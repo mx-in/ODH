@@ -26,7 +26,7 @@ What the evidence shows:
 - **Chrome exposes the page URL without AppleScript.** Its `accessibilityURL` returns the tab's URL on the web area ([ax_platform_node_cocoa.mm](https://source.chromium.org/chromium/chromium/src/+/main:ui/accessibility/platform/ax_platform_node_cocoa.mm)). AppleScript stays a fallback, because it needs the user's Automation permission.
 - **Chrome and Electron must be told to switch accessibility on.** Chrome turns on its basic accessibility tree when a client reads the app's `AXRole` ([chrome_browser_application_mac.mm](https://source.chromium.org/chromium/chromium/src/+/main:chrome/browser/chrome_browser_application_mac.mm)). Electron apps (VS Code, Slack, Obsidian) need `AXManualAccessibility = true` on the app element ([Electron docs](https://github.com/electron/electron/blob/main/docs/tutorial/accessibility.md)).
 - **Copy-only apps give text and nothing else.** When text only arrives through ⌘C (some Java, game-engine or custom-drawn apps), there is no sentence, paragraph or position. The context fields stay empty and plugins must handle that.
-- **Not yet measured on a real Mac.** Coverage per app comes from source code and docs. Milestone 0 checks it against a fixed list of apps before we commit to the API.
+- **Measured on 2026-10-10.** 8 of 13 test apps pass every field, including sentence and paragraph; see [ax-coverage.md](research/ax-coverage.md). Chromium needed a fallback: its sentence and paragraph markers stop at inline elements, so Baron rebuilds the paragraph from the Accessibility tree.
 
 ## Goals and non-goals
 
@@ -105,7 +105,7 @@ A selection goes through three stages: a trigger fires, a gate rejects non-text 
 3. Menu copy: press the app's Edit › Copy menu item through Accessibility. No keystroke is sent, so there is no beep.
 4. Keyboard copy: post ⌘C, then wait up to 300 ms for the clipboard to change.
 
-Steps 3 and 4 save every clipboard item first and restore it afterwards. Our temporary writes carry `org.nspasteboard.TransientType`, so clipboard managers ignore them. A per-app rule can start the chain at a later step for apps with broken Accessibility.
+Steps 3 and 4 save every clipboard item first and restore it afterwards. The copy itself is written by the source app, so Baron can't mark it as transient; a clipboard manager may record it. Step 4 posts ⌘C directly: SelectedTextKit's own shortcut strategy scripts System Events and stalls on an Automation prompt. A per-app rule can start the chain at a later step for apps with broken Accessibility.
 
 **Library choice.** Use [SelectedTextKit](https://github.com/tisfeng/SelectedTextKit) (MIT) for steps 1–4, behind our own `TextRetriever` protocol so it can be swapped. Easydict (14.9k stars) uses it in production. The gate and the window-drag check are ours. We take ideas, not code, from OpenClip's [text-selection design](https://github.com/ganeshmshetty/openclip/blob/main/docs/architecture/text-selection.md), because OpenClip is AGPL-3.0.
 
@@ -346,7 +346,7 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 | Accessibility support varies (Electron, Java, Qt, games) | No context, or no text without copying | Copy fallback, per-app rules, measured in M0 |
 | Switching on Chrome or Electron accessibility costs them CPU and memory | Users blame us for slower apps | Switch it on only for the frontmost app, and only when a context permission is in use |
 | False triggers (Finder drags, drawing apps) | The bar becomes annoying | Gate, exclusion list, optional hold-a-modifier mode |
-| Copy fallback side effects | Clipboard managers record junk; apps run copy hooks | Transient pasteboard type, full restore, menu copy before ⌘C |
+| Copy fallback side effects | Clipboard managers record junk; apps run copy hooks | Full restore, menu copy before ⌘C. The source app writes the copy, so it can't be marked transient |
 | macOS changes AX behaviour or permission prompts | Breakage after an OS update | Test on each macOS beta; keep the retriever swappable |
 | The plugin API is hard to change once published | Stuck with early mistakes | Small v1 surface, `apiVersion`, support N and N−1 |
 | JavaScriptCore and QuickJS-NG behave differently | A plugin works on macOS only | Every plugin's tests run on both engines in CI |

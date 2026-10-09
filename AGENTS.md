@@ -28,6 +28,49 @@
     - [x] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
     - [x] Copy through Edit › Copy, with clipboard save and restore
     - [x] Copy through ⌘C, with clipboard save and restore
+- [x] Coverage measurement (commits 4a5a8b4, 8824d00, 6579c24, 2588186; user tried the bar 2026-10-10 and asked for automated UI tests)
+    - [x] Move the probe's reading logic into `BaronPlatform` so the CLI and UI tests share it
+    - [x] Grade a probe report against the fixture's expected text (`BaronCore`, unit tested)
+    - [x] Add input automation: locate a word on screen, double-click it, close fixture windows
+    - [x] Add `baron-uitest` and `scripts/uitest-all.sh` (3 attempts per app, then omit)
+    - [x] Run on the test apps: 8 of 13 pass every field; Pages, Preview, VS Code not measurable by the harness; Slack skipped; Obsidian not installed
+    - [x] Fix what the runs found: ⌘C stall (bc89053), Chromium web context and Safari title (b54ac9f)
+    - [x] Write the table and conclusions in `docs/research/ax-coverage.md`
+- [x] Design update (commit: see next)
+    - [x] Keep the `SelectionContext` contract as designed: sentence, paragraph and page stay optional
+    - [x] Correct the design's claim that Baron marks the copy as transient
+- [ ] **▶ IN PROGRESS** Gate: the user reviews the coverage table (then archive this task)
+
+**Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while this measurement waits for them.
+
+# Agent guide
+
+## Current task
+
+**Task:** task-001-spike: measure what macOS really gives us (gate: coverage table reviewed; context fields confirmed)
+**Started:** 2026-10-10 · **Agent:** Claude (Claude Code)
+
+- [x] Decisions needed before code (commit 37e5f1e)
+    - [x] Product name: **baron** (package scope `@baron`, CLI `baron`)
+    - [x] Licence: MIT
+    - [x] Minimum macOS: 14
+    - [x] Code location: `macos/` in this repo
+    - [x] Record the decisions in `docs/tec-design.md`
+- [x] Project skeleton (commit 8056622)
+    - [x] Create the Swift package and app target (menu-bar agent, no Dock icon)
+    - [x] Sign builds with the installed Apple Development identity so the Accessibility grant survives rebuilds
+    - [x] Add the Accessibility permission check and the prompt that opens System Settings
+- [x] Probe tool (commit 52526d9; `macos/Sources/baron-probe`, readers in `BaronPlatform/Readers`)
+    - [x] Read `AXSelectedText` from the focused element
+    - [x] Read the web selection via `AXSelectedTextMarkerRange` and `AXStringForTextMarkerRange`
+    - [x] Read the sentence and paragraph via the web text-marker attributes
+    - [x] Read the native-text window via `AXSelectedTextRange` and `AXStringForRange`
+    - [x] Read `AXURL` and the title from the nearest `AXWebArea`
+    - [x] Read the window title and `AXDocument`
+    - [x] Read the selection bounds
+    - [x] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
+    - [x] Copy through Edit › Copy, with clipboard save and restore
+    - [x] Copy through ⌘C, with clipboard save and restore
 - [ ] **▶ IN PROGRESS** Coverage measurement (user tried the bar 2026-10-10 and asked for automated UI tests that drive the computer)
     - [x] Move the probe's reading logic into `BaronPlatform` so the CLI and UI tests share it (commit 4a5a8b4)
     - [x] Grade a probe report against the fixture's expected text (`BaronCore`, unit tested; commit: see next)
@@ -83,10 +126,11 @@
     - [x] Launch at login
 - [x] Logging (commit: see next; `log stream --predicate 'subsystem == "org.odh.baron"'`)
     - [x] Log text length and the retrieval step used, never the text
-- [ ] Verification (automated by `baron-uitest`, which also checks the bar)
-    - [ ] Run the bar on the 13 test apps and record the results in `docs/research/ax-coverage.md`
+- [x] Verification (automated by `baron-uitest`, which also checks the bar)
+    - [x] Run the bar on the test apps: it appeared and its Copy button worked in all 8 measured apps
+- [ ] Gate: the user reviews tasks 1–2 (then archive this task)
 
-**Notes for the next agent:** all task-002 code is committed and unit tested (70 tests in `BaronCore`); the app launches without crashing. Nothing has been checked by a person yet. **Stop here:** the user reviews tasks 1–2 and adds UI automation tests before task-003 starts. To try the bar: `cd macos && scripts/build-app.sh && open build/Baron.app`, grant Accessibility to Baron, then select text in another app. Known gaps to watch for: the bar's look has never been seen by anyone (no screenshot taken); a copy-fallback copy can still be recorded by clipboard managers; the settings window needs the built `.app` for launch at login. UI elements carry accessibility identifiers for automation: `baron.actionBar`, `baron.action.<id>`, `baron.settings`, `settings.pause`, `settings.searchTemplate`, `settings.excludedApps`, `settings.launchAtLogin`.
+**Notes for the next agent:** all task-002 code is committed and unit tested (76 tests in `BaronCore`). The user tried the bar by hand on 2026-10-10, and `baron-uitest` verified it in 8 apps. **Stop here:** the user reviews tasks 1–2 and adds UI automation tests before task-003 starts. To try the bar: `cd macos && scripts/build-app.sh && open build/Baron.app`, grant Accessibility to Baron, then select text in another app. Known gaps: Pages, Preview, VS Code and Slack are unmeasured; a copy-fallback copy can still be recorded by clipboard managers; the settings window needs the built `.app` for launch at login. UI elements carry accessibility identifiers for automation: `baron.actionBar`, `baron.action.<id>`, `baron.settings`, `settings.pause`, `settings.searchTemplate`, `settings.excludedApps`, `settings.launchAtLogin`.
 
 **Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while task-001's coverage measurement waits for them. Stop before task-003; the user reviews tasks 1–2 and adds UI automation tests first.
 

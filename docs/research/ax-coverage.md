@@ -1,44 +1,56 @@
 # Accessibility coverage per app
 
-What macOS Accessibility returns for a selection in each of the 13 test apps, measured with `baron-probe`. This table decides which `SelectionContext` fields v1 promises plugins (task-001 gate).
+What macOS Accessibility returns for a selection in the test apps, measured on 2026-10-10 by `baron-uitest` (macOS 26.2). In each app the harness opened a fixture, double-clicked the word "quokka" with real mouse events, checked that Baron's bar appeared and that its Copy button copied the word, ran the probe, and graded every field against the expected sentence and paragraph.
 
-Status: **in progress**: 1 of 13 apps measured (TextEdit, by an agent). The rest need a person, because each needs a real selection.
-
-## How to measure an app
-
-```sh
-cd macos && swift build
-.build/debug/baron-probe --delay 3          # switch to the app and select a word inside a sentence
-.build/debug/baron-probe --delay 3 --copy   # same, also tries Edit › Copy and ⌘C (clipboard is restored)
-```
-
-Use `--json` to save the raw output. Select one word in the middle of a multi-sentence paragraph, so the sentence and paragraph results can be told apart.
-
-Mark each field **✓** (correct), **~** (partly right: say how), or **✗** (missing). Write the slowest step's time in the last column.
+**Result: 8 of 13 apps pass every column.** Three apps couldn't be measured automatically, Slack was skipped on purpose, and Obsidian isn't installed.
 
 ## Results
 
-| App | selected text | web selection | web sentence / paragraph | native window | native sentence / paragraph | page URL / title | window title / document | bounds | menu copy | ⌘C | slowest step |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TextEdit | ✓ | n/a | n/a | ✓ | ✓ / ✓ | n/a | ✓ / ✓ | ✓ native | not run | not run | 1.5 ms (native window) |
-| Safari | | | | | | | | | | | |
-| Chrome | | | | | | | | | | | |
-| Arc | | | | | | | | | | | |
-| Mail | | | | | | | | | | | |
-| Notes | | | | | | | | | | | |
-| Pages | | | | | | | | | | | |
-| Preview | | | | | | | | | | | |
-| Xcode | | | | | | | | | | | |
-| VS Code | | | | | | | | | | | |
-| Slack | | | | | | | | | | | |
-| Obsidian | | | | | | | | | | | |
-| Terminal | | | | | | | | | | | |
+| App | Selected text | Context from | Sentence | Paragraph | Page URL | Page title | Window title | Document | Bounds | Menu copy | ⌘C | Bar shown | Slowest AX read |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TextEdit | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 13 ms | ✓ 54 ms | ✓ | 2.2 ms |
+| Safari | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 10 ms | ✓ 50 ms | ✓ | 0.4 ms |
+| Chrome | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 12 ms | ✓ 38 ms | ✓ | 2.6 ms |
+| Arc | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 26 ms | ✓ 58 ms | ✓ | 2.4 ms |
+| Mail | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 29 ms | ✓ 53 ms | ✓ | 2.3 ms |
+| Notes | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 20 ms | ✓ 31 ms | ✓ | 1.7 ms |
+| Xcode | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 15 ms | ✓ 43 ms | ✓ | 2.3 ms |
+| Terminal | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 21 ms | ✓ 82 ms | ✓ | 4.3 ms |
 
-## Findings so far
+✓ correct · ~ partly right · ✗ missing · – not applicable (no page, or no document file). The bar's Copy button copied "quokka" in all 8 apps.
 
-- **TextEdit (2026-10-10):** every native field works. The selection was set through Accessibility on a background TextEdit window; reads took 0.2–1.5 ms each.
-- **Copy fallback and clipboard managers:** SelectedTextKit saves and restores every clipboard item, but the copy is written by the source app. A clipboard manager that polls quickly may still record it; Baron can't mark that write as transient. To be confirmed with a clipboard manager running.
+**Not measured:**
+
+| App | Why |
+| --- | --- |
+| Pages | The harness couldn't find the word in the Accessibility tree after 3 attempts |
+| Preview | Same; the PDF's text may not be exposed as element values |
+| VS Code | Same; the editor (Monaco) may expose text only through a hidden text area |
+| Slack | Skipped: testing would mean typing into a real workspace. Test by hand |
+| Obsidian | Not installed |
+
+For these, the harness's word finder failed, not necessarily Baron. Check them by hand with `baron-probe --delay 3`.
+
+## What the runs found and fixed
+
+- **⌘C fallback stalled for ~30 s.** SelectedTextKit's shortcut strategy mutes the alert sound by scripting System Events, which raises an Automation prompt. Baron now posts ⌘C itself (`bc89053`).
+- **Chromium returned only the word as its sentence and paragraph**, and no bounds, when the word sat in its own inline element. Baron now rebuilds the paragraph from the Accessibility tree and uses the text element's frame (`b54ac9f`). Safari didn't need this.
+- **Safari's web area has no title.** Baron falls back to the window title (`b54ac9f`).
 
 ## Conclusions
 
-To write once the table is filled: which context fields are reliable enough to promise in v1, and which apps need a per-app rule.
+- **v1 can promise:** the selected text, app, window title, and selection bounds in all measured apps. The bar appeared in every one.
+- **Sentence and paragraph** worked in every measured app (web or native path). They stay optional in the contract, because copy-only apps and the unmeasured apps may not provide them.
+- **Page URL and title** work in all three browsers and Mail without AppleScript.
+- **Speed:** every Accessibility read took under 5 ms. The copy fallbacks took 10–82 ms, well within the 150 ms budget for showing the bar.
+- **Clipboard managers:** the copy fallback is written by the source app, so Baron can't mark it as transient. It does restore the user's clipboard. Not yet tested with a clipboard manager running.
+
+## How to re-run
+
+```sh
+cd macos
+scripts/build-app.sh             # the bar check uses build/Baron.app
+scripts/uitest-all.sh            # every app; or name some: scripts/uitest-all.sh Safari Chrome
+```
+
+It takes over the mouse and keyboard for a few minutes. Each app gets up to 3 attempts; results land in `macos/UITests/results/all.md`.

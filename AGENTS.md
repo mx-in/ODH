@@ -24,6 +24,7 @@ ODH is a Chrome (Manifest V3) extension for looking up words and adding them to 
 ## Design docs
 
 - [Selection Popup App — Technical Design](docs/tec-design.md): the planned macOS selection bar (Swift host, TypeScript/JavaScript plugins), with ODH as its first plugin. Read it before working on that app or on code shared with it.
+- [Task backlog](docs/tasks.md): the design split into tasks, features and sub-tasks. Start the next task from here.
 - Extension background and development notes: [doc/](doc/).
 
 ## Checks
@@ -35,6 +36,18 @@ npm run lint
 npm run test:contracts
 npm run test:unit
 ```
+
+## Task breakdown rules
+
+Split work by the single-responsibility principle: every item has exactly one reason to change.
+
+- **Task = one goal** with one acceptance gate (for the selection app, one milestone). Planned tasks live in [docs/tasks.md](docs/tasks.md).
+- **Feature = one component or concern**, such as the gate, the text retriever or the host's `http` namespace. If its name needs "and" to describe two separate things, split it.
+- **Sub-task = one behaviour you can verify on its own**, finished in one sitting and small enough for one commit. Write it as a verb plus an object ("Reject secure text fields"), not as an area ("security").
+- **Keep layers apart:** contract, platform code and UI are separate sub-tasks, even inside one feature, so each changes for one reason only.
+- **Open decisions are their own items**, placed before the code that depends on them.
+- **Verification is its own item**, at the end of the feature or task it checks.
+- If a sub-task turns out to need two commits, split it in the checklist before continuing.
 
 ## Task tracking rules
 

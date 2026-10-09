@@ -15,7 +15,7 @@
     - [x] Create the Swift package and app target (menu-bar agent, no Dock icon)
     - [x] Sign builds with the installed Apple Development identity so the Accessibility grant survives rebuilds
     - [x] Add the Accessibility permission check and the prompt that opens System Settings
-- [x] Probe tool (commit: see next; `macos/Sources/baron-probe`, readers in `BaronPlatform/Readers`)
+- [x] Probe tool (commit 52526d9; `macos/Sources/baron-probe`, readers in `BaronPlatform/Readers`)
     - [x] Read `AXSelectedText` from the focused element
     - [x] Read the web selection via `AXSelectedTextMarkerRange` and `AXStringForTextMarkerRange`
     - [x] Read the sentence and paragraph via the web text-marker attributes
@@ -26,12 +26,55 @@
     - [x] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
     - [x] Copy through Edit › Copy, with clipboard save and restore
     - [x] Copy through ⌘C, with clipboard save and restore
-- [ ] **▶ IN PROGRESS** Coverage measurement (needs the user: Accessibility grant and real selections)
-    - [ ] Run the probe on the 13 test apps and record each field
+- [ ] Coverage measurement (**blocked on the user**: needs real selections in each app)
+    - [ ] Run the probe on the 13 test apps and record each field (TextEdit done by an agent)
     - [ ] Measure the time each retrieval step takes per app
-    - [ ] Write `docs/research/ax-coverage.md`
-- [ ] Design update
+    - [x] Write `docs/research/ax-coverage.md` (template, TextEdit row, how to measure)
+    - [ ] Write the conclusions in `docs/research/ax-coverage.md`
+- [ ] Design update (after the measurement)
     - [ ] Update the `SelectionContext` contract to match the measured coverage
+    - [ ] Correct the design's claim that Baron marks the copy as transient: the source app writes it, so Baron can't
+
+**Task:** task-002-selection-bar: the bar appears in any app (gate: the bar shows in every test app, or the gap is documented)
+**Started:** 2026-10-10 · **Agent:** Claude (Claude Code) · runs while task-001 waits for the user
+
+- [ ] **▶ IN PROGRESS** Selection monitor
+    - [ ] Detect mouse-up after a drag of 5 px or more
+    - [ ] Detect double- and triple-click
+    - [ ] Detect ⇧-click
+    - [ ] Detect ⇧-arrow and ⌘A, debounced 300 ms
+    - [ ] Record a window drag (window moved or resized between mouse-down and mouse-up)
+- [ ] Hotkey
+    - [ ] Add KeyboardShortcuts and record one configurable shortcut
+    - [ ] Send the hotkey trigger straight to retrieval, skipping the gate
+- [ ] Gate
+    - [ ] Reject apps on the exclusion list, with the default list
+    - [ ] Reject secure text fields and secure keyboard input
+    - [ ] Reject roles that cannot hold text
+    - [ ] Reject window drags
+- [ ] Text retriever
+    - [ ] Define the `TextRetriever` protocol
+    - [ ] Wrap SelectedTextKit behind it
+    - [ ] Apply a 0.5 s timeout to every AX call (done in `AXElement`; check SelectedTextKit's calls)
+    - [ ] Retry the web step up to 6 times within 300 ms
+    - [ ] Choose the chain's starting step from per-app rules
+- [ ] Action bar window
+    - [ ] Show a non-activating `NSPanel` that never takes focus
+    - [ ] Position it above the selection, or below near the top of the screen; fall back to the mouse position
+    - [ ] Close it on an outside click, key press, scroll or app switch
+    - [ ] Render action buttons from a list of actions
+- [ ] Built-in actions
+    - [ ] Copy
+    - [ ] Search with a configurable URL template
+    - [ ] Open a link found in the selection
+- [ ] Settings
+    - [ ] Pause and resume the bar from the menu-bar item
+    - [ ] Edit the excluded apps
+    - [ ] Launch at login
+- [ ] Logging
+    - [ ] Log text length and the retrieval step used, never the text
+- [ ] Verification (needs the user)
+    - [ ] Run the bar on the 13 test apps and record the results in `docs/research/ax-coverage.md`
 
 **Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while task-001's coverage measurement waits for them. Stop before task-003; the user reviews tasks 1–2 and adds UI automation tests first.
 

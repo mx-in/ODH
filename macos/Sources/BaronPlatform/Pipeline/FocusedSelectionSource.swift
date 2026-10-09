@@ -37,7 +37,7 @@ public final class FocusedSelectionSource: SelectionSource {
         case .axText:
             return SelectionBoundsReader.bounds(ofNativeSelectionIn: focused)
         case .axWeb:
-            return WebSelectionReader.selectedRange(near: focused).flatMap { SelectionBoundsReader.bounds(of: $0.range, in: $0.owner) }
+            return WebSelectionReader.selectedRange(near: focused).flatMap { SelectionBoundsReader.bounds(ofWebSelection: $0.range, in: $0.owner) }
         case .menuCopy, .keyCopy:
             // The app may still report bounds even when its text needed copying.
             return SelectionBoundsReader.bounds(ofNativeSelectionIn: focused)

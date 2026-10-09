@@ -79,6 +79,23 @@ public struct AXElement {
     public var title: String? { string(kAXTitleAttribute) }
     public var parent: AXElement? { element(kAXParentAttribute) }
 
+    /// The element's frame in top-left-origin screen points.
+    public var frame: CGRect? {
+        guard
+            let position = value(kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID(),
+            let size = value(kAXSizeAttribute), CFGetTypeID(size) == AXValueGetTypeID()
+        else { return nil }
+        var origin = CGPoint.zero
+        var extent = CGSize.zero
+        AXValueGetValue(position as! AXValue, .cgPoint, &origin)
+        AXValueGetValue(size as! AXValue, .cgSize, &extent)
+        return CGRect(origin: origin, size: extent)
+    }
+
+    public var children: [AXElement] {
+        (value(kAXChildrenAttribute) as? [AXUIElement])?.map(AXElement.init) ?? []
+    }
+
     public var pid: pid_t? {
         var pid: pid_t = 0
         return AXUIElementGetPid(raw, &pid) == .success ? pid : nil

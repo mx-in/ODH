@@ -12,9 +12,12 @@ public enum WebAreaReader {
         webArea.url(kAXURLAttribute)
     }
 
-    /// Browsers put the page title in `AXTitle` or, failing that, `AXDescription`.
+    /// Chromium puts the page title in `AXTitle` or `AXDescription`; Safari leaves both empty,
+    /// so fall back to the window title, which Safari sets to the page title.
     public static func title(of webArea: AXElement) -> String? {
-        let title = webArea.title ?? webArea.string(kAXDescriptionAttribute)
-        return title?.isEmpty == false ? title : nil
+        for title in [webArea.title, webArea.string(kAXDescriptionAttribute), webArea.element(kAXWindowAttribute)?.title] {
+            if let title, !title.isEmpty { return title }
+        }
+        return nil
     }
 }

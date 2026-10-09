@@ -46,9 +46,9 @@ public enum SelectionProbe {
             web = WebSelectionReader.selectedRange(near: element)
             return web.flatMap { WebSelectionReader.string(for: $0.range, in: $0.owner) }
         }
-        report.record(ProbeField.webSentence) { web.flatMap { describe(WebContextReader.span(.sentence, around: $0.range, in: $0.owner)) } }
-        report.record(ProbeField.webParagraph) { web.flatMap { describe(WebContextReader.span(.paragraph, around: $0.range, in: $0.owner)) } }
-        report.record(ProbeField.webBounds) { web.flatMap { describe(SelectionBoundsReader.bounds(of: $0.range, in: $0.owner)) } }
+        report.record(ProbeField.webSentence) { web.flatMap { describe(WebContextReader.contextSpan(.sentence, around: $0.range, in: $0.owner)) } }
+        report.record(ProbeField.webParagraph) { web.flatMap { describe(WebContextReader.contextSpan(.paragraph, around: $0.range, in: $0.owner)) } }
+        report.record(ProbeField.webBounds) { web.flatMap { describe(SelectionBoundsReader.bounds(ofWebSelection: $0.range, in: $0.owner)) } }
 
         let area = WebAreaReader.webArea(containing: element)
         report.record(ProbeField.pageURL) { area.flatMap(WebAreaReader.url)?.absoluteString }

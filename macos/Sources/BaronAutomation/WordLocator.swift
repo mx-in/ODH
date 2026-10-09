@@ -72,14 +72,6 @@ public enum WordLocator {
     }
 
     static func frame(of element: AXElement) -> CGRect? {
-        guard
-            let position = element.value(kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID(),
-            let size = element.value(kAXSizeAttribute), CFGetTypeID(size) == AXValueGetTypeID()
-        else { return nil }
-        var origin = CGPoint.zero
-        var extent = CGSize.zero
-        AXValueGetValue(position as! AXValue, .cgPoint, &origin)
-        AXValueGetValue(size as! AXValue, .cgSize, &extent)
-        return CGRect(origin: origin, size: extent)
+        element.frame
     }
 }

@@ -13,6 +13,11 @@ public enum SelectionBoundsReader {
         usable(AXElement.rect(from: element.value(kAXBoundsForTextMarkerRangeParameterizedAttribute, parameter: range)))
     }
 
+    /// Marker bounds, falling back to the frame of the text element under the selection (Chromium).
+    public static func bounds(ofWebSelection range: AXTextMarkerRange, in element: AXElement) -> CGRect? {
+        bounds(of: range, in: element) ?? usable(WebTreeContextReader.leafBounds(around: range, in: element))
+    }
+
     // Some apps answer with an empty rect at the origin instead of failing.
     private static func usable(_ rect: CGRect?) -> CGRect? {
         guard let rect, rect.width > 0 || rect.height > 0 else { return nil }

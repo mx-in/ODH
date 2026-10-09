@@ -45,4 +45,19 @@ public enum WebContextReader {
         let end = min(start + selected.utf16.count, text.utf16.count)
         return NativeTextContext.capped(TextSpan(text: text, selectionStart: start, selectionEnd: end), to: unit.cap)
     }
+
+    /// The text-marker answer, or the tree-rebuilt one when markers stop at an inline element
+    /// and return no more than the selection itself (Chromium).
+    public static func contextSpan(_ unit: Unit, around selection: AXTextMarkerRange, in element: AXElement) -> TextSpan? {
+        let direct = span(unit, around: selection, in: element)
+        if let direct, direct.text.utf16.count > direct.selectionEnd - direct.selectionStart { return direct }
+        guard
+            let selected = WebSelectionReader.string(for: selection, in: element),
+            let paragraph = WebTreeContextReader.paragraph(around: selection, selectedText: selected, in: element)
+        else { return direct }
+        switch unit {
+        case .paragraph: return paragraph
+        case .sentence: return NativeTextContext.sentence(in: paragraph) ?? direct
+        }
+    }
 }

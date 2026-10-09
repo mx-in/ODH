@@ -47,18 +47,18 @@
 - [x] Hotkey (commit de69a91; no default shortcut, recorded in Settings)
     - [x] Add KeyboardShortcuts and record one configurable shortcut
     - [x] Send the hotkey trigger straight to retrieval, skipping the gate
-- [x] Gate (commit: see next)
+- [x] Gate (commit 748eca3)
     - [x] Reject apps on the exclusion list, with the default list
     - [x] Reject secure text fields and secure keyboard input
     - [x] Reject roles that cannot hold text
     - [x] Reject window drags
-- [ ] **▶ IN PROGRESS** Text retriever
-    - [ ] Define the `TextRetriever` protocol
-    - [ ] Wrap SelectedTextKit behind it
-    - [ ] Apply a 0.5 s timeout to every AX call (done in `AXElement`; check SelectedTextKit's calls)
-    - [ ] Retry the web step up to 6 times within 300 ms
-    - [ ] Choose the chain's starting step from per-app rules
-- [ ] Action bar window
+- [x] Text retriever (commit: see next)
+    - [x] Define the `TextRetriever` protocol
+    - [x] Wrap SelectedTextKit behind it
+    - [x] Apply a 0.5 s timeout to every AX call (global default set on the system-wide element, which covers SelectedTextKit too)
+    - [x] Retry the web step up to 6 times within 300 ms
+    - [x] Choose the chain's starting step from per-app rules
+- [ ] **▶ IN PROGRESS** Action bar window
     - [ ] Show a non-activating `NSPanel` that never takes focus
     - [ ] Position it above the selection, or below near the top of the screen; fall back to the mouse position
     - [ ] Close it on an outside click, key press, scroll or app switch

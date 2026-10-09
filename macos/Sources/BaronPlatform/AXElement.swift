@@ -23,6 +23,12 @@ public struct AXElement {
         AXElement(AXUIElementCreateSystemWide())
     }
 
+    /// A timeout set on the system-wide element becomes the default for every element in
+    /// this process, including those SelectedTextKit creates. Call once at launch.
+    public static func applyGlobalTimeout() {
+        AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), timeout)
+    }
+
     // MARK: Reading
 
     /// The raw value of an attribute, or nil when the app does not provide it.

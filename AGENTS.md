@@ -29,8 +29,8 @@
     - [x] Copy through Edit › Copy, with clipboard save and restore
     - [x] Copy through ⌘C, with clipboard save and restore
 - [ ] **▶ IN PROGRESS** Coverage measurement (user tried the bar 2026-10-10 and asked for automated UI tests that drive the computer)
-    - [x] Move the probe's reading logic into `BaronPlatform` so the CLI and UI tests share it (commit: see next)
-    - [ ] Grade a probe report against the fixture's expected text (`BaronCore`, unit tested)
+    - [x] Move the probe's reading logic into `BaronPlatform` so the CLI and UI tests share it (commit 4a5a8b4)
+    - [x] Grade a probe report against the fixture's expected text (`BaronCore`, unit tested; commit: see next)
     - [ ] Add input automation: locate a word on screen, double-click it, close fixture windows
     - [ ] Add `baron-uitest`: open a fixture per app, select a word, probe, check Baron's bar, clean up
     - [ ] Run the probe on the 13 test apps and record each field (TextEdit done by an agent)

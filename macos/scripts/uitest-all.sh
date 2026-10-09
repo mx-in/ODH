@@ -24,24 +24,25 @@ for app in $apps; do
         dir="$out/$app"
         rm -rf "$dir"
         timeout 150 "$bin" --only "$name" --out "$dir" >/dev/null 2>"$out/$app.log"
-        row=$(grep "^| $name |" "$dir/latest.md" 2>/dev/null)
-        note=$(grep "^- \*\*$name:\*\*" "$dir/latest.md" 2>/dev/null)
+        row=$(grep "^| $name · " "$dir/latest.md" 2>/dev/null)
+        note=$(grep "^- \*\*$name · " "$dir/latest.md" 2>/dev/null)
         # A skip is final; a row whose selected text was read is a result worth keeping.
         if echo "$note" | grep -q "skipped:"; then
-            omitted="$omitted\n- **$name:** $(echo "$note" | sed 's/.*skipped: //')"
+            omitted="$omitted\n- **$name:** $(echo "$note" | head -1 | sed 's/.*skipped: //')"
             passed=skip
             break
         fi
-        if [ -n "$row" ] && ! echo "$row" | grep -q "^| $name | ✗ |"; then
+        # Keep the attempt when every mode read its selection (no ✗ in the selected-text column).
+        if [ -n "$row" ] && ! echo "$row" | grep -q "^| $name · [a-z]* | ✗ |"; then
             rows="$rows\n$row"
-            notes="$notes\n$note (attempt $attempt)"
+            notes="$notes\n$note"
             passed=yes
             break
         fi
-        echo "  attempt $attempt failed: $(echo "$note" | sed 's/.*:\*\* //')" >&2
+        echo "  attempt $attempt failed" >&2
     done
     if [ "$passed" = no ]; then
-        omitted="$omitted\n- **$name:** failed 3 attempts; last: $(echo "$note" | sed 's/.*:\*\* //')"
+        omitted="$omitted\n- **$name:** failed 3 attempts; last: $(echo "$note" | grep -o 'could not[^;]*\|never appeared[^;]*' | head -1)"
     fi
 done
 

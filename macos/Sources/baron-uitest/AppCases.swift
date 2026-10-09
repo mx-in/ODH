@@ -18,13 +18,19 @@ struct Fixtures {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try fixture.text.write(to: text, atomically: true, encoding: .utf8)
 
-        // The target word sits in its own <span>, so browsers expose it as its own text element.
-        let sentenceRest = fixture.paragraph.replacingOccurrences(of: "The quick brown \(fixture.target) ", with: "")
+        // The target word and the sentence's first and last words sit in their own <span>s,
+        // so browsers expose each as its own text element with an exact frame.
+        let first = fixture.sentenceStartWord, last = fixture.sentenceEndWord
+        var body = fixture.paragraph
+        for word in [fixture.target, last] {
+            body = body.replacingOccurrences(of: " \(word) ", with: " <span>\(word)</span> ")
+        }
+        body = "<span>\(first)</span>" + body.dropFirst(first.count)
         let html = """
         <!doctype html><html><head><meta charset="utf-8"><title>\(Self.title)</title>
         <style>body{font:18px -apple-system;margin:40px;max-width:640px}</style></head><body>
         <p>Baron fixture first paragraph.</p>
-        <p>The quick brown <span>\(fixture.target)</span> \(sentenceRest)</p>
+        <p>\(body)</p>
         <p>Last paragraph with a link <a href="https://example.com">https://example.com</a> here.</p>
         </body></html>
         """

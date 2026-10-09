@@ -6,9 +6,15 @@ import Foundation
 /// Finds where a word is drawn on screen by searching an app's Accessibility tree.
 public enum WordLocator {
     public struct Hit {
-        public let point: CGPoint
-        /// How the point was found: "exact element", "bounds for range" or "estimated".
+        /// Where the word is drawn, in top-left-origin screen points.
+        public let rect: CGRect
+        /// How it was found: "exact element", "bounds for range" or "estimated".
         public let method: String
+
+        public var point: CGPoint { CGPoint(x: rect.midX, y: rect.midY) }
+        /// Just inside the word's left and right edges, where a drag starts or ends.
+        public var leadingPoint: CGPoint { CGPoint(x: rect.minX + 1, y: rect.midY) }
+        public var trailingPoint: CGPoint { CGPoint(x: rect.maxX - 1, y: rect.midY) }
     }
 
     static let maxNodes = 6_000
@@ -58,17 +64,18 @@ public enum WordLocator {
         guard let frame = frame(of: element), frame.width > 0, frame.height > 0 else { return nil }
 
         if text.trimmingCharacters(in: .whitespacesAndNewlines) == word {
-            return Hit(point: CGPoint(x: frame.midX, y: frame.midY), method: "exact element")
+            return Hit(rect: frame, method: "exact element")
         }
         let location = text.utf16.distance(from: text.utf16.startIndex, to: range.lowerBound.samePosition(in: text.utf16)!)
         let request = AXElement.value(of: CFRange(location: location, length: word.utf16.count))
         if let rect = AXElement.rect(from: element.value(kAXBoundsForRangeParameterizedAttribute, parameter: request)), rect.width > 0 {
-            return Hit(point: CGPoint(x: rect.midX, y: rect.midY), method: "bounds for range")
+            return Hit(rect: rect, method: "bounds for range")
         }
         // A single line of text: assume even character widths (exact for monospaced editors).
         guard frame.height < 48 else { return nil }
-        let fraction = (Double(location) + Double(word.utf16.count) / 2) / Double(max(text.utf16.count, 1))
-        return Hit(point: CGPoint(x: frame.minX + frame.width * fraction, y: frame.midY), method: "estimated")
+        let unit = frame.width / CGFloat(max(text.utf16.count, 1))
+        let rect = CGRect(x: frame.minX + unit * CGFloat(location), y: frame.minY, width: unit * CGFloat(word.utf16.count), height: frame.height)
+        return Hit(rect: rect, method: "estimated")
     }
 
     static func frame(of element: AXElement) -> CGRect? {

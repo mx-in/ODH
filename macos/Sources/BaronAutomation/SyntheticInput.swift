@@ -27,6 +27,28 @@ public enum SyntheticInput {
         post(.leftMouseUp, at: point, clickState: 2)
     }
 
+    /// Three clicks inside the double-click interval, so apps select a paragraph or line.
+    public static func tripleClick(at point: CGPoint) {
+        move(to: point)
+        for state: Int64 in 1...3 {
+            post(.leftMouseDown, at: point, clickState: state)
+            post(.leftMouseUp, at: point, clickState: state)
+            pause(0.05)
+        }
+    }
+
+    /// Presses at `start`, moves in steps to `end`, and releases: a text selection drag.
+    public static func drag(from start: CGPoint, to end: CGPoint, steps: Int = 12) {
+        move(to: start)
+        post(.leftMouseDown, at: start, clickState: 1)
+        for step in 1...steps {
+            let t = CGFloat(step) / CGFloat(steps)
+            post(.leftMouseDragged, at: CGPoint(x: start.x + (end.x - start.x) * t, y: start.y + (end.y - start.y) * t))
+            pause(0.02)
+        }
+        post(.leftMouseUp, at: end, clickState: 1)
+    }
+
     /// Presses one key. `keyCode` is a macOS virtual key code (53 = Escape, 13 = W).
     public static func press(keyCode: CGKeyCode, flags: CGEventFlags = []) {
         for down in [true, false] {

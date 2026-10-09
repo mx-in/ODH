@@ -6,16 +6,18 @@ import Foundation
 
 // baron-uitest: drives real apps to measure Accessibility coverage and check Baron's bar.
 //
-//   baron-uitest [--only TextEdit,Safari] [--no-copy] [--out dir]
+//   baron-uitest [--only TextEdit,Safari] [--modes word,sentence,paragraph] [--no-copy] [--out dir]
 //
-// For each app: open a fixture, find the word "quokka" through Accessibility,
-// double-click it with real mouse events, check that Baron's bar appears and its
-// Copy button works, run the probe, grade it, and close what the test opened.
+// For each app: open a fixture, then for each mode select a word (double-click),
+// the first sentence (drag) and the paragraph (triple-click) with real mouse events,
+// check that Baron's bar appears and its Copy button works, run the probe, grade it,
+// and close what the test opened.
 // It takes over the mouse and keyboard while it runs.
 
 struct Options {
     var only: Set<String>?
     var copy = true
+    var modes = CoverageFixture.Mode.allCases
     var out = URL(fileURLWithPath: "UITests/results")
 
     init(_ arguments: [String]) {
@@ -24,9 +26,10 @@ struct Options {
             switch argument {
             case "--only": only = Set((rest.popFirst() ?? "").split(separator: ",").map { $0.lowercased() })
             case "--no-copy": copy = false
+            case "--modes": modes = (rest.popFirst() ?? "").split(separator: ",").compactMap { CoverageFixture.Mode(rawValue: String($0)) }
             case "--out": out = URL(fileURLWithPath: rest.popFirst() ?? out.path)
             default:
-                print("usage: baron-uitest [--only App1,App2] [--no-copy] [--out dir]")
+                print("usage: baron-uitest [--only App1,App2] [--modes word,sentence,paragraph] [--no-copy] [--out dir]")
                 exit(2)
             }
         }
@@ -39,44 +42,84 @@ struct CaseResult: Codable {
 }
 
 @MainActor
-func runCase(_ test: AppCase, fixtures: Fixtures, options: Options) async -> CaseResult {
+func runCase(_ test: AppCase, fixtures: Fixtures, options: Options) async -> [CaseResult] {
     let fixture = fixtures.fixture
-    var row = CoverageGrader.grade(ProbeReport(appName: test.name, bundleIdentifier: test.bundleIdentifier), app: test.name,
-                                   expectsPage: test.expectsPage, expectsDocument: test.expectsDocument, barShown: nil)
-    func fail(_ note: String) -> CaseResult {
-        row.notes.append(note)
+    func failAll(_ note: String) -> [CaseResult] {
         log("  ✗ \(note)")
-        return CaseResult(row: row, report: nil)
+        return options.modes.map { mode in
+            var row = CoverageGrader.grade(ProbeReport(appName: test.name, bundleIdentifier: test.bundleIdentifier),
+                                           app: "\(test.name) · \(mode.rawValue)", expectsPage: test.expectsPage,
+                                           expectsDocument: test.expectsDocument, barShown: nil)
+            row.notes.append(note)
+            return CaseResult(row: row, report: nil)
+        }
     }
 
-    if let reason = test.skipReason { return fail("skipped: \(reason)") }
-    guard NSWorkspace.shared.urlForApplication(withBundleIdentifier: test.bundleIdentifier) != nil else { return fail("skipped: not installed") }
+    if let reason = test.skipReason { return failAll("skipped: \(reason)") }
+    guard NSWorkspace.shared.urlForApplication(withBundleIdentifier: test.bundleIdentifier) != nil else { return failAll("skipped: not installed") }
 
     let wasRunning = !NSRunningApplication.runningApplications(withBundleIdentifier: test.bundleIdentifier).isEmpty
     do {
         try test.open(fixtures)
     } catch {
-        return fail("could not open the fixture: \(error)")
+        return failAll("could not open the fixture: \(error)")
     }
 
-    guard let app = waitForApp(test.bundleIdentifier) else { return fail("app did not start") }
+    guard let app = waitForApp(test.bundleIdentifier) else { return failAll("app did not start") }
     defer { cleanUp(test, app: app, wasRunning: wasRunning) }
 
-    var window: AXElement?
     if !test.windowTitle.isEmpty {
-        window = FixtureWindows.waitForWindow(titled: test.windowTitle, inApp: app.processIdentifier, timeout: 20)
-        guard let window else { return fail("fixture window \"\(test.windowTitle)\" never appeared") }
+        guard let window = FixtureWindows.waitForWindow(titled: test.windowTitle, inApp: app.processIdentifier, timeout: 20) else {
+            return failAll("fixture window \"\(test.windowTitle)\" never appeared")
+        }
         FixtureWindows.raise(window)
     }
     app.activate()
     SyntheticInput.pause(1.0)
 
-    guard let hit = WordLocator.locate(fixture.target, inApp: app.processIdentifier) else {
-        return fail("could not find \"\(fixture.target)\" in the Accessibility tree")
+    var results: [CaseResult] = []
+    for mode in options.modes {
+        results.append(await runMode(mode, test: test, app: app, fixture: fixture, options: options))
+        SyntheticInput.pause(0.6)
     }
-    row.notes.append("word found by \(hit.method)")
+    return results
+}
 
-    SyntheticInput.doubleClick(at: hit.point)
+/// Makes one selection of `mode` in the open fixture, then checks the bar and grades the probe.
+@MainActor
+func runMode(_ mode: CoverageFixture.Mode, test: AppCase, app: NSRunningApplication, fixture: CoverageFixture, options: Options) async -> CaseResult {
+    let label = "\(test.name) · \(mode.rawValue)"
+    let expected = fixture.expectation(for: mode)
+    var row = CoverageGrader.grade(ProbeReport(appName: test.name, bundleIdentifier: test.bundleIdentifier), app: label, mode: mode,
+                                   expectsPage: test.expectsPage, expectsDocument: test.expectsDocument, barShown: nil)
+    func fail(_ note: String) -> CaseResult {
+        row.notes.append(note)
+        log("  ✗ \(label): \(note)")
+        return CaseResult(row: row, report: nil)
+    }
+
+    // Clear the previous selection and bar so this mode starts clean.
+    SyntheticInput.press(keyCode: 53)
+    app.activate()
+    SyntheticInput.pause(0.4)
+
+    let pid = app.processIdentifier
+    var method = ""
+    switch mode {
+    case .word, .paragraph:
+        guard let hit = WordLocator.locate(fixture.target, inApp: pid) else { return fail("could not find \"\(fixture.target)\" in the Accessibility tree") }
+        method = hit.method
+        if mode == .word { SyntheticInput.doubleClick(at: hit.point) } else { SyntheticInput.tripleClick(at: hit.point) }
+    case .sentence:
+        guard
+            let start = WordLocator.locate(fixture.sentenceStartWord, inApp: pid),
+            let end = WordLocator.locate(fixture.sentenceEndWord, inApp: pid)
+        else { return fail("could not find the sentence's first and last words") }
+        method = "\(start.method) → \(end.method)"
+        SyntheticInput.drag(from: start.leadingPoint, to: end.trailingPoint)
+    }
+    row.notes.append("found by \(method)")
+
     let barShown = BaronBarDetector.waitForBar(timeout: 2.5)
     var barCopy: String?
     if barShown {
@@ -87,15 +130,15 @@ func runCase(_ test: AppCase, fixtures: Fixtures, options: Options) async -> Cas
             barCopy = NSPasteboard.general.string(forType: .string)
         }
         backup.restore()
-        // Pressing a bar button hides the bar, but the app keeps its selection.
     }
 
     let report = await SelectionProbe.run(on: app, includeCopy: options.copy)
-    row = CoverageGrader.grade(report, app: test.name, fixture: fixture, expectsPage: test.expectsPage,
+    let notes = row.notes
+    row = CoverageGrader.grade(report, app: label, fixture: fixture, mode: mode, expectsPage: test.expectsPage,
                                expectsDocument: test.expectsDocument, barShown: barShown)
-    row.notes.append("word found by \(hit.method)")
+    row.notes = notes
     if barShown {
-        row.notes.append("bar Copy button: \(CoverageGrader.gradeText(barCopy, expected: fixture.target).rawValue)")
+        row.notes.append("bar Copy button: \(CoverageGrader.gradeText(barCopy, expected: expected.selection).rawValue)")
     }
     log("  \(row.markdown)")
     return CaseResult(row: row, report: report)
@@ -178,7 +221,7 @@ func main() async {
     var results: [CaseResult] = []
     for test in AppCase.all() where options.only.map({ $0.contains(test.name.lowercased()) }) ?? true {
         log("▶ \(test.name)")
-        results.append(await runCase(test, fixtures: fixtures, options: options))
+        results += await runCase(test, fixtures: fixtures, options: options)
     }
 
     clipboard.restore()

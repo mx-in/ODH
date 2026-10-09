@@ -52,18 +52,18 @@
     - [x] Reject secure text fields and secure keyboard input
     - [x] Reject roles that cannot hold text
     - [x] Reject window drags
-- [x] Text retriever (commit: see next)
+- [x] Text retriever (commit 45f85d1)
     - [x] Define the `TextRetriever` protocol
     - [x] Wrap SelectedTextKit behind it
     - [x] Apply a 0.5 s timeout to every AX call (global default set on the system-wide element, which covers SelectedTextKit too)
     - [x] Retry the web step up to 6 times within 300 ms
     - [x] Choose the chain's starting step from per-app rules
-- [ ] **▶ IN PROGRESS** Action bar window
-    - [ ] Show a non-activating `NSPanel` that never takes focus
-    - [ ] Position it above the selection, or below near the top of the screen; fall back to the mouse position
-    - [ ] Close it on an outside click, key press, scroll or app switch
-    - [ ] Render action buttons from a list of actions
-- [ ] Built-in actions
+- [x] Action bar window (commit: see next)
+    - [x] Show a non-activating `NSPanel` that never takes focus
+    - [x] Position it above the selection, or below near the top of the screen; fall back to the mouse position
+    - [x] Close it on an outside click, key press, scroll or app switch
+    - [x] Render action buttons from a list of actions
+- [ ] **▶ IN PROGRESS** Built-in actions
     - [ ] Copy
     - [ ] Search with a configurable URL template
     - [ ] Open a link found in the selection

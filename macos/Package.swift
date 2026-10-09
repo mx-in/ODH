@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .executable(name: "Baron", targets: ["Baron"]),
         .executable(name: "baron-probe", targets: ["baron-probe"]),
+        .executable(name: "baron-uitest", targets: ["baron-uitest"]),
     ],
     dependencies: [
         .package(url: "https://github.com/tisfeng/SelectedTextKit.git", from: "2.6.7"),
@@ -36,6 +37,11 @@ let package = Package(
         .target(
             name: "BaronAutomation",
             dependencies: ["BaronCore", "BaronPlatform"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
+        .executableTarget(
+            name: "baron-uitest",
+            dependencies: ["BaronCore", "BaronPlatform", "BaronAutomation"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(name: "BaronCoreTests", dependencies: ["BaronCore"]),

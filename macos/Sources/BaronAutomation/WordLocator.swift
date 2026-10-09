@@ -25,6 +25,9 @@ public enum WordLocator {
         AccessibilityWaker.wake(app)
         let deadline = Date().addingTimeInterval(timeout)
         repeat {
+            // Search the focused window on its own first: other windows (a long PDF, say) can
+            // hold tens of thousands of elements and use up the search budget.
+            if let focused = app.element(kAXFocusedWindowAttribute), let hit = search(word, in: [focused]) { return hit }
             if let hit = search(word, in: windows(of: app)) { return hit }
             Thread.sleep(forTimeInterval: 0.3)
         } while Date() < deadline

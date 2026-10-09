@@ -2,9 +2,11 @@ import AppKit
 import BaronCore
 import BaronPlatform
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var statusItem: NSStatusItem?
     private let permissionItem = NSMenuItem()
+    private let coordinator = SelectionCoordinator(pipeline: SelectionPipeline(gate: Gate(excludedApps: ExcludedAppRule.defaults)))
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -15,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if !AccessibilityPermission.isGranted {
             AccessibilityPermission.request()
         }
+        AXElement.applyGlobalTimeout()
+        coordinator.start()
     }
 
     private func buildMenu() -> NSMenu {

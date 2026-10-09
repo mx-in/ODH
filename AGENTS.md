@@ -63,10 +63,14 @@
     - [x] Position it above the selection, or below near the top of the screen; fall back to the mouse position
     - [x] Close it on an outside click, key press, scroll or app switch
     - [x] Render action buttons from a list of actions
-- [x] Built-in actions (commit: see next)
+- [x] Built-in actions (commit 9e3b97d)
     - [x] Copy
     - [x] Search with a configurable URL template
     - [x] Open a link found in the selection
+- [x] Selection pipeline (commit: see next; found missing while building; wires the parts together)
+    - [x] Run trigger → gate → retrieval → bar, skipping the gate for the hotkey
+    - [x] Offer the built-in actions for the text and perform the chosen one
+    - [x] Drop a run that a newer trigger has replaced
 - [ ] **▶ IN PROGRESS** Settings
     - [ ] Pause and resume the bar from the menu-bar item
     - [ ] Edit the excluded apps

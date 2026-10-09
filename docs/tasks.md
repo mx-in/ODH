@@ -6,7 +6,7 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
 
 | Task | Milestone | Status |
 | --- | --- | --- |
-| task-001-spike | M0 · Spike | Awaiting review |
+| task-001-spike | M0 · Spike | In progress |
 | task-002-selection-bar | M1 · Selection bar | Awaiting review |
 | task-003-plugin-runtime | M2 · Plugin runtime | Not started |
 | task-004-context-and-views | M3 · Context and views | Not started |

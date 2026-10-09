@@ -26,9 +26,8 @@
 # Private dictionary data
 /src/bg/data/
 
-# Agent workspace and local instructions
+# Agent workspace
 /.agents/
-/AGENTS.md
 
 # Credentials
 *.key

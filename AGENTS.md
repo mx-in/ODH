@@ -33,9 +33,9 @@
     - [x] Run the test apps: 8 apps pass every field in all three modes; Pages passes for words
     - [x] Fix what the runs found (bc89053, b54ac9f, 5b91f5b, e79493c, d082f47)
     - [x] Write the table and conclusions in `docs/research/ax-coverage.md`
-    - [ ] Hand checks by the user: Pages (sentence, paragraph bar), Preview, VS Code, Slack
-    - [ ] **▶ IN PROGRESS** Measure time from trigger to bar per app (goal: 150 ms; never measured)
-    - [ ] Grade the app Baron detects itself, not the one the test names
+    - [ ] **▶ IN PROGRESS** Hand checks by the user: Pages (sentence, paragraph bar), Preview, VS Code, Slack
+    - [x] Measure time from trigger to bar per app: warm 41–110 ms, first selection in an app 105–204 ms (commits: perf + test, see log)
+    - [x] Grade the app Baron detects itself, not the one the test names: matched in all 23 selections
     - [ ] Check the copy fallback with a clipboard manager running
 - [x] Design update
     - [x] Correct the design's claim that Baron marks the copy as transient (95c454b)

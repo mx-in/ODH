@@ -6,44 +6,44 @@ What macOS Accessibility returns for a selection in the test apps, measured on 2
 
 ## Results
 
-| App | Selected text | Context from | Sentence | Paragraph | Page URL | Page title | Window title | Document | Bounds | Menu copy | ⌘C | Bar shown | Slowest AX read |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TextEdit · word | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 12 ms | ✓ 38 ms | ✓ | 1.0 ms |
-| TextEdit · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 15 ms | ✓ 16 ms | ✓ | 1.4 ms |
-| TextEdit · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 13 ms | ✓ 13 ms | ✓ | 1.0 ms |
-| Safari · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 14 ms | ✓ 46 ms | ✓ | 2.1 ms |
-| Safari · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 13 ms | ✓ 16 ms | ✓ | 1.4 ms |
-| Safari · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 18 ms | ✓ 26 ms | ✓ | 1.5 ms |
-| Chrome · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 21 ms | ✓ 22 ms | ✓ | 3.7 ms |
-| Chrome · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 20 ms | ✓ 23 ms | ✓ | 3.1 ms |
-| Chrome · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 12 ms | ✓ 22 ms | ✓ | 6.7 ms |
-| Arc · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 16 ms | ✓ 14 ms | ✓ | 3.3 ms |
-| Arc · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 20 ms | ✓ 31 ms | ✓ | 3.7 ms |
-| Arc · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 23 ms | ✓ 36 ms | ✓ | 3.2 ms |
-| Mail · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 32 ms | ✓ 25 ms | ✓ | 3.5 ms |
-| Mail · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 15 ms | ✓ 25 ms | ✓ | 0.8 ms |
-| Mail · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 16 ms | ✓ 27 ms | ✓ | 2.0 ms |
-| Notes · word | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 40 ms | ✓ 35 ms | ✓ | 1.5 ms |
-| Notes · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 24 ms | ✓ 31 ms | ✓ | 1.3 ms |
-| Notes · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 41 ms | ✓ 22 ms | ✓ | 1.8 ms |
-| Xcode · word | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 15 ms | ✓ 22 ms | ✓ | 1.9 ms |
-| Xcode · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 21 ms | ✓ 34 ms | ✓ | 6.0 ms |
-| Xcode · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 21 ms | ✓ 48 ms | ✓ | 3.2 ms |
-| Terminal · word | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 19 ms | ✓ 64 ms | ✓ | 3.9 ms |
-| Terminal · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 18 ms | ✓ 23 ms | ✓ | 1.8 ms |
-| Terminal · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 14 ms | ✓ 16 ms | ✓ | 1.6 ms |
-| Pages · word | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 50 ms | ✓ 23 ms | ✓ | 2.3 ms |
-| Pages · sentence | ✗ | native | ~ | ~ | – | – | ✓ | – | ✓ | ✗ 16 ms | ✗ 208 ms | ✗ | 2.0 ms |
-| Pages · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 32 ms | ✓ 30 ms | ✗ | 2.1 ms |
-| Preview · word | ✗ | none | ✗ | ✗ | – | – | ✓ | ✓ | ✗ | ✗ 20 ms | ✗ 26 ms | ✗ | 1.3 ms |
-| Preview · sentence | ✗ | none | ✗ | ✗ | – | – | ✓ | ✓ | ✗ | ✗ 28 ms | ✗ 28 ms | ✗ | 1.5 ms |
-| Preview · paragraph | ~ | none | ✗ | ✗ | – | – | ✓ | ✓ | ✗ | ~ 17 ms | ~ 18 ms | ✗ | 3.1 ms |
+| App | Selected text | Context from | Sentence | Paragraph | Page URL | Page title | Window title | Document | Bounds | Menu copy | ⌘C | Bar shown | Time to bar | App detected | Slowest AX read |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TextEdit · word | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 25 ms | ✓ 50 ms | ✓ | ~ 204 ms | ✓ | 3.8 ms |
+| TextEdit · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 12 ms | ✓ 9 ms | ✓ | ✓ 91 ms | ✓ | 1.6 ms |
+| TextEdit · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 20 ms | ✓ 19 ms | ✓ | ✓ 85 ms | ✓ | 2.2 ms |
+| Safari · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 9 ms | ✓ 44 ms | ✓ | ✓ 141 ms | ✓ | 1.0 ms |
+| Safari · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 11 ms | ✓ 25 ms | ✓ | ✓ 41 ms | ✓ | 0.7 ms |
+| Safari · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 13 ms | ✓ 16 ms | ✓ | ✓ 84 ms | ✓ | 1.5 ms |
+| Chrome · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 15 ms | ✓ 23 ms | ✓ | ~ 175 ms | ✓ | 3.8 ms |
+| Chrome · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 18 ms | ✓ 21 ms | ✓ | ✓ 70 ms | ✓ | 3.9 ms |
+| Chrome · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ 18 ms | ✓ 22 ms | ✓ | ✓ 83 ms | ✓ | 3.5 ms |
+| Arc · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 26 ms | ✓ 33 ms | ✓ | ✓ 138 ms | ✓ | 4.5 ms |
+| Arc · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 21 ms | ✓ 28 ms | ✓ | ✓ 65 ms | ✓ | 6.9 ms |
+| Arc · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 18 ms | ✓ 29 ms | ✓ | ✓ 87 ms | ✓ | 3.8 ms |
+| Mail · word | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 25 ms | ✓ 29 ms | ✓ | ✓ 132 ms | ✓ | 3.1 ms |
+| Mail · sentence | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 20 ms | ✓ 24 ms | ✓ | ✓ 63 ms | ✓ | 2.2 ms |
+| Mail · paragraph | ✓ | web | ✓ | ✓ | ✓ | ✓ | ✓ | – | ✓ | ✓ 23 ms | ✓ 27 ms | ✓ | ✓ 81 ms | ✓ | 2.1 ms |
+| Notes · word | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 18 ms | ✓ 22 ms | ✓ | ~ 176 ms | ✓ | 1.4 ms |
+| Notes · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 30 ms | ✓ 26 ms | ✓ | ✓ 110 ms | ✓ | 12.4 ms |
+| Notes · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 26 ms | ✓ 34 ms | ✓ | ✓ 82 ms | ✓ | 1.7 ms |
+| Xcode · word | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 14 ms | ✓ 34 ms | ✓ | ✓ 105 ms | ✓ | 6.1 ms |
+| Xcode · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 17 ms | ✓ 36 ms | ✓ | ✓ 104 ms | ✓ | 2.6 ms |
+| Xcode · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 27 ms | ✓ 24 ms | ✓ | ✓ 81 ms | ✓ | 3.9 ms |
+| Terminal · word | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 14 ms | ✓ 30 ms | ✓ | ✓ 145 ms | ✓ | 1.9 ms |
+| Terminal · sentence | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 13 ms | ✓ 15 ms | ✓ | ✓ 73 ms | ✓ | 1.8 ms |
+| Terminal · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | ✓ | ✓ | ✓ 16 ms | ✓ 24 ms | ✗ | – | not run | 1.2 ms |
+| Pages · word | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 50 ms | ✓ 23 ms | ✓ | – | not run | 2.3 ms |
+| Pages · sentence | ✗ | native | ~ | ~ | – | – | ✓ | – | ✓ | ✗ 16 ms | ✗ 208 ms | ✗ | – | not run | 2.0 ms |
+| Pages · paragraph | ✓ | native | ✓ | ✓ | – | – | ✓ | – | ✓ | ✓ 32 ms | ✓ 30 ms | ✗ | – | not run | 2.1 ms |
+| Preview · word | ✗ | none | ✗ | ✗ | – | – | ✓ | ✓ | ✗ | ✗ 20 ms | ✗ 26 ms | ✗ | – | not run | 1.3 ms |
+| Preview · sentence | ✗ | none | ✗ | ✗ | – | – | ✓ | ✓ | ✗ | ✗ 28 ms | ✗ 28 ms | ✗ | – | not run | 1.5 ms |
+| Preview · paragraph | ~ | none | ✗ | ✗ | – | – | ✓ | ✓ | ✗ | ~ 17 ms | ~ 18 ms | ✗ | – | not run | 3.1 ms |
 
-✓ correct · ~ partly right · ✗ missing · – not applicable (no page, or no document file). Times are the copy step's duration and the slowest single Accessibility read.
+✓ correct · ~ partly right · ✗ missing · – not applicable (no page, or no document file). Copy times are each copy step's duration. **Time to bar** runs from the gesture's last mouse-up to Baron's bar on screen (goal 150 ms). **App detected** grades the app Baron itself logged for the selection. Pages and Preview rows come from an earlier run, before those two columns existed.
 
 Notes on the rows:
 
-- **Terminal:** in one full run the bar didn't appear for Terminal, which ran right after VS Code; a rerun passed all three modes. Treat it as a test-ordering flake, not a Baron failure.
+- **Terminal:** in two full runs the bar once didn't appear for one Terminal selection (word mode after VS Code, then paragraph mode); reruns passed all three modes. Treat it as flaky until it is reproduced.
 - **Pages · sentence:** the drag didn't select text. In Pages a drag can move or resize the text box, so this may be the test's gesture, not Baron. Check by hand.
 - **Pages · paragraph:** the text, sentence and paragraph were read correctly, but the bar didn't appear. Check by hand.
 - **Preview:** the word is found on screen, but the synthetic double-click doesn't select PDF text, so nothing is read. Check by hand.
@@ -76,7 +76,9 @@ Use the debug panel: `open macos/build/Baron.app --args --debug-panel`, or choos
 - **v1 can promise:** the selected text, app, window title and bounds wherever Accessibility works, with the copy steps covering the rest.
 - **Sentence and paragraph** are reliable in the 8 measured apps after the fixes above. They stay optional in the contract, because Electron editors, PDFs and copy-only apps may not provide them.
 - **Page URL and title** work in all three browsers and in Mail without AppleScript.
-- **Speed:** every Accessibility read took under 7 ms. The copy fallbacks took 10–210 ms.
+- **Speed:** every Accessibility read took under 13 ms; the copy fallbacks took 9–210 ms.
+- **Time to bar:** after the first selection in an app, the bar appeared in 41–110 ms, inside the 150 ms goal. The first selection after an app opens took 105–204 ms; a separate run (TextEdit: sentence 207 ms, then words 70 ms and 32 ms) shows this is the app's accessibility tree warming up, not the gesture. Baron could warm the tree when an app becomes frontmost, before any selection.
+- **App detection:** the app Baron logged matched the app under test in all 23 selections that showed the bar.
 - **Clipboard managers:** the copy fallback is written by the source app, so Baron can't mark it as transient. It restores the user's clipboard afterwards.
 
 ## How to re-run

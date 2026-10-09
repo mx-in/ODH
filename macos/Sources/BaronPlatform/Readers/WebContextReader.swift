@@ -26,9 +26,18 @@ public enum WebContextReader {
     public static func span(_ unit: Unit, around selection: AXTextMarkerRange, in element: AXElement) -> TextSpan? {
         let selectionStart = AXTextMarkerRangeCopyStartMarker(selection)
         let selectionEnd = AXTextMarkerRangeCopyEndMarker(selection)
+        // A triple-click selects the paragraph with its trailing line breaks, so the end marker sits
+        // in the next paragraph. Step back over those breaks to look up the last real character.
+        let trailingBreaks = (WebSelectionReader.string(for: selection, in: element) ?? "")
+            .reversed().prefix { $0.isNewline }.count
+        var lookupEnd = selectionEnd
+        for _ in 0..<trailingBreaks {
+            guard let previous = WebSelectionReader.marker(element.value(kAXPreviousTextMarkerForTextMarkerParameterizedAttribute, parameter: lookupEnd)) else { break }
+            lookupEnd = previous
+        }
         guard
             let first = WebSelectionReader.markerRange(element.value(unit.attribute, parameter: selectionStart)),
-            let last = WebSelectionReader.markerRange(element.value(unit.attribute, parameter: selectionEnd))
+            let last = WebSelectionReader.markerRange(element.value(unit.attribute, parameter: lookupEnd))
         else { return nil }
 
         let spanStart = AXTextMarkerRangeCopyStartMarker(first)
@@ -46,19 +55,26 @@ public enum WebContextReader {
         return NativeTextContext.capped(TextSpan(text: text, selectionStart: start, selectionEnd: end), to: unit.cap)
     }
 
-    /// The paragraph rebuilt from the Accessibility tree, and the sentence cut from it; text markers
-    /// only when the tree gives nothing.
+    /// The sentence or paragraph around a web selection, by the method that works for the engine.
     ///
-    /// Markers are unreliable at block edges: Chromium stops them at inline elements, and a
-    /// selection that ends where the next block starts (a triple-click) pulls neighbours in.
+    /// WebKit (Safari, Mail) answers correctly through text markers, and its tree hides `<br>`
+    /// line breaks, so markers come first. Chromium stops markers at inline elements and pulls in
+    /// neighbouring blocks at block edges, so its paragraph is rebuilt from the tree instead.
     public static func contextSpan(_ unit: Unit, around selection: AXTextMarkerRange, in element: AXElement) -> TextSpan? {
-        if let selected = WebSelectionReader.string(for: selection, in: element),
-           let paragraph = WebTreeContextReader.paragraph(around: selection, selectedText: selected, in: element) {
-            switch unit {
-            case .paragraph: return paragraph
-            case .sentence: if let sentence = NativeTextContext.sentence(in: paragraph) { return sentence }
-            }
+        if WebAreaReader.isChromium(element) {
+            return treeSpan(unit, around: selection, in: element) ?? span(unit, around: selection, in: element)
         }
-        return span(unit, around: selection, in: element)
+        return span(unit, around: selection, in: element) ?? treeSpan(unit, around: selection, in: element)
+    }
+
+    static func treeSpan(_ unit: Unit, around selection: AXTextMarkerRange, in element: AXElement) -> TextSpan? {
+        guard
+            let selected = WebSelectionReader.string(for: selection, in: element),
+            let paragraph = WebTreeContextReader.paragraph(around: selection, selectedText: selected, in: element)
+        else { return nil }
+        switch unit {
+        case .paragraph: return paragraph
+        case .sentence: return NativeTextContext.sentence(in: paragraph)
+        }
     }
 }

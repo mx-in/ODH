@@ -8,6 +8,13 @@ public enum WebAreaReader {
         element.firstAncestor { $0.role == webAreaRole }
     }
 
+    /// Chromium (Chrome, Arc, Edge, Electron) marks its elements with `ChromeAXNodeId`; WebKit doesn't.
+    public static func isChromium(_ element: AXElement) -> Bool {
+        var names: CFArray?
+        guard AXUIElementCopyAttributeNames(element.raw, &names) == .success, let list = names as? [String] else { return false }
+        return list.contains("ChromeAXNodeId")
+    }
+
     public static func url(of webArea: AXElement) -> URL? {
         webArea.url(kAXURLAttribute)
     }

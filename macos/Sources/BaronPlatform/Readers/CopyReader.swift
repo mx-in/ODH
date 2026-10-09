@@ -1,3 +1,4 @@
+import BaronCore
 import SelectedTextKit
 
 /// Reads the selection by making the app copy it, then puts the user's clipboard back.
@@ -24,5 +25,11 @@ public enum CopyReader {
     public static func copySelection(using method: Method) async -> String? {
         let text = try? await SelectedTextManager.shared.getSelectedText(strategy: method.strategy)
         return text?.isEmpty == false ? text : nil
+    }
+}
+
+extension ProbeField {
+    public static func copy(_ method: CopyReader.Method) -> String {
+        method == .menu ? menuCopy : keyCopy
     }
 }

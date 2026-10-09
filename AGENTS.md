@@ -28,7 +28,11 @@
     - [x] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
     - [x] Copy through Edit › Copy, with clipboard save and restore
     - [x] Copy through ⌘C, with clipboard save and restore
-- [ ] Coverage measurement (**blocked on the user**: needs real selections in each app)
+- [ ] **▶ IN PROGRESS** Coverage measurement (user tried the bar 2026-10-10 and asked for automated UI tests that drive the computer)
+    - [x] Move the probe's reading logic into `BaronPlatform` so the CLI and UI tests share it (commit: see next)
+    - [ ] Grade a probe report against the fixture's expected text (`BaronCore`, unit tested)
+    - [ ] Add input automation: locate a word on screen, double-click it, close fixture windows
+    - [ ] Add `baron-uitest`: open a fixture per app, select a word, probe, check Baron's bar, clean up
     - [ ] Run the probe on the 13 test apps and record each field (TextEdit done by an agent)
     - [ ] Measure the time each retrieval step takes per app
     - [x] Write `docs/research/ax-coverage.md` (template, TextEdit row, how to measure)
@@ -79,7 +83,7 @@
     - [x] Launch at login
 - [x] Logging (commit: see next; `log stream --predicate 'subsystem == "org.odh.baron"'`)
     - [x] Log text length and the retrieval step used, never the text
-- [ ] **▶ IN PROGRESS** Verification (needs the user)
+- [ ] Verification (automated by `baron-uitest`, which also checks the bar)
     - [ ] Run the bar on the 13 test apps and record the results in `docs/research/ax-coverage.md`
 
 **Notes for the next agent:** all task-002 code is committed and unit tested (70 tests in `BaronCore`); the app launches without crashing. Nothing has been checked by a person yet. **Stop here:** the user reviews tasks 1–2 and adds UI automation tests before task-003 starts. To try the bar: `cd macos && scripts/build-app.sh && open build/Baron.app`, grant Accessibility to Baron, then select text in another app. Known gaps to watch for: the bar's look has never been seen by anyone (no screenshot taken); a copy-fallback copy can still be recorded by clipboard managers; the settings window needs the built `.app` for launch at login. UI elements carry accessibility identifiers for automation: `baron.actionBar`, `baron.action.<id>`, `baron.settings`, `settings.pause`, `settings.searchTemplate`, `settings.excludedApps`, `settings.launchAtLogin`.

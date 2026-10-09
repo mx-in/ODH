@@ -1,0 +1,20 @@
+/// The names the probe records readings under, shared by the probe and the grading.
+public enum ProbeField {
+    public static let wake = "wake.manualAccessibility"
+    public static let focusedRole = "focused.role"
+    public static let windowTitle = "window.title"
+    public static let windowDocument = "window.document"
+    public static let selectedText = "ax.selectedText"
+    public static let webSelection = "web.selection"
+    public static let webSentence = "web.sentence"
+    public static let webParagraph = "web.paragraph"
+    public static let webBounds = "web.bounds"
+    public static let pageURL = "page.url"
+    public static let pageTitle = "page.title"
+    public static let nativeWindow = "native.window"
+    public static let nativeParagraph = "native.paragraph"
+    public static let nativeSentence = "native.sentence"
+    public static let nativeBounds = "native.bounds"
+    public static let menuCopy = "copy.menu"
+    public static let keyCopy = "copy.keyboard"
+}

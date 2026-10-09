@@ -36,19 +36,6 @@ struct Options {
     }
 }
 
-func describe(_ span: TextSpan?) -> String? {
-    guard let span else { return nil }
-    let units = Array(span.text.utf16)
-    let before = String(decoding: units[..<span.selectionStart], as: UTF16.self)
-    let selected = String(decoding: units[span.selectionStart..<span.selectionEnd], as: UTF16.self)
-    let after = String(decoding: units[span.selectionEnd...], as: UTF16.self)
-    return before + "[" + selected + "]" + after + (span.truncated ? " (truncated)" : "")
-}
-
-func describe(_ rect: CGRect?) -> String? {
-    rect.map { String(format: "x %.0f y %.0f w %.0f h %.0f", $0.origin.x, $0.origin.y, $0.width, $0.height) }
-}
-
 @MainActor
 func probe(_ options: Options) async -> ProbeReport? {
     let running: NSRunningApplication?
@@ -58,65 +45,7 @@ func probe(_ options: Options) async -> ProbeReport? {
         running = FocusedElementReader.frontmostApplication
     }
     guard let running else { return nil }
-    var report = ProbeReport(appName: running.localizedName ?? "?", bundleIdentifier: running.bundleIdentifier ?? "?")
-    let app = AXElement.application(pid: running.processIdentifier)
-
-    report.record("wake.manualAccessibility") {
-        AccessibilityWaker.wake(app).manualAccessibilitySet ? "accepted (Electron)" : nil
-    }
-
-    var focused: AXElement?
-    report.record("focused.role") {
-        focused = FocusedElementReader.focusedElement(in: app)
-        return focused.map { [$0.role, $0.subrole].compactMap { $0 }.joined(separator: " / ") }
-    }
-
-    let window = WindowReader.focusedWindow(of: app)
-    report.record("window.title") { window.flatMap(WindowReader.title) }
-    report.record("window.document") { window.flatMap(WindowReader.documentURL)?.absoluteString }
-
-    guard let element = focused else { return report }
-
-    report.record("ax.selectedText") { SelectedTextReader.selectedText(of: element) }
-
-    var web: (range: AXTextMarkerRange, owner: AXElement)?
-    report.record("web.selection") {
-        web = WebSelectionReader.selectedRange(near: element)
-        return web.flatMap { WebSelectionReader.string(for: $0.range, in: $0.owner) }
-    }
-    report.record("web.sentence") { web.flatMap { describe(WebContextReader.span(.sentence, around: $0.range, in: $0.owner)) } }
-    report.record("web.paragraph") { web.flatMap { describe(WebContextReader.span(.paragraph, around: $0.range, in: $0.owner)) } }
-    report.record("web.bounds") { web.flatMap { describe(SelectionBoundsReader.bounds(of: $0.range, in: $0.owner)) } }
-
-    let area = WebAreaReader.webArea(containing: element)
-    report.record("page.url") { area.flatMap(WebAreaReader.url)?.absoluteString }
-    report.record("page.title") { area.flatMap(WebAreaReader.title) }
-
-    var native: NativeTextWindowReader.Window?
-    report.record("native.window") {
-        native = NativeTextWindowReader.window(around: element)
-        return native.map { "\($0.text.utf16.count) units, selection \($0.selection)" }
-    }
-    var paragraph: TextSpan?
-    report.record("native.paragraph") {
-        paragraph = native.flatMap {
-            NativeTextContext.paragraph(in: $0.text, selection: $0.selection, windowStartsAtDocumentStart: $0.startsAtDocumentStart, windowEndsAtDocumentEnd: $0.endsAtDocumentEnd)
-        }
-        return describe(paragraph)
-    }
-    report.record("native.sentence") { describe(paragraph.flatMap(NativeTextContext.sentence)) }
-    report.record("native.bounds") { describe(SelectionBoundsReader.bounds(ofNativeSelectionIn: element)) }
-
-    if options.copy {
-        for method in CopyReader.Method.allCases {
-            let clock = ContinuousClock()
-            var text: String?
-            let started = clock.now
-            text = await CopyReader.copySelection(using: method)
-            report.record("copy.\(method.rawValue)", value: text, milliseconds: (clock.now - started).milliseconds)
-        }
-    }
-    return report
+    return await SelectionProbe.run(on: running, includeCopy: options.copy)
 }
 
 let options = Options(CommandLine.arguments)

@@ -24,6 +24,12 @@ public enum NativeTextContext {
         let units = Array(window.utf16)
         guard selection.lowerBound >= 0, selection.upperBound <= units.count else { return nil }
 
+        // A triple-click selects the paragraph with its line break; expand from the last
+        // selected character that isn't a break, or the next paragraph gets pulled in.
+        var last = selection.upperBound
+        while last > selection.lowerBound, isLineBreak(units[last - 1]) { last -= 1 }
+        let selection = selection.lowerBound..<last
+
         var start = selection.lowerBound
         while start > 0, !isLineBreak(units[start - 1]) { start -= 1 }
         var end = selection.upperBound

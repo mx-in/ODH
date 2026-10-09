@@ -9,6 +9,8 @@ import BaronCore
 /// static texts in order. The sentence is then cut with the same tokenizer as native text.
 public enum WebTreeContextReader {
     static let staticTextRole = "AXStaticText"
+    /// Roles browsers give inline content, which never form a paragraph of their own.
+    static let inlineRoles: Set<String> = [staticTextRole, "AXLink", "AXInlineTextBox"]
 
     /// The text element that holds a text marker.
     public static func leaf(at marker: AXTextMarker, in area: AXElement) -> AXElement? {
@@ -18,14 +20,23 @@ public enum WebTreeContextReader {
     }
 
     public static func paragraph(around selection: AXTextMarkerRange, selectedText: String, in area: AXElement) -> TextSpan? {
-        guard let leaf = leaf(at: AXTextMarkerRangeCopyStartMarker(selection), in: area) else { return nil }
+        // Use the first selected character: a selection's start marker can sit at the end of the
+        // previous block (a triple-click), which would pick the wrong paragraph.
+        let start = AXTextMarkerRangeCopyStartMarker(selection)
+        let firstCharacter = selectedText.isEmpty ? start
+            : WebSelectionReader.marker(area.value(kAXNextTextMarkerForTextMarkerParameterizedAttribute, parameter: start)) ?? start
+        guard let leaf = leaf(at: firstCharacter, in: area) ?? leaf(at: start, in: area) else { return nil }
         let leafText = leaf.string(kAXValueAttribute) ?? ""
+        let selectedText = selectedText.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        // The paragraph is the nearest ancestor that isn't inline text or a link. If the selection
+        // runs past it (it spans blocks), widen to the next ancestor that holds all of it.
         var block = leaf.parent
+        while let inline = block, inlineRoles.contains(inline.role ?? "") { block = inline.parent }
         var depth = 0
         while let candidate = block, depth < 8 {
             let (text, leafOffset) = joinedText(of: candidate, locating: leaf)
-            if let leafOffset, text.trimmingCharacters(in: .whitespacesAndNewlines).count > selectedText.count {
+            if let leafOffset, text.utf16.count >= selectedText.utf16.count {
                 let within = leafText.range(of: selectedText).map { leafText.utf16.distance(from: leafText.utf16.startIndex, to: $0.lowerBound.samePosition(in: leafText.utf16)!) } ?? 0
                 let start = leafOffset + within
                 let end = min(start + selectedText.utf16.count, text.utf16.count)

@@ -46,18 +46,19 @@ public enum WebContextReader {
         return NativeTextContext.capped(TextSpan(text: text, selectionStart: start, selectionEnd: end), to: unit.cap)
     }
 
-    /// The text-marker answer, or the tree-rebuilt one when markers stop at an inline element
-    /// and return no more than the selection itself (Chromium).
+    /// The paragraph rebuilt from the Accessibility tree, and the sentence cut from it; text markers
+    /// only when the tree gives nothing.
+    ///
+    /// Markers are unreliable at block edges: Chromium stops them at inline elements, and a
+    /// selection that ends where the next block starts (a triple-click) pulls neighbours in.
     public static func contextSpan(_ unit: Unit, around selection: AXTextMarkerRange, in element: AXElement) -> TextSpan? {
-        let direct = span(unit, around: selection, in: element)
-        if let direct, direct.text.utf16.count > direct.selectionEnd - direct.selectionStart { return direct }
-        guard
-            let selected = WebSelectionReader.string(for: selection, in: element),
-            let paragraph = WebTreeContextReader.paragraph(around: selection, selectedText: selected, in: element)
-        else { return direct }
-        switch unit {
-        case .paragraph: return paragraph
-        case .sentence: return NativeTextContext.sentence(in: paragraph) ?? direct
+        if let selected = WebSelectionReader.string(for: selection, in: element),
+           let paragraph = WebTreeContextReader.paragraph(around: selection, selectedText: selected, in: element) {
+            switch unit {
+            case .paragraph: return paragraph
+            case .sentence: if let sentence = NativeTextContext.sentence(in: paragraph) { return sentence }
+            }
         }
+        return span(unit, around: selection, in: element)
     }
 }

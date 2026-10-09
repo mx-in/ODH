@@ -79,3 +79,14 @@ struct CappedSpanTests {
         #expect(capped.truncated)
     }
 }
+
+struct ParagraphSelectionTests {
+    @Test func selectionEndingInALineBreakStaysInItsParagraph() {
+        let window = "First.\nThe whole second paragraph.\nThird paragraph."
+        let start = 7, end = 7 + "The whole second paragraph.\n".utf16.count
+        let span = NativeTextContext.paragraph(in: window, selection: start..<end, windowStartsAtDocumentStart: true, windowEndsAtDocumentEnd: true)!
+        #expect(span.text == "The whole second paragraph.")
+        #expect(span.selectionStart == 0)
+        #expect(span.selectionEnd == span.text.utf16.count)
+    }
+}

@@ -38,13 +38,13 @@
 **Task:** task-002-selection-bar: the bar appears in any app (gate: the bar shows in every test app, or the gap is documented)
 **Started:** 2026-10-10 · **Agent:** Claude (Claude Code) · runs while task-001 waits for the user
 
-- [ ] **▶ IN PROGRESS** Selection monitor
-    - [ ] Detect mouse-up after a drag of 5 px or more
-    - [ ] Detect double- and triple-click
-    - [ ] Detect ⇧-click
-    - [ ] Detect ⇧-arrow and ⌘A, debounced 300 ms
-    - [ ] Record a window drag (window moved or resized between mouse-down and mouse-up)
-- [ ] Hotkey
+- [x] Selection monitor (commit: see next)
+    - [x] Detect mouse-up after a drag of 5 px or more
+    - [x] Detect double- and triple-click
+    - [x] Detect ⇧-click
+    - [x] Detect ⇧-arrow and ⌘A, debounced 300 ms
+    - [x] Record a window drag (window moved or resized between mouse-down and mouse-up)
+- [ ] **▶ IN PROGRESS** Hotkey
     - [ ] Add KeyboardShortcuts and record one configurable shortcut
     - [ ] Send the hotkey trigger straight to retrieval, skipping the gate
 - [ ] Gate

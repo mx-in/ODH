@@ -131,7 +131,12 @@
 - [x] Debug panel (commit: see next; user request 2026-10-10; menu "Show Debug Panel" or `open build/Baron.app --args --debug-panel`)
     - [x] Build a debug snapshot from a pipeline outcome and a probe report (`BaronCore`, unit tested)
     - [x] Show it in a floating, non-activating panel toggled from the menu-bar icon (checked in TextEdit by reading the panel through Accessibility)
-- [ ] **▶ IN PROGRESS** Gate: the user reviews tasks 1–2 (then archive this task)
+- [ ] **▶ IN PROGRESS** Sentence and paragraph UI-test cases (user request 2026-10-10)
+    - [x] Grade word, sentence and paragraph selections against their own expected text (commit: see next)
+    - [ ] Add drag and triple-click input, and word rectangles for drag end points
+    - [ ] Run all three modes per app in `baron-uitest` and `uitest-all.sh`
+    - [ ] Re-run the apps and update `docs/research/ax-coverage.md`
+- [ ] Gate: the user reviews tasks 1–2 (then archive this task)
 
 **Notes for the next agent:** all task-002 code is committed and unit tested (76 tests in `BaronCore`). The user tried the bar by hand on 2026-10-10, and `baron-uitest` verified it in 8 apps. **Stop here:** the user reviews tasks 1–2 and adds UI automation tests before task-003 starts. To try the bar: `cd macos && scripts/build-app.sh && open build/Baron.app`, grant Accessibility to Baron, then select text in another app. Known gaps: Pages, Preview, VS Code and Slack are unmeasured; a copy-fallback copy can still be recorded by clipboard managers; the settings window needs the built `.app` for launch at login. UI elements carry accessibility identifiers for automation: `baron.actionBar`, `baron.action.<id>`, `baron.settings`, `settings.pause`, `settings.searchTemplate`, `settings.excludedApps`, `settings.launchAtLogin`.
 

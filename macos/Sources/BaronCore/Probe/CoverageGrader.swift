@@ -16,6 +16,35 @@ public struct CoverageFixture: Sendable {
     public var text: String {
         "Baron fixture first paragraph.\n\(paragraph)\nLast paragraph with a link https://example.com here.\n"
     }
+
+    /// The first and last words of `sentence`, where a sentence drag starts and ends.
+    public var sentenceStartWord: String { String(sentence.split(separator: " ").first ?? "") }
+    public var sentenceEndWord: String { String(sentence.split(separator: " ").last ?? "") }
+
+    /// How much of the fixture a UI test selects.
+    public enum Mode: String, CaseIterable, Codable, Sendable {
+        /// Double-click the target word.
+        case word
+        /// Drag from the sentence's first word to its last.
+        case sentence
+        /// Triple-click the target word.
+        case paragraph
+    }
+
+    public struct Expectation: Sendable {
+        public var selection: String
+        public var sentence: String
+        public var paragraph: String
+    }
+
+    /// Selecting the whole paragraph spans both its sentences, so the sentence span is the paragraph.
+    public func expectation(for mode: Mode) -> Expectation {
+        switch mode {
+        case .word: Expectation(selection: target, sentence: sentence, paragraph: paragraph)
+        case .sentence: Expectation(selection: sentence, sentence: sentence, paragraph: paragraph)
+        case .paragraph: Expectation(selection: paragraph, sentence: paragraph, paragraph: paragraph)
+        }
+    }
 }
 
 public enum Grade: String, Codable, Sendable {
@@ -75,6 +104,7 @@ public enum CoverageGrader {
         _ report: ProbeReport,
         app: String,
         fixture: CoverageFixture = .standard,
+        mode: CoverageFixture.Mode = .word,
         expectsPage: Bool,
         expectsDocument: Bool,
         barShown: Bool?
@@ -82,12 +112,13 @@ public enum CoverageGrader {
         let value: (String) -> String? = { field in report.readings.first { $0.field == field }?.value.flatMap { $0.isEmpty ? nil : $0 } }
         let ran: (String) -> Bool = { field in report.readings.contains { $0.field == field } }
 
-        let selected = best([value(ProbeField.selectedText), value(ProbeField.webSelection)].map { gradeText($0, expected: fixture.target) })
+        let expected = fixture.expectation(for: mode)
+        let selected = best([value(ProbeField.selectedText), value(ProbeField.webSelection)].map { gradeText($0, expected: expected.selection) })
 
         let web = (value(ProbeField.webSentence), value(ProbeField.webParagraph))
         let native = (value(ProbeField.nativeSentence), value(ProbeField.nativeParagraph))
-        let webGrades = (gradeSpan(web.0, expected: fixture.sentence, target: fixture.target), gradeSpan(web.1, expected: fixture.paragraph, target: fixture.target))
-        let nativeGrades = (gradeSpan(native.0, expected: fixture.sentence, target: fixture.target), gradeSpan(native.1, expected: fixture.paragraph, target: fixture.target))
+        let webGrades = (gradeSpan(web.0, expected: expected.sentence, target: expected.selection), gradeSpan(web.1, expected: expected.paragraph, target: expected.selection))
+        let nativeGrades = (gradeSpan(native.0, expected: expected.sentence, target: expected.selection), gradeSpan(native.1, expected: expected.paragraph, target: expected.selection))
         let useWeb = rank(webGrades.0) + rank(webGrades.1) >= rank(nativeGrades.0) + rank(nativeGrades.1)
         let context = useWeb ? webGrades : nativeGrades
         let contextSource = context.0 == .fail && context.1 == .fail ? "none" : (useWeb ? "web" : "native")
@@ -111,8 +142,8 @@ public enum CoverageGrader {
             windowTitle: present(value(ProbeField.windowTitle)),
             document: expectsDocument ? present(value(ProbeField.windowDocument)) : notApplicableUnlessPresent(value(ProbeField.windowDocument)),
             bounds: present(value(ProbeField.webBounds) ?? value(ProbeField.nativeBounds)),
-            menuCopy: ran(ProbeField.menuCopy) ? gradeText(value(ProbeField.menuCopy), expected: fixture.target) : .notRun,
-            keyCopy: ran(ProbeField.keyCopy) ? gradeText(value(ProbeField.keyCopy), expected: fixture.target) : .notRun,
+            menuCopy: ran(ProbeField.menuCopy) ? gradeText(value(ProbeField.menuCopy), expected: expected.selection) : .notRun,
+            keyCopy: ran(ProbeField.keyCopy) ? gradeText(value(ProbeField.keyCopy), expected: expected.selection) : .notRun,
             bar: barShown.map { $0 ? .pass : .fail } ?? .notRun,
             slowestReadMilliseconds: slowest,
             copyMilliseconds: copyTimes,
@@ -120,7 +151,7 @@ public enum CoverageGrader {
         )
     }
 
-    /// Exactly the expected word passes; text that merely contains it is partial.
+    /// Exactly the expected text passes (surrounding whitespace ignored); text that merely contains it is partial.
     public static func gradeText(_ value: String?, expected: String) -> Grade {
         guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return .fail }
         if value == expected { return .pass }
@@ -128,13 +159,18 @@ public enum CoverageGrader {
     }
 
     /// `value` is the probe's bracketed form, e.g. "The quick [quokka] jumps." with an optional " (truncated)".
+    /// It passes when the text matches `expected` and the bracketed part is `target` (whitespace ignored at both).
     public static func gradeSpan(_ value: String?, expected: String, target: String) -> Grade {
         guard var text = value else { return .fail }
         if text.hasSuffix(" (truncated)") { text.removeLast(" (truncated)".count) }
         let plain = text.replacingOccurrences(of: "[", with: "").replacingOccurrences(of: "]", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        if plain == expected, text.contains("[\(target)]") { return .pass }
-        return plain.contains(target) ? .partial : .fail
+        let bracketed: String? = {
+            guard let open = text.firstIndex(of: "["), let close = text.lastIndex(of: "]"), open < close else { return nil }
+            return String(text[text.index(after: open)..<close]).trimmingCharacters(in: .whitespacesAndNewlines)
+        }()
+        if plain == expected, bracketed == target { return .pass }
+        return plain.contains(target) || target.contains(plain) && !plain.isEmpty ? .partial : .fail
     }
 
     private static func present(_ value: String?) -> Grade { value == nil ? .fail : .pass }

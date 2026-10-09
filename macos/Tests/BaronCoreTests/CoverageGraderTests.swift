@@ -75,3 +75,37 @@ struct CoverageGraderTests {
         #expect(fixture.paragraph.hasPrefix(fixture.sentence))
     }
 }
+
+struct CoverageModeTests {
+    private let fixture = CoverageFixture.standard
+
+    @Test func sentenceAndParagraphModesExpectLongerSelections() {
+        #expect(fixture.expectation(for: .sentence).selection == fixture.sentence)
+        #expect(fixture.expectation(for: .paragraph).selection == fixture.paragraph)
+        #expect(fixture.expectation(for: .paragraph).sentence == fixture.paragraph)
+        #expect(fixture.sentenceStartWord == "The")
+        #expect(fixture.sentenceEndWord == "dog.")
+    }
+
+    @Test func sentenceSelectionIsGradedAgainstTheSentence() {
+        var report = ProbeReport(appName: "App", bundleIdentifier: "x")
+        report.record(ProbeField.selectedText, value: fixture.sentence, milliseconds: 1)
+        report.record(ProbeField.nativeSentence, value: "[\(fixture.sentence)]", milliseconds: 1)
+        report.record(ProbeField.nativeParagraph, value: "[\(fixture.sentence)] Then it runs into the forest.", milliseconds: 1)
+        let row = CoverageGrader.grade(report, app: "App", mode: .sentence, expectsPage: false, expectsDocument: false, barShown: true)
+        #expect(row.selectedText == .pass)
+        #expect(row.sentence == .pass)
+        #expect(row.paragraph == .pass)
+    }
+
+    @Test func paragraphSelectionMayIncludeTheLineBreak() {
+        let value = "[\(fixture.paragraph)\n]"
+        #expect(CoverageGrader.gradeSpan(value, expected: fixture.paragraph, target: fixture.paragraph) == .pass)
+        #expect(CoverageGrader.gradeText(fixture.paragraph + "\n", expected: fixture.paragraph) == .pass)
+    }
+
+    @Test func wordModeStillNeedsTheBracketOnTheWord() {
+        let value = "[The quick brown quokka jumps over the lazy dog.]"
+        #expect(CoverageGrader.gradeSpan(value, expected: fixture.sentence, target: "quokka") == .partial)
+    }
+}

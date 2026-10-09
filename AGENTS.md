@@ -11,29 +11,29 @@
     - [x] Minimum macOS: 14
     - [x] Code location: `macos/` in this repo
     - [x] Record the decisions in `docs/tec-design.md`
-- [x] Project skeleton (commit: see next)
+- [x] Project skeleton (commit 8056622)
     - [x] Create the Swift package and app target (menu-bar agent, no Dock icon)
     - [x] Sign builds with the installed Apple Development identity so the Accessibility grant survives rebuilds
     - [x] Add the Accessibility permission check and the prompt that opens System Settings
-- [ ] **▶ IN PROGRESS** Probe tool
-    - [ ] Read `AXSelectedText` from the focused element
-    - [ ] Read the web selection via `AXSelectedTextMarkerRange` and `AXStringForTextMarkerRange`
-    - [ ] Read the sentence and paragraph via the web text-marker attributes
-    - [ ] Read the native-text window via `AXSelectedTextRange` and `AXStringForRange`
-    - [ ] Read `AXURL` and the title from the nearest `AXWebArea`
-    - [ ] Read the window title and `AXDocument`
-    - [ ] Read the selection bounds
-    - [ ] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
-    - [ ] Copy through Edit › Copy, with clipboard save and restore
-    - [ ] Copy through ⌘C, with clipboard save and restore
-- [ ] Coverage measurement (needs the user: Accessibility grant and real selections)
+- [x] Probe tool (commit: see next; `macos/Sources/baron-probe`, readers in `BaronPlatform/Readers`)
+    - [x] Read `AXSelectedText` from the focused element
+    - [x] Read the web selection via `AXSelectedTextMarkerRange` and `AXStringForTextMarkerRange`
+    - [x] Read the sentence and paragraph via the web text-marker attributes
+    - [x] Read the native-text window via `AXSelectedTextRange` and `AXStringForRange`
+    - [x] Read `AXURL` and the title from the nearest `AXWebArea`
+    - [x] Read the window title and `AXDocument`
+    - [x] Read the selection bounds
+    - [x] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
+    - [x] Copy through Edit › Copy, with clipboard save and restore
+    - [x] Copy through ⌘C, with clipboard save and restore
+- [ ] **▶ IN PROGRESS** Coverage measurement (needs the user: Accessibility grant and real selections)
     - [ ] Run the probe on the 13 test apps and record each field
     - [ ] Measure the time each retrieval step takes per app
     - [ ] Write `docs/research/ax-coverage.md`
 - [ ] Design update
     - [ ] Update the `SelectionContext` contract to match the measured coverage
 
-**Notes for the next agent:** the user approved working on task-002 while task-001's coverage measurement waits for them. Stop before task-003; the user reviews tasks 1–2 and adds UI automation tests first.
+**Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while task-001's coverage measurement waits for them. Stop before task-003; the user reviews tasks 1–2 and adds UI automation tests first.
 
 <!--
 Template while a task is active (replace the line above):

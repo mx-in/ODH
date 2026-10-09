@@ -9,13 +9,16 @@ let package = Package(
         .executable(name: "Baron", targets: ["Baron"]),
         .executable(name: "baron-probe", targets: ["baron-probe"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/tisfeng/SelectedTextKit.git", from: "2.6.7"),
+    ],
     targets: [
         // Pure logic: no AppKit, no Accessibility. Everything here is unit tested.
         .target(name: "BaronCore"),
         // macOS glue: Accessibility, event monitors, pasteboard, windows.
         .target(
             name: "BaronPlatform",
-            dependencies: ["BaronCore"],
+            dependencies: ["BaronCore", "SelectedTextKit"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(

@@ -46,3 +46,7 @@ log stream --predicate 'subsystem == "org.odh.baron"'
 ```
 
 Record results in [docs/research/ax-coverage.md](../docs/research/ax-coverage.md).
+
+## Debug panel
+
+Choose **Show Debug Panel** from Baron's menu-bar icon, or start with `open build/Baron.app --args --debug-panel`. After each selection it shows the app (name and bundle ID), the trigger, the result or the gate's reason, how the text was read, the selected text, sentence, paragraph, page URL and title, window title, document, bounds, and how long each read took. The text stays in the panel only; it is never logged.

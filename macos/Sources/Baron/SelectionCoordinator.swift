@@ -6,6 +6,8 @@ import BaronPlatform
 @MainActor
 final class SelectionCoordinator {
     let pipeline: SelectionPipeline
+    /// Called after every run, with the source it read from (used by the debug panel).
+    var onRun: ((Trigger, PipelineOutcome, FocusedSelectionSource) -> Void)?
     private let events = SelectionEventMonitor()
     private let hotkey = HotkeyMonitor()
     private let bar = ActionBarController()
@@ -43,6 +45,7 @@ final class SelectionCoordinator {
         Task {
             let outcome = await pipeline.run(trigger, source: source)
             BaronLog.record(outcome, trigger: trigger, app: source.bundleIdentifier)
+            onRun?(trigger, outcome, source)
             if case .show(let run) = outcome {
                 current = run
                 bar.show(run.items, selection: run.bounds, pointer: run.trigger.location)

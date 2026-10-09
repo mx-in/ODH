@@ -39,7 +39,7 @@
 - [x] Design update (commit: see next)
     - [x] Keep the `SelectionContext` contract as designed: sentence, paragraph and page stay optional
     - [x] Correct the design's claim that Baron marks the copy as transient
-- [ ] **▶ IN PROGRESS** Gate: the user reviews the coverage table (then archive this task)
+- [ ] Gate: the user reviews the coverage table (then archive this task)
 
 **Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while this measurement waits for them.
 
@@ -128,7 +128,10 @@
     - [x] Log text length and the retrieval step used, never the text
 - [x] Verification (automated by `baron-uitest`, which also checks the bar)
     - [x] Run the bar on the test apps: it appeared and its Copy button worked in all 8 measured apps
-- [ ] Gate: the user reviews tasks 1–2 (then archive this task)
+- [x] Debug panel (commit: see next; user request 2026-10-10; menu "Show Debug Panel" or `open build/Baron.app --args --debug-panel`)
+    - [x] Build a debug snapshot from a pipeline outcome and a probe report (`BaronCore`, unit tested)
+    - [x] Show it in a floating, non-activating panel toggled from the menu-bar icon (checked in TextEdit by reading the panel through Accessibility)
+- [ ] **▶ IN PROGRESS** Gate: the user reviews tasks 1–2 (then archive this task)
 
 **Notes for the next agent:** all task-002 code is committed and unit tested (76 tests in `BaronCore`). The user tried the bar by hand on 2026-10-10, and `baron-uitest` verified it in 8 apps. **Stop here:** the user reviews tasks 1–2 and adds UI automation tests before task-003 starts. To try the bar: `cd macos && scripts/build-app.sh && open build/Baron.app`, grant Accessibility to Baron, then select text in another app. Known gaps: Pages, Preview, VS Code and Slack are unmeasured; a copy-fallback copy can still be recorded by clipboard managers; the settings window needs the built `.app` for launch at login. UI elements carry accessibility identifiers for automation: `baron.actionBar`, `baron.action.<id>`, `baron.settings`, `settings.pause`, `settings.searchTemplate`, `settings.excludedApps`, `settings.launchAtLogin`.
 

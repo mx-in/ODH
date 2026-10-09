@@ -22,3 +22,27 @@ open build/Baron.app
 `build-app.sh` signs with `BARON_SIGN_IDENTITY`, or the first "Apple Development" identity in your keychain. A stable signature keeps the Accessibility grant across rebuilds; ad-hoc builds lose it every time.
 
 Baron and `baron-probe` both need **System Settings › Privacy & Security › Accessibility**. The probe runs inside your terminal, so grant the terminal app as well.
+
+## Try the bar
+
+```sh
+scripts/build-app.sh && open build/Baron.app
+```
+
+Grant Baron Accessibility access when asked (or from its menu-bar icon), then select text in any app: drag, double-click, triple-click, ⇧-click, or ⇧-arrow / ⌘A. The bar offers Copy, Search and, when the selection holds a link, Open Link. The menu-bar icon has Pause and Settings (hotkey, search URL, excluded apps, launch at login).
+
+Logs never contain selected text:
+
+```sh
+log stream --predicate 'subsystem == "org.odh.baron"'
+```
+
+## Measure Accessibility coverage
+
+```sh
+.build/debug/baron-probe --delay 3            # switch to an app and select text
+.build/debug/baron-probe --app com.apple.TextEdit
+.build/debug/baron-probe --delay 3 --copy --json
+```
+
+Record results in [docs/research/ax-coverage.md](../docs/research/ax-coverage.md).

@@ -1,3 +1,5 @@
+**Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while this measurement waits for them.
+
 # Agent guide
 
 ## Current task
@@ -79,6 +81,8 @@
     - [x] Log text length and the retrieval step used, never the text
 - [ ] **▶ IN PROGRESS** Verification (needs the user)
     - [ ] Run the bar on the 13 test apps and record the results in `docs/research/ax-coverage.md`
+
+**Notes for the next agent:** all task-002 code is committed and unit tested (70 tests in `BaronCore`); the app launches without crashing. Nothing has been checked by a person yet. **Stop here:** the user reviews tasks 1–2 and adds UI automation tests before task-003 starts. To try the bar: `cd macos && scripts/build-app.sh && open build/Baron.app`, grant Accessibility to Baron, then select text in another app. Known gaps to watch for: the bar's look has never been seen by anyone (no screenshot taken); a copy-fallback copy can still be recorded by clipboard managers; the settings window needs the built `.app` for launch at login. UI elements carry accessibility identifiers for automation: `baron.actionBar`, `baron.action.<id>`, `baron.settings`, `settings.pause`, `settings.searchTemplate`, `settings.excludedApps`, `settings.launchAtLogin`.
 
 **Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while task-001's coverage measurement waits for them. Stop before task-003; the user reviews tasks 1–2 and adds UI automation tests first.
 

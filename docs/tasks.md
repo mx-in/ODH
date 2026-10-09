@@ -68,13 +68,17 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
     - [ ] Wrap SelectedTextKit behind it
     - [ ] Apply a 0.5 s timeout to every AX call
     - [ ] Retry the web step up to 6 times within 300 ms
-    - [ ] Mark our clipboard writes with `org.nspasteboard.TransientType`
+    - [ ] ~~Mark our clipboard writes with `org.nspasteboard.TransientType`~~ dropped: the copy is written by the source app, so Baron can't mark it (see `docs/research/ax-coverage.md`)
     - [ ] Choose the chain's starting step from per-app rules
 - [ ] **Action bar window**
     - [ ] Show a non-activating `NSPanel` that never takes focus
     - [ ] Position it above the selection, or below near the top of the screen; fall back to the mouse position
     - [ ] Close it on an outside click, key press, scroll or app switch
     - [ ] Render action buttons from a list of actions
+- [ ] **Selection pipeline** (added during task-002)
+    - [ ] Run trigger → gate → retrieval → bar, skipping the gate for the hotkey
+    - [ ] Offer the built-in actions for the text and perform the chosen one
+    - [ ] Drop a run that a newer trigger has replaced
 - [ ] **Built-in actions**
     - [ ] Copy
     - [ ] Search with a configurable URL template

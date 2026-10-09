@@ -55,8 +55,8 @@ Notes on the rows:
 | Pages | Document text is only exposed after `AXEnhancedUserInterface` is set, though the call reports an error | Fixed: Baron sets it for iWork apps only (`d082f47`) |
 | Preview | Text is exposed as one `AXStaticText` per line block; other open PDFs add 20,000+ elements | Test fixed to search the front window first (`d082f47`); selection needs a hand check |
 | VS Code | The editor's text area is empty unless "screen reader optimized" mode (`editor.accessibilitySupport`) is on; editor lines aren't exposed at all | Baron must rely on copying here. Hand check below |
-| Chromium (Chrome, Arc) | Sentence and paragraph markers stop at inline elements and pull in neighbouring blocks at block edges | Fixed: paragraph rebuilt from the tree (`b54ac9f`, `5b91f5b`, engine choice in the next commit) |
-| WebKit (Safari, Mail) | A triple-click selection ends inside the next paragraph; the tree hides `<br>` breaks | Fixed: step back over trailing breaks and use markers |
+| Chromium (Chrome, Arc) | Sentence and paragraph markers stop at inline elements and pull in neighbouring blocks at block edges | Fixed: paragraph rebuilt from the tree (`b54ac9f`, `5b91f5b`, `e79493c`) |
+| WebKit (Safari, Mail) | A triple-click selection ends inside the next paragraph; the tree hides `<br>` breaks | Fixed: step back over trailing breaks and use markers (`e79493c`) |
 | All apps | SelectedTextKit's ⌘C step stalled ~30 s on a System Events Automation prompt | Fixed: Baron posts ⌘C itself (`bc89053`) |
 | TextEdit and other native apps | A triple-click includes the line break, which pulled in the next paragraph | Fixed (`5b91f5b`) |
 

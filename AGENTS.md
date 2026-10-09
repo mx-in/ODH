@@ -71,13 +71,13 @@
     - [x] Run trigger → gate → retrieval → bar, skipping the gate for the hotkey
     - [x] Offer the built-in actions for the text and perform the chosen one
     - [x] Drop a run that a newer trigger has replaced
-- [x] Settings (commit: see next; window also holds the hotkey recorder and search URL)
+- [x] Settings (commit 5bb6df5; window also holds the hotkey recorder and search URL)
     - [x] Pause and resume the bar from the menu-bar item
     - [x] Edit the excluded apps
     - [x] Launch at login
-- [ ] **▶ IN PROGRESS** Logging
-    - [ ] Log text length and the retrieval step used, never the text
-- [ ] Verification (needs the user)
+- [x] Logging (commit: see next; `log stream --predicate 'subsystem == "org.odh.baron"'`)
+    - [x] Log text length and the retrieval step used, never the text
+- [ ] **▶ IN PROGRESS** Verification (needs the user)
     - [ ] Run the bar on the 13 test apps and record the results in `docs/research/ax-coverage.md`
 
 **Notes for the next agent:** the probe was checked by an agent on TextEdit only (native text: every field works). Web fields and copy steps still need a person in Safari/Chrome. Run `macos/.build/debug/baron-probe --delay 3` (or `--app <bundle-id>`, `--copy`, `--json`). The user approved working on task-002 while task-001's coverage measurement waits for them. Stop before task-003; the user reviews tasks 1–2 and adds UI automation tests first.

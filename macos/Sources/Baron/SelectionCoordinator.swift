@@ -42,6 +42,7 @@ final class SelectionCoordinator {
         guard let source = FocusedSelectionSource.current() else { return }
         Task {
             let outcome = await pipeline.run(trigger, source: source)
+            BaronLog.record(outcome, trigger: trigger, app: source.bundleIdentifier)
             if case .show(let run) = outcome {
                 current = run
                 bar.show(run.items, selection: run.bounds, pointer: run.trigger.location)

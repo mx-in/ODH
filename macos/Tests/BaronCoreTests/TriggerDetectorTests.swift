@@ -119,3 +119,17 @@ struct TriggerTests {
         #expect(!Trigger(kind: .keyboard, location: .zero).skipsGate)
     }
 }
+
+struct WindowSnapshotNeedTests {
+    @Test func onlyADragNeedsTheWindowAtMouseUp() {
+        var detector = PointerTriggerDetector()
+        _ = detector.handle(PointerEvent(phase: .down, location: .zero))
+        #expect(!detector.endsDrag(at: CGPoint(x: 2, y: 0)))
+        _ = detector.handle(PointerEvent(phase: .dragged, location: CGPoint(x: 30, y: 0)))
+        #expect(detector.endsDrag(at: CGPoint(x: 1, y: 0)))
+    }
+
+    @Test func noPressMeansNoDrag() {
+        #expect(!PointerTriggerDetector().endsDrag(at: CGPoint(x: 50, y: 50)))
+    }
+}

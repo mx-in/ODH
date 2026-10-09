@@ -44,8 +44,10 @@ public final class SelectionEventMonitor {
         case .leftMouseDragged: phase = .dragged
         default: phase = .up
         }
-        // Window frames are only needed to spot a window drag, so skip the lookup while dragging.
-        let window = phase == .dragged ? nil : WindowLocator.window(at: location)
+        // Window frames only matter for spotting a window drag. The window-list query costs
+        // milliseconds on the path to the bar, so skip it while dragging and on a click's mouse-up.
+        let needsWindow = phase == .down || (phase == .up && pointer.endsDrag(at: location))
+        let window = needsWindow ? WindowLocator.window(at: location) : nil
         let pointerEvent = PointerEvent(
             phase: phase,
             location: location,

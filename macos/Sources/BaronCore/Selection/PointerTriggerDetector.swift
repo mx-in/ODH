@@ -29,6 +29,13 @@ public struct PointerTriggerDetector: Sendable {
 
     public init() {}
 
+    /// Whether a mouse-up at `location` ends a drag, the only case where the window's frame matters
+    /// (to spot a window drag). Lets the caller skip the costly window lookup for clicks.
+    public func endsDrag(at location: CGPoint) -> Bool {
+        guard let pressed else { return false }
+        return max(farthest, distance(pressed.location, location)) >= Self.minimumDragDistance
+    }
+
     public mutating func handle(_ event: PointerEvent) -> Trigger? {
         switch event.phase {
         case .down:

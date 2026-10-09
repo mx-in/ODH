@@ -1,4 +1,5 @@
 import BaronCore
+import CoreGraphics
 import SelectedTextKit
 
 /// Reads the selection by making the app copy it, then puts the user's clipboard back.
@@ -10,21 +11,32 @@ public enum CopyReader {
     public enum Method: String, CaseIterable {
         /// Presses the app's Edit › Copy menu item through Accessibility. No keystroke, no beep.
         case menu
-        /// Posts ⌘C with the system volume muted.
+        /// Posts ⌘C. The app may beep if nothing is selected.
         case keyboard
-
-        var strategy: TextStrategy {
-            switch self {
-            case .menu: .menuAction
-            case .keyboard: .shortcut
-            }
-        }
     }
 
     @MainActor
     public static func copySelection(using method: Method) async -> String? {
-        let text = try? await SelectedTextManager.shared.getSelectedText(strategy: method.strategy)
+        let text: String?
+        switch method {
+        case .menu:
+            text = try? await SelectedTextManager.shared.getSelectedText(strategy: .menuAction)
+        case .keyboard:
+            // Not SelectedTextKit's `.shortcut` strategy: it mutes the alert sound by scripting
+            // System Events, which raises an Automation prompt and stalls for ~30 s until answered.
+            text = await PasteboardManager.shared.getSelectedText(afterPerform: postCommandC)
+        }
         return text?.isEmpty == false ? text : nil
+    }
+
+    private static func postCommandC() {
+        let source = CGEventSource(stateID: .combinedSessionState)
+        let keyC: CGKeyCode = 8
+        for down in [true, false] {
+            let event = CGEvent(keyboardEventSource: source, virtualKey: keyC, keyDown: down)
+            event?.flags = .maskCommand
+            event?.post(tap: .cghidEventTap)
+        }
     }
 }
 

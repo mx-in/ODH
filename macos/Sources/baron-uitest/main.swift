@@ -103,6 +103,7 @@ func runMode(_ mode: CoverageFixture.Mode, test: AppCase, app: NSRunningApplicat
     app.activate()
     SyntheticInput.pause(0.4)
 
+    BaronBarDetector.waitUntilHidden()
     let pid = app.processIdentifier
     var method = ""
     switch mode {
@@ -120,7 +121,10 @@ func runMode(_ mode: CoverageFixture.Mode, test: AppCase, app: NSRunningApplicat
     }
     row.notes.append("found by \(method)")
 
-    let barShown = BaronBarDetector.waitForBar(timeout: 2.5)
+    let timeToBar = BaronBarDetector.timeUntilBar(since: SyntheticInput.lastMouseUp)
+    let barShown = timeToBar != nil
+    // Read before the Copy button runs, while Baron's latest "shown" line is this selection's.
+    let logLine = barShown ? BaronBarDetector.lastShownLogLine() : nil
     var barCopy: String?
     if barShown {
         let backup = PasteboardBackup()
@@ -137,6 +141,8 @@ func runMode(_ mode: CoverageFixture.Mode, test: AppCase, app: NSRunningApplicat
     row = CoverageGrader.grade(report, app: label, fixture: fixture, mode: mode, expectsPage: test.expectsPage,
                                expectsDocument: test.expectsDocument, barShown: barShown)
     row.notes = notes
+    row.timeToBarMilliseconds = timeToBar
+    row.appDetected = barShown ? CoverageGrader.gradeDetectedApp(logLine: logLine, expected: test.bundleIdentifier) : .notRun
     if barShown {
         row.notes.append("bar Copy button: \(CoverageGrader.gradeText(barCopy, expected: expected.selection).rawValue)")
     }

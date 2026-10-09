@@ -14,6 +14,7 @@ swift build --product baron-uitest >/dev/null || exit 1
 bin="$(swift build --show-bin-path)/baron-uitest"
 
 rows=""
+header=""
 notes=""
 omitted=""
 for app in $apps; do
@@ -25,6 +26,7 @@ for app in $apps; do
         rm -rf "$dir"
         timeout 150 "$bin" --only "$name" --out "$dir" >/dev/null 2>"$out/$app.log"
         row=$(grep "^| $name · " "$dir/latest.md" 2>/dev/null)
+        [ -z "$header" ] && header=$(grep -m2 "^| App |\|^| --- |" "$dir/latest.md" 2>/dev/null)
         note=$(grep "^- \*\*$name · " "$dir/latest.md" 2>/dev/null)
         # A skip is final; a row whose selected text was read is a result worth keeping.
         if echo "$note" | grep -q "skipped:"; then
@@ -49,8 +51,8 @@ done
 {
     echo "# baron-uitest results ($(date -u +%Y-%m-%dT%H:%MZ))"
     echo
-    echo "| App | Selected text | Context from | Sentence | Paragraph | Page URL | Page title | Window title | Document | Bounds | Menu copy | ⌘C | Bar shown | Slowest AX read |"
-    echo "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+    # The header comes from this run's harness output, so new columns appear without edits.
+    echo "$header"
     printf "%b\n" "$rows" | sed '/^$/d'
     echo
     echo "## Notes"

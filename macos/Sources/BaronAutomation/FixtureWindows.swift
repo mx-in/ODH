@@ -58,6 +58,37 @@ public enum BaronBarDetector {
         }
     }
 
+    /// Milliseconds from `start` until the bar is on screen, polling every 5 ms; nil if it never shows.
+    public static func timeUntilBar(since start: Date, timeout: TimeInterval = 2.5) -> Double? {
+        let deadline = start.addingTimeInterval(timeout)
+        repeat {
+            if isVisible() { return Date().timeIntervalSince(start) * 1_000 }
+            Thread.sleep(forTimeInterval: 0.005)
+        } while Date() < deadline
+        return nil
+    }
+
+    /// Waits until no bar is showing, so the next measurement can't see a stale one.
+    public static func waitUntilHidden(timeout: TimeInterval = 1.5) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while isVisible(), Date() < deadline { Thread.sleep(forTimeInterval: 0.02) }
+    }
+
+    /// Baron's most recent "result=shown" log line, which names the app Baron detected.
+    public static func lastShownLogLine(within seconds: Int = 15) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/log")
+        process.arguments = ["show", "--info", "--style", "compact", "--last", "\(seconds)s",
+                             "--predicate", "subsystem == \"org.odh.baron\""]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return String(decoding: data, as: UTF8.self).split(separator: "\n").last { $0.contains("result=shown") }.map(String.init)
+    }
+
     /// Polls until the bar shows or `timeout` passes.
     public static func waitForBar(timeout: TimeInterval = 2) -> Bool {
         let deadline = Date().addingTimeInterval(timeout)

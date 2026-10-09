@@ -75,8 +75,12 @@ public struct CoverageRow: Codable, Equatable, Sendable {
     public var slowestReadMilliseconds: Double
     public var copyMilliseconds: [String: Double]
     public var notes: [String]
+    /// The app Baron itself reported for the selection, graded against the app under test.
+    public var appDetected: Grade = .notRun
+    /// From the gesture's last mouse-up to Baron's bar on screen.
+    public var timeToBarMilliseconds: Double?
 
-    static let headers = ["App", "Selected text", "Context from", "Sentence", "Paragraph", "Page URL", "Page title", "Window title", "Document", "Bounds", "Menu copy", "⌘C", "Bar shown", "Slowest AX read"]
+    static let headers = ["App", "Selected text", "Context from", "Sentence", "Paragraph", "Page URL", "Page title", "Window title", "Document", "Bounds", "Menu copy", "⌘C", "Bar shown", "Time to bar", "App detected", "Slowest AX read"]
 
     public static var markdownHeader: String {
         "| " + headers.joined(separator: " | ") + " |\n|" + String(repeating: " --- |", count: headers.count)
@@ -87,6 +91,8 @@ public struct CoverageRow: Codable, Equatable, Sendable {
             app, selectedText.rawValue, contextSource, sentence.rawValue, paragraph.rawValue,
             pageURL.rawValue, pageTitle.rawValue, windowTitle.rawValue, document.rawValue, bounds.rawValue,
             withTime(menuCopy, ProbeField.menuCopy), withTime(keyCopy, ProbeField.keyCopy), bar.rawValue,
+            timeToBarMilliseconds.map { String(format: "%@ %.0f ms", CoverageGrader.gradeTimeToBar($0).rawValue, $0) } ?? "–",
+            appDetected.rawValue,
             String(format: "%.1f ms", slowestReadMilliseconds),
         ]
         return "| " + cells.joined(separator: " | ") + " |"
@@ -149,6 +155,20 @@ public enum CoverageGrader {
             copyMilliseconds: copyTimes,
             notes: []
         )
+    }
+
+    /// The design's goal is the bar within 150 ms of the selection; up to 300 ms is partial.
+    public static let timeToBarGoal: Double = 150
+
+    public static func gradeTimeToBar(_ milliseconds: Double) -> Grade {
+        if milliseconds <= timeToBarGoal { return .pass }
+        return milliseconds <= timeToBarGoal * 2 ? .partial : .fail
+    }
+
+    /// Grades Baron's own log line ("… app=com.example … result=shown …") against the app under test.
+    public static func gradeDetectedApp(logLine: String?, expected bundleIdentifier: String) -> Grade {
+        guard let line = logLine, let token = line.split(separator: " ").first(where: { $0.hasPrefix("app=") }) else { return .fail }
+        return token.dropFirst("app=".count) == bundleIdentifier ? .pass : .fail
     }
 
     /// Exactly the expected text passes (surrounding whitespace ignored); text that merely contains it is partial.

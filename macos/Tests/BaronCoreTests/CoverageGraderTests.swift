@@ -109,3 +109,27 @@ struct CoverageModeTests {
         #expect(CoverageGrader.gradeSpan(value, expected: fixture.sentence, target: "quokka") == .partial)
     }
 }
+
+struct TimingAndAppTests {
+    @Test func timeToBarIsGradedAgainstTheGoal() {
+        #expect(CoverageGrader.gradeTimeToBar(90) == .pass)
+        #expect(CoverageGrader.gradeTimeToBar(150) == .pass)
+        #expect(CoverageGrader.gradeTimeToBar(220) == .partial)
+        #expect(CoverageGrader.gradeTimeToBar(400) == .fail)
+    }
+
+    @Test func detectedAppComesFromBaronsLogLine() {
+        let line = "2026-10-10 Baron: trigger=doubleClick app=com.apple.TextEdit result=shown step=ax-text length=6"
+        #expect(CoverageGrader.gradeDetectedApp(logLine: line, expected: "com.apple.TextEdit") == .pass)
+        #expect(CoverageGrader.gradeDetectedApp(logLine: line, expected: "com.apple.Safari") == .fail)
+        #expect(CoverageGrader.gradeDetectedApp(logLine: nil, expected: "com.apple.Safari") == .fail)
+    }
+
+    @Test func rowShowsTheNewColumns() {
+        var row = CoverageGrader.grade(ProbeReport(appName: "A", bundleIdentifier: "a"), app: "A", expectsPage: false, expectsDocument: false, barShown: true)
+        row.timeToBarMilliseconds = 87
+        row.appDetected = .pass
+        #expect(row.markdown.contains("| ✓ 87 ms | ✓ |"))
+        #expect(CoverageRow.markdownHeader.contains("Time to bar | App detected"))
+    }
+}

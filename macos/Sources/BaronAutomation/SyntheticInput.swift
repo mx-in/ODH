@@ -5,6 +5,8 @@ import Foundation
 /// Points are top-left-origin screen points, the same space CGEvent uses.
 public enum SyntheticInput {
     private static let source = CGEventSource(stateID: .hidSystemState)
+    /// When the last left mouse-up was posted: where a selection gesture ends.
+    public private(set) static var lastMouseUp = Date.distantPast
 
     public static func move(to point: CGPoint) {
         post(.mouseMoved, at: point)
@@ -63,6 +65,7 @@ public enum SyntheticInput {
         let event = CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: point, mouseButton: .left)
         if clickState > 0 { event?.setIntegerValueField(.mouseEventClickState, value: clickState) }
         event?.post(tap: .cghidEventTap)
+        if type == .leftMouseUp { lastMouseUp = Date() }
         pause(0.02)
     }
 

@@ -24,7 +24,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "Baron",
-            dependencies: ["BaronCore", "BaronPlatform"],
+            dependencies: ["BaronCore", "BaronPlatform", "KeyboardShortcuts"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(

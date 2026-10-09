@@ -67,15 +67,15 @@
     - [x] Copy
     - [x] Search with a configurable URL template
     - [x] Open a link found in the selection
-- [x] Selection pipeline (commit: see next; found missing while building; wires the parts together)
+- [x] Selection pipeline (commit feba391; found missing while building; wires the parts together)
     - [x] Run trigger → gate → retrieval → bar, skipping the gate for the hotkey
     - [x] Offer the built-in actions for the text and perform the chosen one
     - [x] Drop a run that a newer trigger has replaced
-- [ ] **▶ IN PROGRESS** Settings
-    - [ ] Pause and resume the bar from the menu-bar item
-    - [ ] Edit the excluded apps
-    - [ ] Launch at login
-- [ ] Logging
+- [x] Settings (commit: see next; window also holds the hotkey recorder and search URL)
+    - [x] Pause and resume the bar from the menu-bar item
+    - [x] Edit the excluded apps
+    - [x] Launch at login
+- [ ] **▶ IN PROGRESS** Logging
     - [ ] Log text length and the retrieval step used, never the text
 - [ ] Verification (needs the user)
     - [ ] Run the bar on the 13 test apps and record the results in `docs/research/ax-coverage.md`

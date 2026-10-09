@@ -18,6 +18,15 @@ final class SelectionCoordinator {
         bar.onSelect = { [weak self] in self?.perform($0) }
     }
 
+    /// Pausing also hides the bar; the hotkey keeps working while paused.
+    func apply(_ settings: BaronSettings) {
+        pipeline.isPaused = settings.isPaused
+        pipeline.gate = Gate(excludedApps: settings.effectiveExcludedApps)
+        pipeline.retrievalRules = settings.retrievalRules
+        pipeline.actions = BuiltInActions(searchTemplate: settings.searchTemplate)
+        if settings.isPaused { bar.hide() }
+    }
+
     func start() {
         events.start()
     }

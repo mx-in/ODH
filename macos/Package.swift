@@ -32,6 +32,12 @@ let package = Package(
             dependencies: ["BaronCore", "BaronPlatform"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        // Test-only: drives other apps with synthetic input. Never linked into Baron.app.
+        .target(
+            name: "BaronAutomation",
+            dependencies: ["BaronCore", "BaronPlatform"],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         .testTarget(name: "BaronCoreTests", dependencies: ["BaronCore"]),
     ]
 )

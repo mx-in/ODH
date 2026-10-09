@@ -124,9 +124,14 @@ Context must be read before the user clicks anything. The bar is non-activating,
 - **App:** `NSWorkspace.frontmostApplication` gives the bundle ID, name and PID.
 - **Window:** the app's `AXFocusedWindow`, then `AXTitle` and `AXDocument` (a file URL for document apps).
 - **Page:** walk `AXParent` up from the focused element to the first `AXWebArea`, then read `AXURL` and `AXTitle`. If that fails and the user has allowed it, ask Safari or the Chrome family through AppleScript.
-- **Sentence and paragraph on web pages:** take the start and end markers of `AXSelectedTextMarkerRange`. Ask for `AXSentenceTextMarkerRangeForTextMarker` (or `AXParagraph…`) at each, join the two ranges, then read `AXStringForTextMarkerRange`. Joining covers selections that cross sentence boundaries.
-- **Sentence and paragraph in native text:** read `AXSelectedTextRange`, then fetch only about 1,000 characters on each side with `AXStringForRange`. Never read `AXValue` whole, because documents can be megabytes. The paragraph is that slice cut at the nearest line breaks. The sentence comes from `NLTokenizer(unit: .sentence)` over the paragraph, which also handles Chinese and Japanese punctuation.
-- **Copy fallback:** text only. All context fields stay `undefined`, and `source` says `"copy"`.
+- **Sentence and paragraph on web pages:** the method depends on the engine, because each breaks a different way ([measurements](research/ax-coverage.md)). Chromium marks its elements with `ChromeAXNodeId`; WebKit doesn't.
+    - **WebKit (Safari, Mail):** take the start and end markers of `AXSelectedTextMarkerRange`, ask for `AXSentenceTextMarkerRangeForTextMarker` (or `AXParagraph…`) at each, join the two ranges, then read `AXStringForTextMarkerRange`. A triple-click selection includes trailing line breaks, so its end marker sits in the next paragraph; step back over those breaks with `AXPreviousTextMarkerForTextMarker` first. Don't rebuild from the tree here: WebKit's tree hides `<br>` breaks, so lines would run together.
+    - **Chromium (Chrome, Arc, Edge, Electron):** markers stop at inline elements (a word in a `<span>` returns only itself) and pull in neighbouring blocks at block edges. Instead, find the text element under the first selected character (`AXUIElementForTextMarker` after `AXNextTextMarkerForTextMarker`), walk up to the nearest ancestor that isn't inline text or a link, and join its `AXStaticText` values in order. That is the paragraph; the sentence is cut from it with `NLTokenizer`. Markers are the fallback.
+    - **Bounds:** `AXBoundsForTextMarkerRange`, or in Chromium, which returns none, the frame of the text element under the selection.
+- **Sentence and paragraph in native text:** read `AXSelectedTextRange`, then fetch only about 1,000 characters on each side with `AXStringForRange`. Never read `AXValue` whole, because documents can be megabytes. The paragraph is that slice cut at the nearest line breaks; a selection's trailing line breaks (a triple-click) are ignored when expanding, or the next paragraph would be pulled in. The sentence comes from `NLTokenizer(unit: .sentence)` over the paragraph, which also handles Chinese and Japanese punctuation.
+- **Waking apps that build their tree on demand:** Chrome builds a basic tree once `AXRole` is read on the app element. Electron apps need `AXManualAccessibility = true`. iWork apps (Pages, Numbers, Keynote) expose their document text only after `AXEnhancedUserInterface = true`, even though the call reports an error; Baron sets it for those apps only (see Risks).
+- **Apps without readable text:** VS Code exposes no editor text unless its "screen reader optimized" mode (`editor.accessibilitySupport`) is on, so Baron gets VS Code text through the copy steps, without context. PDFs in Preview expose one `AXStaticText` per text block, so a PDF "paragraph" is whatever block the PDF defines (to be confirmed by hand).
+- **Copy fallback:** text only. All context fields stay `undefined`, and `source` says `"menu-copy"` or `"key-copy"`.
 
 The paragraph is capped at 4,000 characters and the sentence at 1,000; a `truncated` flag says when a cap was hit. Offsets are UTF-16 code units. That is what `CFRange` uses and what JavaScript string indices use, so plugins can slice without converting.
 
@@ -154,6 +159,21 @@ interface TextSpan {
   truncated: boolean;
 }
 ```
+
+**What v1 guarantees** (decided 2026-10-10 from the [coverage measurements](research/ax-coverage.md)):
+
+| Field | v1 promise | Basis |
+| --- | --- | --- |
+| `text`, `source`, `app`, `platform` | Always present | Every measured app, including copy-only reads |
+| `editable` | Always present, best effort | Derived from the focused element's role |
+| `window.title` | Present when the app has a focused window | All 9 measured apps |
+| `bounds` | Usually present; the bar falls back to the pointer | All 8 apps passing every field |
+| `sentence`, `paragraph` | **Optional.** Present when Accessibility exposes the text | All 8 apps passing every field; missing in VS Code (default settings) and copy-only apps |
+| `page` | **Optional.** Present on web pages | Safari, Chrome, Arc, Mail |
+| `window.documentUrl` | **Optional.** Present for document-based apps | TextEdit, Xcode, Terminal, Chrome |
+| `html` | **Optional.** Only when the app put HTML on the clipboard | Not measured yet |
+
+Plugins must treat every optional field as absent-able and still work with `text` alone. The shape of `SelectionContext` above stays unchanged.
 
 ## Plugin system
 
@@ -345,6 +365,7 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 | --- | --- | --- |
 | Accessibility support varies (Electron, Java, Qt, games) | No context, or no text without copying | Copy fallback, per-app rules, measured in M0 |
 | Switching on Chrome or Electron accessibility costs them CPU and memory | Users blame us for slower apps | Switch it on only for the frontmost app, and only when a context permission is in use |
+| `AXEnhancedUserInterface` (needed for Pages, Numbers, Keynote) slows those apps' window animations and can confuse window managers | iWork feels sluggish while Baron runs | Set it only for iWork apps; measure the effect; consider setting it only while a selection is being read, then clearing it |
 | False triggers (Finder drags, drawing apps) | The bar becomes annoying | Gate, exclusion list, optional hold-a-modifier mode |
 | Copy fallback side effects | Clipboard managers record junk; apps run copy hooks | Full restore, menu copy before ⌘C. The source app writes the copy, so it can't be marked transient |
 | macOS changes AX behaviour or permission prompts | Breakage after an OS update | Test on each macOS beta; keep the retriever swappable |

@@ -26,7 +26,7 @@
     - [x] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
     - [x] Copy through Edit › Copy, with clipboard save and restore
     - [x] Copy through ⌘C, with clipboard save and restore
-- [ ] **▶ IN PROGRESS** Coverage measurement (automated with `baron-uitest`; commits 4a5a8b4, 8824d00, 6579c24, 2588186, edcb838, e481c50)
+- [ ] Coverage measurement (automated with `baron-uitest`; commits 4a5a8b4, 8824d00, 6579c24, 2588186, edcb838, e481c50)
     - [x] Move the probe's reading logic into `BaronPlatform` so the CLI and UI tests share it
     - [x] Grade a probe report against the fixture's expected text (`BaronCore`, unit tested)
     - [x] Add input automation and `baron-uitest` with word, sentence and paragraph modes
@@ -34,14 +34,14 @@
     - [x] Fix what the runs found (bc89053, b54ac9f, 5b91f5b, e79493c, d082f47)
     - [x] Write the table and conclusions in `docs/research/ax-coverage.md`
     - [ ] Hand checks by the user: Pages (sentence, paragraph bar), Preview, VS Code, Slack
-    - [ ] Measure time from trigger to bar per app (goal: 150 ms; never measured)
+    - [ ] **▶ IN PROGRESS** Measure time from trigger to bar per app (goal: 150 ms; never measured)
     - [ ] Grade the app Baron detects itself, not the one the test names
     - [ ] Check the copy fallback with a clipboard manager running
-- [ ] Design update
+- [x] Design update
     - [x] Correct the design's claim that Baron marks the copy as transient (95c454b)
-    - [ ] Update "Context capture" with the per-engine methods: Chromium tree, WebKit markers, iWork wake-up, VS Code without editor text
-    - [ ] Add the `AXEnhancedUserInterface` side effect to the risks
-    - [ ] Write the `SelectionContext` decision into the design: which fields v1 promises, which stay optional
+    - [x] Update "Context capture" with the per-engine methods: Chromium tree, WebKit markers, iWork wake-up, VS Code without editor text (commit: see next)
+    - [x] Add the `AXEnhancedUserInterface` side effect to the risks
+    - [x] Write the `SelectionContext` decision into the design: which fields v1 promises, which stay optional
 - [ ] Gate: the user reviews the coverage table (then archive this task)
 
 **Notes for the next agent:** coverage is measured by `macos/scripts/uitest-all.sh` (drives the mouse; see `docs/research/ax-coverage.md`). Hand checks use the debug panel: `open macos/build/Baron.app --args --debug-panel`. The user approved working on task-002 while task-001 waits for them.

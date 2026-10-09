@@ -44,15 +44,15 @@
     - [x] Detect ⇧-click
     - [x] Detect ⇧-arrow and ⌘A, debounced 300 ms
     - [x] Record a window drag (window moved or resized between mouse-down and mouse-up)
-- [x] Hotkey (commit: see next; no default shortcut, recorded in Settings)
+- [x] Hotkey (commit de69a91; no default shortcut, recorded in Settings)
     - [x] Add KeyboardShortcuts and record one configurable shortcut
     - [x] Send the hotkey trigger straight to retrieval, skipping the gate
-- [ ] **▶ IN PROGRESS** Gate
-    - [ ] Reject apps on the exclusion list, with the default list
-    - [ ] Reject secure text fields and secure keyboard input
-    - [ ] Reject roles that cannot hold text
-    - [ ] Reject window drags
-- [ ] Text retriever
+- [x] Gate (commit: see next)
+    - [x] Reject apps on the exclusion list, with the default list
+    - [x] Reject secure text fields and secure keyboard input
+    - [x] Reject roles that cannot hold text
+    - [x] Reject window drags
+- [ ] **▶ IN PROGRESS** Text retriever
     - [ ] Define the `TextRetriever` protocol
     - [ ] Wrap SelectedTextKit behind it
     - [ ] Apply a 0.5 s timeout to every AX call (done in `AXElement`; check SelectedTextKit's calls)

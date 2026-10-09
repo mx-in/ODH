@@ -11,6 +11,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/tisfeng/SelectedTextKit.git", from: "2.6.7"),
+        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts.git", from: "3.1.0"),
     ],
     targets: [
         // Pure logic: no AppKit, no Accessibility. Everything here is unit tested.
@@ -18,7 +19,7 @@ let package = Package(
         // macOS glue: Accessibility, event monitors, pasteboard, windows.
         .target(
             name: "BaronPlatform",
-            dependencies: ["BaronCore", "SelectedTextKit"],
+            dependencies: ["BaronCore", "SelectedTextKit", "KeyboardShortcuts"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(

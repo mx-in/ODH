@@ -111,3 +111,11 @@ struct KeyboardTriggerDetectorTests {
         #expect(!detector.isLatest(token))
     }
 }
+
+struct TriggerTests {
+    @Test func onlyTheHotkeySkipsTheGate() {
+        #expect(Trigger(kind: .hotkey, location: .zero).skipsGate)
+        #expect(!Trigger(kind: .drag, location: .zero).skipsGate)
+        #expect(!Trigger(kind: .keyboard, location: .zero).skipsGate)
+    }
+}

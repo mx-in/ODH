@@ -34,3 +34,8 @@ public struct Trigger: Equatable, Sendable {
         self.windowDragged = windowDragged
     }
 }
+
+extension Trigger {
+    /// The hotkey is an explicit request, so the gate's guesses about intent don't apply.
+    public var skipsGate: Bool { kind == .hotkey }
+}

@@ -2,7 +2,38 @@
 
 ## Current task
 
-_No active task._
+**Task:** task-001-spike: measure what macOS really gives us (gate: coverage table reviewed; context fields confirmed)
+**Started:** 2026-10-10 · **Agent:** Claude (Claude Code)
+
+- [x] Decisions needed before code (commit: see next)
+    - [x] Product name: **baron** (package scope `@baron`, CLI `baron`)
+    - [x] Licence: MIT
+    - [x] Minimum macOS: 14
+    - [x] Code location: `macos/` in this repo
+    - [x] Record the decisions in `docs/tec-design.md`
+- [ ] **▶ IN PROGRESS** Project skeleton
+    - [ ] Create the Swift package and app target (menu-bar agent, no Dock icon)
+    - [ ] Sign builds with the installed Apple Development identity so the Accessibility grant survives rebuilds
+    - [ ] Add the Accessibility permission check and the prompt that opens System Settings
+- [ ] Probe tool
+    - [ ] Read `AXSelectedText` from the focused element
+    - [ ] Read the web selection via `AXSelectedTextMarkerRange` and `AXStringForTextMarkerRange`
+    - [ ] Read the sentence and paragraph via the web text-marker attributes
+    - [ ] Read the native-text window via `AXSelectedTextRange` and `AXStringForRange`
+    - [ ] Read `AXURL` and the title from the nearest `AXWebArea`
+    - [ ] Read the window title and `AXDocument`
+    - [ ] Read the selection bounds
+    - [ ] Wake Electron (`AXManualAccessibility`) and Chrome (`AXRole`) accessibility
+    - [ ] Copy through Edit › Copy, with clipboard save and restore
+    - [ ] Copy through ⌘C, with clipboard save and restore
+- [ ] Coverage measurement (needs the user: Accessibility grant and real selections)
+    - [ ] Run the probe on the 13 test apps and record each field
+    - [ ] Measure the time each retrieval step takes per app
+    - [ ] Write `docs/research/ax-coverage.md`
+- [ ] Design update
+    - [ ] Update the `SelectionContext` contract to match the measured coverage
+
+**Notes for the next agent:** the user approved working on task-002 while task-001's coverage measurement waits for them. Stop before task-003; the user reviews tasks 1–2 and adds UI automation tests first.
 
 <!--
 Template while a task is active (replace the line above):

@@ -1,4 +1,4 @@
-# Task backlog: Selection Popup App
+# Task backlog: Baron
 
 Tasks extracted from [tec-design.md](tec-design.md), in build order. Each task matches one milestone and ends at that milestone's gate. Features and sub-tasks are split with the single-responsibility rule in [AGENTS.md](../AGENTS.md#task-breakdown-rules).
 
@@ -6,7 +6,7 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
 
 | Task | Milestone | Status |
 | --- | --- | --- |
-| task-001-spike | M0 · Spike | Not started |
+| task-001-spike | M0 · Spike | In progress |
 | task-002-selection-bar | M1 · Selection bar | Not started |
 | task-003-plugin-runtime | M2 · Plugin runtime | Not started |
 | task-004-context-and-views | M3 · Context and views | Not started |
@@ -19,13 +19,13 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
 
 **Gate:** coverage table reviewed; context fields confirmed.
 
-- [ ] **Decisions needed before code** (open questions from the design)
-    - [ ] Pick the product name and package scope (replaces `selbar`)
-    - [ ] Confirm the licence (MIT proposed)
-    - [ ] Confirm the minimum macOS version (14 proposed)
+- [x] **Decisions needed before code** (open questions from the design)
+    - [x] Pick the product name and package scope: baron
+    - [x] Confirm the licence: MIT
+    - [x] Confirm the minimum macOS version: 14
 - [ ] **Project skeleton**
     - [ ] Create the Swift package and app target (menu-bar agent, no Dock icon)
-    - [ ] Set up a stable self-signed development certificate so the Accessibility grant survives rebuilds
+    - [ ] Sign builds with a stable identity (the installed Apple Development one) so the Accessibility grant survives rebuilds
     - [ ] Add the Accessibility permission check and the prompt that opens System Settings
 - [ ] **Probe tool** (a throwaway CLI that prints what each API returns for the current selection)
     - [ ] Read `AXSelectedText` from the focused element
@@ -123,8 +123,8 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
     - [ ] `host.ui.toast` and `host.ui.openUrl`
     - [ ] `host.log`, which never records selected text
 - [ ] **CLI**
-    - [ ] `selbar build`: bundle TypeScript with esbuild
-    - [ ] `selbar dev`: watch, rebuild and reload the plugin
+    - [ ] `baron build`: bundle TypeScript with esbuild
+    - [ ] `baron dev`: watch, rebuild and reload the plugin
 - [ ] **Conformance**
     - [ ] Write a QuickJS-NG test runner that loads a plugin with a mock host
     - [ ] Write two sample plugins (a text transform and a network lookup) with tests

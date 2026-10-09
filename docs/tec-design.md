@@ -1,8 +1,8 @@
-# Selection Popup App — Technical Design
+# Baron: Selection Popup App — Technical Design
 
 2026-10-09 · mx_in · Mirror of the [Claude Docs version](https://claude.ai/code/artifact/a302bd64-f80d-4be1-875e-414221f4b8d6)
 
-A standalone macOS app, written in Swift, shows a small action bar whenever text is selected in any app. Every action beyond the built-ins is a plugin written in TypeScript or JavaScript, so the same plugins can run on a later Windows or Linux host. ODH dictionary lookup with Anki export is the first plugin, not part of the core app.
+Baron is a standalone macOS app, written in Swift. It shows a small action bar whenever text is selected in any app. Every action beyond the built-ins is a plugin written in TypeScript or JavaScript, so the same plugins can run on a later Windows or Linux host. ODH dictionary lookup with Anki export is the first plugin, not part of the core app.
 
 ## Research: what can be captured
 
@@ -198,7 +198,7 @@ The `when` rules (length, regex, content type, apps, editable) are checked in Sw
 **The API plugins write against**
 
 ```ts
-import { defineActions } from "@selbar/plugin";   // working package name
+import { defineActions } from "@baron/plugin";
 
 export default defineActions({
   async lookup(ctx: SelectionContext, host: Host) {
@@ -243,7 +243,7 @@ interface Host {
 
 The API stays inside ES2023 plus `host`. CI runs every plugin's tests on both JavaScriptCore and QuickJS-NG. A plugin that passes both should work on a future Windows host before that host exists.
 
-**TypeScript.** Plugins ship compiled JavaScript. A small CLI (`selbar build`, `selbar dev`) bundles TypeScript with esbuild and reloads the plugin on save. The app contains no TypeScript compiler. PopClip's in-app [sucrase](https://github.com/alangpierce/sucrase) approach can be added later for single-file scripts.
+**TypeScript.** Plugins ship compiled JavaScript. A small CLI (`baron build`, `baron dev`) bundles TypeScript with esbuild and reloads the plugin on save. The app contains no TypeScript compiler. PopClip's in-app [sucrase](https://github.com/alangpierce/sucrase) approach can be added later for single-file scripts.
 
 **DOM in actions.** The action runtime has no DOM. A plugin that scrapes HTML either bundles [linkedom](https://github.com/WebReflection/linkedom) (pure JS, also bundled by PopClip) or does the scraping inside its view.
 
@@ -324,7 +324,7 @@ v1 ships after five milestones, each closed by a gate.
 flowchart TB
   m0["M0 · Spike<br/>Measure AX text, context and copy fallback on the 13 test apps;<br/>stable signing certificate for dev builds"]
   m1["M1 · Selection bar<br/>Monitor, gate, retriever, non-activating bar;<br/>built-ins: copy, search, open link"]
-  m2["M2 · Plugin runtime<br/>Manifest, JavaScriptCore helper, host API, permissions;<br/>CLI: selbar build, selbar dev"]
+  m2["M2 · Plugin runtime<br/>Manifest, JavaScriptCore helper, host API, permissions;<br/>CLI: baron build, baron dev"]
   m3["M3 · Context and views<br/>Sentence, paragraph, window and page URL;<br/>WKWebView views with the host bridge"]
   m4["M4 · ODH plugin<br/>ODH dictionary scripts and popup in a view;<br/>Anki export through AnkiConnect"]
   v1["v1 release<br/>Developer ID–signed, notarized download"]
@@ -353,12 +353,12 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 
 **Open questions**
 
-- [ ] Product name and package scope. This doc uses `selbar` as a placeholder.
+- [x] Product name: **baron** (package scope `@baron`, CLI `baron`). Decided 2026-10-10.
 - [ ] Windows host language: C# with WinUI, or Rust?
 - [ ] Network access for dictionary scripts users add from a URL: a broad `network:*` grant with a warning, or a prompt for each new host?
 - [ ] Should the bar appear automatically by default, or only while a modifier key is held?
-- [ ] Minimum macOS version: 14 (as OpenClip) or 13 (as PopClip)? Proposal: 14.
-- [ ] License: MIT like ODH? That rules out copying GPL or AGPL code from Easydict, OpenClip or Selected.
+- [x] Minimum macOS version: 14. Decided 2026-10-10.
+- [x] Licence: MIT, like ODH. No GPL or AGPL code is copied from Easydict, OpenClip or Selected. Decided 2026-10-10.
 
 ## Sources
 

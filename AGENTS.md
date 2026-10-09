@@ -5,17 +5,17 @@
 **Task:** task-001-spike: measure what macOS really gives us (gate: coverage table reviewed; context fields confirmed)
 **Started:** 2026-10-10 · **Agent:** Claude (Claude Code)
 
-- [x] Decisions needed before code (commit: see next)
+- [x] Decisions needed before code (commit 37e5f1e)
     - [x] Product name: **baron** (package scope `@baron`, CLI `baron`)
     - [x] Licence: MIT
     - [x] Minimum macOS: 14
     - [x] Code location: `macos/` in this repo
     - [x] Record the decisions in `docs/tec-design.md`
-- [ ] **▶ IN PROGRESS** Project skeleton
-    - [ ] Create the Swift package and app target (menu-bar agent, no Dock icon)
-    - [ ] Sign builds with the installed Apple Development identity so the Accessibility grant survives rebuilds
-    - [ ] Add the Accessibility permission check and the prompt that opens System Settings
-- [ ] Probe tool
+- [x] Project skeleton (commit: see next)
+    - [x] Create the Swift package and app target (menu-bar agent, no Dock icon)
+    - [x] Sign builds with the installed Apple Development identity so the Accessibility grant survives rebuilds
+    - [x] Add the Accessibility permission check and the prompt that opens System Settings
+- [ ] **▶ IN PROGRESS** Probe tool
     - [ ] Read `AXSelectedText` from the focused element
     - [ ] Read the web selection via `AXSelectedTextMarkerRange` and `AXStringForTextMarkerRange`
     - [ ] Read the sentence and paragraph via the web text-marker attributes
@@ -67,6 +67,14 @@ npm run lint
 npm run test:contracts
 npm run test:unit
 ```
+
+When `macos/` changed, also run:
+
+```sh
+cd macos && swift build && swift test
+```
+
+Anything that needs the Accessibility grant or real selections (the probe, the bar in other apps) can't be checked by an agent. List it under **Notes for the next agent** for the user to verify.
 
 ## Task breakdown rules
 

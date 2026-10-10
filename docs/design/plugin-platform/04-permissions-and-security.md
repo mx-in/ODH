@@ -63,7 +63,7 @@ Every call passes the permission gate before its service runs: first the method'
 ## Install and update consent
 
 - **Install sheet:** name, author, source (folder, file or link), version, and the permissions in plain words grouped as Reads, Connects to, Can, Stores, plus the `code.dynamic` disclosure and "Unsigned" in v1. `PermissionWording` writes the words; launching Baron with `--preview-install-sheet <folder>` shows the sheet for any plugin.
-- **Updates:** an update that adds permissions installs disabled until the user accepts the new ones. An update with the same or fewer permissions installs silently.
+- **Updates:** an update that adds permissions waits in "Needs consent" while the installed version keeps working; the plugin's settings page offers Review Update…, whose sheet lists only the new permissions. An update with the same or fewer permissions installs silently.
 - **Revoking:** the Permissions section of a plugin's settings lists run-time grants with a remove button. Install-time permissions are revoked by disabling or uninstalling the plugin.
 
 ## Dynamic code
@@ -204,6 +204,56 @@ sequenceDiagram
   P->>Router: http.fetch again
   HTTP->>Policy: check(url), then resolve dict.cn: not a private address
   HTTP-->>P: response
+```
+
+Consent at install and update, added in task-008 (`macos/Sources/Baron/InstallFlow.swift`, `PluginsPane.swift`, `BaronRuntime/Install`):
+
+```mermaid
+classDiagram
+  class InstallPlan {
+    +kind: InstallKind
+    +otherSource: PluginSource?
+    +needsSheet: Bool
+  }
+  class InstallKind {
+    <<enumeration>>
+    fresh
+    update(from, addsPermissions)
+    reinstall
+    downgrade(from)
+  }
+  class PendingUpdate {
+    +version
+    +newPermissions: [String]
+    +source
+  }
+  class InstallSheetView {
+    +permissions: all, grouped by PermissionWording
+    +newPermissions: only on Review Update
+    +notes: other source, downgrade, unsigned
+  }
+  class InstallFlow
+  class PluginsPane {
+    Review Update…
+  }
+  InstallPlan --> InstallKind
+  InstallFlow ..> InstallPlan : needsSheet?
+  InstallFlow ..> InstallSheetView : fresh, reinstall, downgrade
+  InstallFlow ..> PendingUpdate : update adding permissions
+  PluginsPane ..> PendingUpdate
+  PluginsPane ..> InstallSheetView : the new permissions
+  InstallSheetView ..> PermissionWording
+```
+
+```mermaid
+stateDiagram-v2
+  [*] --> Sheet: fresh, reinstall or downgrade
+  Sheet --> Installed: Install
+  Sheet --> [*]: Cancel or close
+  Installed --> Installed: update with the same or fewer permissions (silent)
+  Installed --> NeedsConsent: update adds permissions; the old version keeps running
+  NeedsConsent --> Installed: Review Update…, Update (acceptPending)
+  NeedsConsent --> Installed: Keep the old version (declinePending deletes the new copy)
 ```
 
 ## Gate (task-006)

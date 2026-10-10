@@ -22,12 +22,12 @@ They live in this repository under `packages/`, with the ODH plugin under `plugi
 
 | Command | Does |
 | --- | --- |
-| `baron create <name> [--template action\|lookup\|webview\|settings]` | Makes a folder with `manifest.json`, `src/main.ts`, a test, `tsconfig.json` and `package.json` |
+| `baron create <name> [--template action\|lookup\|settings]` | Makes a folder with `manifest.json`, `src/main.ts`, a test, `tsconfig.json` and `package.json`; `webview` comes with task-010. Until the packages are on npm, `package.json` links `@baron/*` to this repository with `file:` paths |
 | `baron build` | Bundles `src/main.ts` into the manifest's `main` (one classic script, source map inline) through a virtual entry that assigns the default export to `globalThis.__baronPlugin`; validates the manifest; runs the checks below |
 | `baron dev` | Builds on every save and loads the plugin into the running Baron in development mode, streaming its logs and errors to the terminal |
 | `baron test [--engine jsc\|quickjs\|all]` | Builds, then runs the plugin's own `bun test` once per engine with `BARON_ENGINE` set; `all` (the default) runs both and returns the worst exit code |
 | `baron validate` | Only checks the manifest |
-| `baron pack` | Builds, validates, and zips the package as `<id>-<version>.baronplugin`, printing its SHA-256 |
+| `baron pack` | Builds, validates, and zips what the package ships ([10](10-install-and-lifecycle.md#installing)) as `<id>-<version>.baronplugin`, printing its SHA-256 |
 
 ## Checks in `baron build`
 
@@ -63,21 +63,21 @@ test("looks up a word", async () => {
 
 - **Turned on** in Baron's Settings (Advanced › Developer mode). Baron then listens on a socket in its Application Support folder that only the same user can open.
 - **`baron dev`** connects and registers the plugin folder. Baron loads it from the folder, without copying, and marks it "Development" in Settings.
-- **Each rebuild** reloads the plugin's context; open panels reload too.
+- **Each rebuild** that changes the bundle reloads the plugin's context; a rebuild with an identical bundle (a save without changes, or a late file event) doesn't. Open panels reload too once web views exist (task-010).
 - **Logs and errors** stream to the terminal with TypeScript line numbers. Contexts are inspectable in Safari's Web Inspector.
 
 ## Templates and examples
 
 - `action`: transforms the selection (uppercase) and returns `{ type: "replace" }`.
 - `lookup`: fetches a definition and shows a toast.
-- `webview`: opens a result panel page.
+- `webview`: opens a result panel page (task-010).
 - `settings`: every preference type, including options loaded from the plugin.
 
 Each template is also a maintained example in `examples/`, built and tested in CI.
 
 ## UML
 
-Drawn from the code at the end of task-005: `packages/cli`, `packages/test` and `packages/runtime/scripts`. `baron create`, `dev`, `validate` and `pack` come with task-008.
+Drawn from the code at the end of task-008: `packages/cli`, `packages/test`, `packages/runtime/scripts` and `macos/Sources/BaronRuntime/Dev`.
 
 ```mermaid
 classDiagram
@@ -100,6 +100,44 @@ classDiagram
     class testPlugin {
       <<function>>
       +testPlugin(folder, engines) exit code
+    }
+    class createPlugin {
+      <<function>>
+      +templates: action, lookup, settings
+      +createPlugin(name, template, parent) folder
+    }
+    class devPlugin {
+      <<function>>
+      +defaultSocket
+      +devPlugin(folder, socket, log, rebuilds, signal) exit code
+    }
+    class packPlugin {
+      <<function>>
+      +shippedEntries(folder, manifest) [String]
+      +packPlugin(folder) file, sha256
+    }
+    class SourceMap {
+      +fromBundle(code) SourceMap
+      +lookup(line, column) source position
+      +rewrite(stack) String
+    }
+  }
+  namespace BaronRuntime_Dev {
+    class DevServer {
+      +path: dev.sock, mode 0600
+      +start() throws
+      +stop()
+      +emit(pluginID, event, fields)
+    }
+    class DevSessionHandler {
+      <<protocol>>
+      +register(folder) async throws id
+      +reload(pluginID) async
+      +unregister(pluginID) async
+    }
+    class PluginController {
+      <<Baron app>>
+      +setDeveloperMode(on)
     }
   }
   namespace baron_test {
@@ -139,6 +177,16 @@ classDiagram
   }
   run --> buildPlugin : build
   run --> testPlugin : test
+  run --> createPlugin : create
+  run --> devPlugin : dev
+  run --> packPlugin : pack
+  run --> checks : validate
+  devPlugin --> buildPlugin : on every save
+  devPlugin --> SourceMap : maps error stacks
+  packPlugin --> buildPlugin
+  devPlugin ..> DevServer : JSON lines over the socket
+  DevServer --> DevSessionHandler
+  DevSessionHandler <|.. PluginController
   buildPlugin --> checks
   checks --> networkPermissionCovers
   testPlugin ..> createHarness : bun test with BARON_ENGINE
@@ -179,8 +227,39 @@ sequenceDiagram
   CLI-->>Author: worst exit code
 ```
 
+`baron dev`, as built:
+
+```mermaid
+sequenceDiagram
+  actor Author
+  participant CLI as baron dev
+  participant Build as buildPlugin
+  participant Server as DevServer (Baron)
+  participant Ctrl as PluginController
+  participant RT as PluginRuntime
+  Author->>CLI: npx baron dev
+  CLI->>Build: build
+  CLI->>Server: connect dev.sock (Developer mode on)
+  CLI->>Server: {"op":"register","folder":…}
+  Server->>Ctrl: register(folder)
+  Ctrl->>Ctrl: PackageReader.read(folder, .development), shipped entries only
+  Ctrl-->>Server: plugin id, or why it can't load
+  Server-->>CLI: {"ok":true,"id":…}
+  loop each save under src/
+    CLI->>Build: rebuild
+    alt bundle changed
+      CLI->>Server: {"op":"reload","id":…}
+      Server->>Ctrl: reload(pluginID)
+      Ctrl->>RT: unload the context; next dispatch loads the new bundle
+    end
+  end
+  RT-->>Server: log lines and errors (DevSink)
+  Server-->>CLI: {"event":"log"…} / {"event":"error","stack":…}
+  CLI-->>Author: printed, stack mapped to TypeScript lines
+```
+
 ## Gate (grows with tasks 004, 005 and 008)
 
 - [x] task-004: `@baron/api` types and the manifest schema are published in the workspace and used by Baron's validator tests
 - [x] task-005: `baron build` and `baron test --engine all` work on the examples
-- [ ] task-008: `baron create`, `baron dev` and `baron pack` work; a first-time author goes from `baron create` to their action on Baron's bar in under 2 minutes
+- [ ] task-008: `baron create`, `baron dev` and `baron pack` work (CLI tests, and `macos/scripts/uitest-install.sh` packs and installs a package); a first-time author goes from `baron create` to their action on Baron's bar in under 2 minutes (`macos/scripts/uitest-author.sh`: create, install and dev load took 2.8 s; the bar step is waiting for an unlocked screen)

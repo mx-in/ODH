@@ -18,6 +18,7 @@ interface Host {
     development: boolean;          // true under `baron dev`
   };
   preferences: Readonly<Record<string, PreferenceValue>>;   // synchronous snapshot; secrets excluded
+  signal: AbortSignal;           // aborted when this dispatch times out or is cancelled
 
   http: { fetch(url: string, init?: HttpInit): Promise<HttpResponse> };   // also behind global fetch()
   clipboard: { readText(): Promise<string>; writeText(text: string): Promise<void> };
@@ -72,11 +73,12 @@ interface ViewHandle {
 
 ## `http.fetch`
 
-- **Request:** `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`; headers including `User-Agent` (some dictionary sites refuse unknown agents); a body as text or bytes.
-- **Allowlist:** checked on the first URL and again on every redirect (up to 5).
-- **Limits:** timeout 30 s by default, 60 s at most; response bodies up to 20 MB.
-- **No cookies or shared state:** each plugin has its own ephemeral session, so no plugin sees another's or Safari's cookies.
-- **Response:** status, headers and body; non-2xx statuses are responses, not errors, as in browsers.
+- **Request:** `GET`, `HEAD`, `POST`, `PUT`, `PATCH`, `DELETE`; headers including `User-Agent` (some dictionary sites refuse unknown agents); a body as text or bytes; `timeout` in milliseconds; `responseType: "bytes"` for binary bodies.
+- **Allowlist:** checked on the first URL and again on every redirect (up to 5). (Task-006; task-005 serves http and https to any host.)
+- **Limits:** timeout 30 s by default, 60 s at most; response bodies up to 20 MB, collected in chunks and stopped as soon as they pass the limit (`network_error`, `reason: too_large`).
+- **No cookies or shared state:** each plugin has its own ephemeral, cookie-free session, so no plugin sees another's or Safari's cookies.
+- **Response:** status, final URL, lowercase header names and body; non-2xx statuses are responses, not errors, as in browsers.
+- **Cancelling:** the prelude's `fetch` sends a `requestID`; aborting its signal calls `http.cancel(requestID)`.
 
 ## Action results
 
@@ -102,10 +104,11 @@ Every exchange is one JSON envelope. Plugins never see envelopes; the prelude an
 { "v": 1, "kind": "result",   "id": 41, "ok": true,  "value": { "status": 200, "headers": {}, "body": "…" } }
 { "v": 1, "kind": "result",   "id": 41, "ok": false, "error": { "code": "permission_denied", "message": "…", "data": { "permission": "network:dict.cn", "requestable": true } } }
 { "v": 1, "kind": "dispatch", "id": 7,  "target": "action", "name": "lookup", "payload": { "context": {} } }
+{ "v": 1, "kind": "cancel",   "id": 7 }
 { "v": 1, "kind": "event",    "view": "v3", "name": "message", "payload": {} }
 ```
 
-- **Directions:** `call` goes from plugin to Baron; `dispatch` and `event` go from Baron to plugin; `result` answers either, matched by `id`.
+- **Directions:** `call` goes from plugin to Baron; `dispatch`, `cancel` and `event` go from Baron to plugin; `result` answers either, matched by `id`. A `cancel` aborts the dispatch's `host.signal` after its time limit.
 - **Identity:** the plugin's ID is never in the envelope. The transport knows which context or page sent it, so a page can't claim to be another plugin.
 - **Bytes** travel as base64 strings in v1. One envelope is at most 25 MB.
 - **Concurrency:** Baron serves a plugin's calls concurrently; each Swift service is an actor and keeps its own order.
@@ -123,6 +126,9 @@ Every exchange is one JSON envelope. Plugins never see envelopes; the prelude an
 | `not_found` | A missing view, file or key where that is an error |
 | `unavailable` | The helper restarted (stage 2) or the panel closed |
 | `internal` | A bug in Baron; reported with a log reference |
+| `plugin_error` | Only in dispatch results: the plugin's own code threw or rejected; carries `message` and `stack` |
+
+Unknown namespaces and methods, and arguments of the wrong type, answer `invalid_argument`; argument errors name the argument with `data.path` (`/0`).
 
 ## Transports
 
@@ -132,109 +138,123 @@ Every exchange is one JSON envelope. Plugins never see envelopes; the prelude an
 | XPC | Helper process | `NSXPCConnection` in both directions, `Data` holding the JSON | 2 |
 | Page bridge | Plugin page in a web view | `WKScriptMessageHandlerWithReply`; identity from the page's `baron-plugin://<id>/` origin | 1 and 2 |
 
-On the Swift side, one router maps `ns.method` to a service. It asks the permission gate ([04](04-permissions-and-security.md)) and the user-action tracker before the service runs, so no service can forget a check.
+On the Swift side, one router maps `ns.method` to a service. Every call passes the router's check first, where the permission gate ([04](04-permissions-and-security.md)) and the user-action tracker plug in (task-006), so no service can forget a check. As of task-005 the services are `log`, `ui.toast` and `http.fetch`; `environment` and `preferences` travel with each dispatch.
 
 ## UML
 
-Design-level diagrams: they show the planned types, and tasks 005 and 006 replace them with diagrams of the code as built.
+Drawn from the code at the end of task-005: `macos/Sources/BaronRuntime/Host` and `Protocol`. Task-006 adds the remaining services and fills the router's check.
 
 ```mermaid
 classDiagram
-  class Transport {
+  class HostCallHandler {
     <<interface>>
-    +pluginID: PluginID
-    +receive(Envelope)
-    +send(Envelope)
-  }
-  class InProcessTransport
-  class XPCTransport
-  class PageBridgeTransport {
-    +origin: baron-plugin URL
-  }
-  class Envelope {
-    +v: Int
-    +kind: call | result | dispatch | event
-    +id: Int
-    +ns: String?
-    +method: String?
-    +args: [Value]?
+    +handle(HostCall, from: RuntimePlugin) Result~JSONValue, HostError~
   }
   class HostRouter {
-    +services: [String: HostService]
-    +handle(Envelope, from: PluginID) async Envelope
-  }
-  class PermissionGate {
-    +check(plugin, method, args) throws
-  }
-  class UserActionTracker {
-    +record(plugin)
-    +hasRecentAction(plugin) Bool
+    -services: [namespace: HostService]
+    -check: (HostCall, RuntimePlugin) -> HostError?
+    +handle(HostCall, from) Result
   }
   class HostService {
     <<interface>>
     +namespace: String
-    +requirement(method) MethodRequirement
-    +call(method, args, plugin) async throws Value
+    +call(method, HostArguments, plugin) async throws JSONValue
   }
-  class MethodRequirement {
-    +permission: Permission?
-    +needsUserAction: Bool
+  class HostArguments {
+    +string(i) String
+    +optionalString(i) String?
+    +object(i) [String: JSONValue]
+    +number(i) Double
+    +unknownMethod() HostError
+  }
+  class HostCall {
+    +id: Int
+    +namespace: String
+    +method: String
+    +arguments: [JSONValue]
   }
   class HostError {
-    +code: ErrorCode
+    +code: String
     +message: String
-    +data: Value?
+    +data: JSONValue?
+    +stack: String?
   }
-  Transport <|.. InProcessTransport : stage 1
-  Transport <|.. XPCTransport : stage 2
-  Transport <|.. PageBridgeTransport : pages
-  Transport --> HostRouter : calls
-  Transport ..> Envelope : carries
-  HostRouter --> PermissionGate
-  HostRouter --> UserActionTracker
+  class LogService {
+    os.Logger, private
+    +sink for baron dev
+  }
+  class UIService {
+    +toast
+  }
+  class PluginPresenter {
+    <<interface>>
+    +toast(message, kind, from)
+  }
+  class HTTPService {
+    -sessions: one ephemeral session per plugin
+    -requests: cancellable by requestID
+    +fetch, cancel
+  }
+  class SessionDelegate {
+    collects bodies in chunks
+    stops past 20 MB
+    follows at most 5 redirects
+  }
+  class OutboundEnvelope {
+    <<enumeration>>
+    call(HostCall)
+    result(id, Result)
+  }
+  class InboundEnvelope {
+    <<enumeration>>
+    result(id, Result)
+    dispatch(id, target, name, payload)
+    cancel(id)
+  }
+  HostCallHandler <|.. HostRouter
   HostRouter o-- "*" HostService
-  HostService ..> MethodRequirement
-  HostRouter ..> HostError : returns on failure
-  HostService <|.. HTTPService
-  HostService <|.. ClipboardService
-  HostService <|.. SelectionService
-  HostService <|.. StorageService
-  HostService <|.. TextService
+  HostRouter ..> HostArguments
+  HostRouter ..> HostCall
+  HostRouter ..> HostError
+  HostService <|.. LogService
   HostService <|.. UIService
+  HostService <|.. HTTPService
+  UIService --> PluginPresenter : the app shows toasts
+  HTTPService --> SessionDelegate
+  PluginInstance ..> OutboundEnvelope : decodes what the plugin sends
+  PluginInstance ..> InboundEnvelope : encodes what Baron sends
+  PluginInstance --> HostCallHandler
 ```
 
-One host call, from plugin code to a Swift service and back:
+A `fetch` from plugin code, as built:
 
 ```mermaid
 sequenceDiagram
   participant Code as Plugin code
-  participant Prelude
-  participant T as Transport
+  participant Prelude as Prelude (fetch, Channel)
+  participant Engine as JSCEngineContext
+  participant Instance as PluginInstance
   participant Router as HostRouter
-  participant Gate as PermissionGate
-  participant UA as UserActionTracker
-  participant Svc as HostService
-  Code->>Prelude: host.clipboard.writeText("fox")
-  Prelude->>T: call envelope id 41
-  T->>Router: envelope + plugin ID from the transport
-  Router->>Gate: check(plugin, clipboard.writeText)
-  Gate-->>Router: allowed
-  Router->>UA: hasRecentAction(plugin)
-  alt no click within 5 s
-    UA-->>Router: false
-    Router-->>T: result id 41, error user_action_required
-  else recent click
-    UA-->>Router: true
-    Router->>Svc: call(writeText, ["fox"])
-    Svc-->>Router: done
-    Router-->>T: result id 41, ok
+  participant HTTP as HTTPService
+  Code->>Prelude: fetch("https://api.dictionaryapi.dev/…", { signal })
+  Prelude->>Engine: __baronNative.send(call http.fetch, responseType bytes, requestID)
+  Engine->>Instance: outbound JSON (on the plugin's queue)
+  Instance->>Router: handle(HostCall)
+  Router->>Router: check (task-006 gate), find the service
+  Router->>HTTP: call("fetch", arguments)
+  HTTP-->>Router: status, url, headers, body as $bytes
+  Router-->>Instance: Result
+  Instance->>Engine: deliver(result envelope)
+  Engine->>Prelude: __baronReceive(json)
+  Prelude-->>Code: Response (text, json, arrayBuffer)
+  opt signal aborted first
+    Prelude->>Engine: call http.cancel(requestID)
+    Prelude-->>Code: reject with AbortError
   end
-  T-->>Prelude: result envelope
-  Prelude-->>Code: resolve, or reject with BaronError
 ```
 
 ## Gate (task-005 core, task-006 complete)
 
-- [ ] Every namespace is implemented with unit tests at the Swift service level
+- [ ] Every namespace is implemented with unit tests at the Swift service level (task-005: `log`, `ui.toast`, `http.fetch` done)
 - [ ] Contract tests call every method from JavaScript on both engines and check results and error codes
 - [ ] A page and an engine context of the same plugin get identical answers to the same call

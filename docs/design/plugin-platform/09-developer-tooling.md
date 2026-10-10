@@ -13,7 +13,7 @@ They live in this repository under `packages/`, with the ODH plugin under `plugi
 | Package | For | Contents |
 | --- | --- | --- |
 | `@baron/api` | Plugin authors | Types for `Host`, `SelectionContext`, `ActionResult` and the manifest; `definePlugin`; the manifest JSON Schema |
-| `@baron/runtime` | Baron only | The prelude ([02](02-runtime.md)), compiled to one script and shipped inside Baron.app |
+| `@baron/runtime` | Baron only | The prelude ([02](02-runtime.md)), compiled to one script and shipped inside Baron.app; `@baron/runtime/build` builds it for the test harness |
 | `@baron/ui` | Plugin authors, after ODH | Components and the reconciler ([08](08-native-views.md)) |
 | `@baron/test` | Plugin authors | The test harness: a mock host, fixtures, runners for both engines |
 | `@baron/cli` | Plugin authors | The `baron` command |
@@ -23,9 +23,9 @@ They live in this repository under `packages/`, with the ODH plugin under `plugi
 | Command | Does |
 | --- | --- |
 | `baron create <name> [--template action\|lookup\|webview\|settings]` | Makes a folder with `manifest.json`, `src/main.ts`, a test, `tsconfig.json` and `package.json` |
-| `baron build` | Bundles `src/` into `dist/main.js` (one classic script, source map inline), validates the manifest, runs the checks below |
+| `baron build` | Bundles `src/main.ts` into the manifest's `main` (one classic script, source map inline) through a virtual entry that assigns the default export to `globalThis.__baronPlugin`; validates the manifest; runs the checks below |
 | `baron dev` | Builds on every save and loads the plugin into the running Baron in development mode, streaming its logs and errors to the terminal |
-| `baron test [--engine jsc\|quickjs\|all]` | Runs the plugin's tests against the built bundle; `all` (the default in CI) runs both engines |
+| `baron test [--engine jsc\|quickjs\|all]` | Builds, then runs the plugin's own `bun test` once per engine with `BARON_ENGINE` set; `all` (the default) runs both and returns the worst exit code |
 | `baron validate` | Only checks the manifest |
 | `baron pack` | Builds, validates, and zips the package as `<id>-<version>.baronplugin`, printing its SHA-256 |
 
@@ -54,9 +54,10 @@ test("looks up a word", async () => {
 });
 ```
 
-- **JavaScriptCore:** the harness loads the prelude and the built bundle into a fresh `node:vm` context that exposes only the web-platform subset, so Bun's own Node globals don't leak into the test.
-- **QuickJS-NG:** the harness runs the same prelude and bundle in `qjs` and drives it over standard input and output with the same envelopes ([03](03-host-api-and-ipc.md)).
-- **The mock host** implements every namespace in memory: HTTP routes, storage, cache, secrets, preferences, permission grants, user-action state. It checks permissions like Baron does, so a missing permission fails the test.
+- **JavaScriptCore:** the harness loads the prelude and the built bundle into a fresh `node:vm` context that exposes only the web-platform subset, so Bun's own Node globals don't leak into the test. Timers and crypto come from Bun.
+- **QuickJS-NG:** the harness runs `qjs` (pinned v0.17.0, fetched into `.tools/` by `npm run tools:qjs`, or `$BARON_QJS`) with a driver script that removes `qjs`'s own globals (`std`, `os`, `print`, …), loads the same prelude and bundle, and exchanges the same envelopes ([03](03-host-api-and-ipc.md)) as JSON lines on standard input and output. It brings its own SHA digests, since `qjs` has none.
+- **The mock host** implements the namespaces in memory: mocked HTTP routes, storage, cache, secrets, clipboard, selection, toasts, logs, `text.segment` and optional-permission requests. It checks network permissions with the same matcher as `baron build` (`networkPermissionCovers` in `@baron/api`), so a missing permission fails the test, and `h.permissions.used` lists what was used.
+- **The harness** (`createHarness({ plugin, engine, preferences })`) builds the plugin, starts it, and offers `runAction`, `runOptions`, `runButton` and `runLifecycle`; failures reject with `DispatchError` carrying the code.
 
 ## Development mode
 
@@ -76,94 +77,110 @@ Each template is also a maintained example in `examples/`, built and tested in C
 
 ## UML
 
-Design-level diagrams: they show the planned types, and tasks 004, 005 and 008 replace them with diagrams of the code as built.
+Drawn from the code at the end of task-005: `packages/cli`, `packages/test` and `packages/runtime/scripts`. `baron create`, `dev`, `validate` and `pack` come with task-008.
 
 ```mermaid
 classDiagram
-  class BaronCLI {
-    +create(name, template)
-    +build()
-    +dev()
-    +test(engine)
-    +validate()
-    +pack()
+  namespace baron_cli {
+    class run {
+      <<function>>
+      +run(args) exit code
+    }
+    class buildPlugin {
+      <<function>>
+      +buildPlugin(folder, options) BuildResult
+    }
+    class checks {
+      +manifestErrors(manifest)
+      +isNodeBuiltin(specifier)
+      +usesDynamicCode(code)
+      +literalFetchHosts(code)
+      +permits(permissions, origin)
+    }
+    class testPlugin {
+      <<function>>
+      +testPlugin(folder, engines) exit code
+    }
   }
-  class Bundler {
-    <<Bun.build>>
-    +bundle(src) classic script + source map
+  namespace baron_test {
+    class createHarness {
+      <<function>>
+      +runAction(id, context)
+      +runOptions(name)
+      +runButton(name)
+      +runLifecycle(name)
+      +http.mock(match, route)
+      +permissions.used
+    }
+    class MockHost {
+      +handle(CallEnvelope) ResultEnvelope
+      +storage, cache, secrets
+      +toasts, replacements, logs
+    }
+    class EngineRunner {
+      <<interface>>
+      +start(prelude, bundle, send)
+      +deliver(json)
+      +close()
+    }
+    class JSCRunner {
+      bare node:vm context
+    }
+    class QuickJSRunner {
+      qjs child process
+      qjs-driver.js, JSON lines
+    }
   }
-  class BuildChecks {
-    +manifest()
-    +noNodeBuiltins()
-    +dynamicCode()
-    +literalHosts()
-    +size()
+  class buildPrelude {
+    <<@baron/runtime/build>>
   }
-  class ManifestSchema {
+  class networkPermissionCovers {
     <<@baron/api>>
-    JSON Schema draft 2020-12
   }
-  class Harness {
-    <<@baron/test>>
-    +http: MockHTTP
-    +permissions: MockGrants
-    +runAction(id, context) ActionResult
-  }
-  class MockHost {
-    +storage, cache, secrets in memory
-    +checks permissions like Baron
-  }
-  class EngineRunner {
-    <<interface>>
-    +load(prelude, bundle)
-    +dispatch(envelope)
-  }
-  class JSCRunner {
-    node:vm context, subset globals only
-  }
-  class QuickJSRunner {
-    qjs over stdin and stdout
-  }
-  class DevSession {
-    +socket: same-user only
-    +register(folder)
-    +reload()
-    +streamLogs()
-  }
-  BaronCLI --> Bundler
-  BaronCLI --> BuildChecks
-  BuildChecks --> ManifestSchema
-  BaronCLI --> Harness : test
-  BaronCLI --> DevSession : dev
-  Harness --> MockHost
-  Harness --> EngineRunner
+  run --> buildPlugin : build
+  run --> testPlugin : test
+  buildPlugin --> checks
+  checks --> networkPermissionCovers
+  testPlugin ..> createHarness : bun test with BARON_ENGINE
+  createHarness --> buildPlugin
+  createHarness --> buildPrelude
+  createHarness --> MockHost
+  createHarness --> EngineRunner
   EngineRunner <|.. JSCRunner
   EngineRunner <|.. QuickJSRunner
+  MockHost --> networkPermissionCovers
 ```
 
-`baron dev`, from a save to the new code on the bar:
+`baron test`, as built:
 
 ```mermaid
 sequenceDiagram
   actor Author
-  participant CLI as baron dev
-  participant Bun as Bundler
-  participant Baron
-  participant RT as PluginRuntime
-  Author->>CLI: baron dev
-  CLI->>Baron: connect to the developer socket, register the folder
-  Baron-->>CLI: plugin loaded as "Development"
-  Author->>Author: saves src/main.ts
-  CLI->>Bun: rebuild dist/main.js
-  Bun-->>CLI: bundle, checks passed
-  CLI->>Baron: reload
-  Baron->>RT: discard the context, load the new bundle
-  Author->>Baron: selects text, clicks the action
-  RT-->>CLI: logs and errors, mapped to TypeScript lines
+  participant CLI as baron test
+  participant Build as buildPlugin
+  participant Bun as bun test (per engine)
+  participant H as createHarness
+  participant Engine as JSCRunner or QuickJSRunner
+  participant Mock as MockHost
+  Author->>CLI: baron test
+  CLI->>Build: build, with checks
+  loop jsc, then quickjs
+    CLI->>Bun: run the plugin's tests, BARON_ENGINE set
+    Bun->>H: createHarness()
+    H->>Engine: start(prelude, bundle)
+    Bun->>H: runAction("lookup", { text })
+    H->>Engine: dispatch envelope
+    Engine->>H: call envelopes (fetch, storage…)
+    H->>Mock: handle(call), permission checked
+    Mock-->>Engine: result envelopes
+    Engine-->>H: dispatch result
+    H-->>Bun: ActionResult, or DispatchError
+  end
+  CLI-->>Author: worst exit code
 ```
 
 ## Gate (grows with tasks 004, 005 and 008)
 
-- [ ] task-004: `@baron/api` types and the manifest schema are published in the workspace and used by Baron's validator tests
-- [ ] task-005: `baron build` and `baron test --engine all` work on the examples
+- [x] task-004: `@baron/api` types and the manifest schema are published in the workspace and used by Baron's validator tests
+- [x] task-005: `baron build` and `baron test --engine all` work on the examples
 - [ ] task-008: `baron create`, `baron dev` and `baron pack` work; a first-time author goes from `baron create` to their action on Baron's bar in under 2 minutes

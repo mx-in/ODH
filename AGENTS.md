@@ -50,9 +50,9 @@
 - [ ] Verification
     - [x] Test timers, errors, time limits, idle unload and reload (covered by TimerTests, PluginLoadingTests, DispatchTests, StuckPluginTests, IdleTests in BaronRuntimeTests, and the prelude's bun tests)
     - [x] Measure load time, dispatch overhead and idle memory against the targets in the design (ad419d4)
-    - [ ] **▶ IN PROGRESS** Run both examples from the bar in a UI test
+    - [ ] Run both examples from the bar in a UI test: written (8ac455c) and the examples pass end to end in Baron's runtime; the bar run itself waits for the user (the screen was locked), see notes
 - [ ] Design UML
-    - [ ] Replace the design-level UML in 02, 03 (core) and 09 with diagrams of the code as built
+    - [ ] **▶ IN PROGRESS** Replace the design-level UML in 02, 03 (core) and 09 with diagrams of the code as built
 
 **Notes for the next agent:** QuickJS-NG `qjs` comes from `scripts/fetch-qjs.sh` (pinned v0.17.0, SHA-256 checked) into `.tools/`; the user hadn't answered whether to vendor it, so this is the default.
 

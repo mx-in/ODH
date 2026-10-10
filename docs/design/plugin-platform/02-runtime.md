@@ -37,7 +37,16 @@ A classic script, not an ES module, because it evaluates the same way in JavaScr
 
 ## The prelude: the web-platform subset
 
-Before the plugin's bundle, every context evaluates the prelude, `@baron/runtime`, a TypeScript package compiled to one script. It is identical on both engines and builds the `host` object over `__baronNative`.
+Before the plugin's bundle, every context evaluates the prelude, `@baron/runtime`, a TypeScript package compiled to one script (about 120 KB, copied into BaronRuntime's resources by `npm run build -w packages/runtime`; a test keeps the copy current). It is identical on every engine. It takes the one native object it needs and removes it from plugin reach:
+
+| `__baronNative` | Does |
+| --- | --- |
+| `send(json)` | Sends one envelope to Baron |
+| `setTimer(id, ms)`, `clearTimer(id)` | One-shot native timers that call `__baronFireTimer(id)` on the plugin's queue |
+| `randomBytes(count)` | Cryptographic random bytes (`SecRandomCopyBytes`) |
+| `digest(algorithm, base64)` | SHA digests (CryptoKit), synchronously, since they are quick and side-effect free |
+
+Envelopes come back through `__baronReceive(json)`.
 
 | Global | Provided by |
 | --- | --- |
@@ -45,9 +54,9 @@ Before the plugin's bundle, every context evaluates the prelude, `@baron/runtime
 | `setTimeout`, `setInterval`, `clearTimeout`, `clearInterval` | Native timers on the plugin's queue |
 | `queueMicrotask` | Prelude, over `Promise` |
 | `fetch`, `Request`, `Response`, `Headers` | Prelude, over `host.http` ([03](03-host-api-and-ipc.md)) |
-| `URL`, `URLSearchParams` | Prelude polyfill (neither engine has them on its own) |
+| `URL`, `URLSearchParams` | core-js's WHATWG implementation, installed on every engine (neither has them on its own) |
 | `TextEncoder`, `TextDecoder` | Prelude polyfill, UTF-8 only |
-| `AbortController`, `AbortSignal` | Prelude polyfill; aborting a `fetch` cancels the native request |
+| `AbortController`, `AbortSignal`, `Event`, `EventTarget`, `DOMException` | Prelude polyfills; aborting a `fetch` cancels the native request by id. Each dispatch's handler gets `host.signal`, aborted when the dispatch is cancelled |
 | `atob`, `btoa`, `structuredClone` | Prelude polyfills |
 | `crypto.getRandomValues`, `crypto.randomUUID` | Native (`SecRandomCopyBytes`) |
 | `crypto.subtle.digest` | Native (CryptoKit): SHA-1, SHA-256, SHA-384, SHA-512 |
@@ -89,7 +98,9 @@ Several dispatches can be in flight for one plugin; async handlers interleave on
 | Dispatch time | Per the table above | The caller gets `timeout`; the plugin is told through `AbortSignal` |
 | Synchronous loop | 10 s without returning to the event loop | Stage 1: the plugin is marked unresponsive and disabled; its thread is abandoned until Baron restarts. Stage 2: the helper is restarted |
 | Memory | Stage 2: helper above 512 MB | The helper is restarted |
-| Crashes or stuck loops | 3 in 10 minutes | The plugin is disabled with a "Re-enable" button |
+| Strikes: dispatches that ran out of time (stage 2 adds helper crashes) | 3 in 10 minutes | The plugin is suspended with a "Re-enable" button |
+
+As built in stage 1 (task-005): the engine records when it enters plugin code, and a watchdog running four times per stuck limit suspends a plugin stuck in one synchronous run, fails its waiting dispatches with `unavailable`, and abandons its context. The same watchdog unloads idle contexts. A load that never returns (a top-level loop) is raced against its limit rather than awaited.
 
 JavaScriptCore can't interrupt a running loop through public API, which is the main reason for stage 2. QuickJS can, through its interrupt handler and per-runtime memory limit.
 
@@ -107,9 +118,13 @@ In development mode (`baron dev`), contexts are marked inspectable, so Safari's 
 
 ## Targets to measure
 
-- Loading a 200 KB bundle: under 50 ms on an M1.
-- Dispatch overhead, call to first line of the handler: under 2 ms.
-- An idle context: under 10 MB.
+| Target | Measured (task-005, M1 Pro, release build) |
+| --- | --- |
+| Loading a 200 KB bundle: under 50 ms on an M1 | About 7 ms, prelude included |
+| Dispatch overhead: under 2 ms | About 0.08 ms for a full round trip |
+| An idle context: under 10 MB | About 2 MB |
+
+`swift test -c release --filter PerformanceTests` prints them.
 
 ## Risks
 
@@ -118,87 +133,113 @@ In development mode (`baron dev`), contexts are marked inspectable, so Safari's 
 
 ## UML
 
-Design-level diagrams: they show the planned types, and tasks 005 and 011 replace them with diagrams of the code as built.
+Drawn from the code at the end of task-005 (stage 1): `packages/runtime` (the prelude) and `macos/Sources/BaronRuntime`. Stage 2 (task-011) replaces the in-process engine with the helper.
 
 ```mermaid
 classDiagram
-  class PluginRuntime {
-    +contexts: [PluginID: EngineContext]
-    +dispatch(plugin, Dispatch) async throws Value
-    +unload(plugin)
-    +reload(plugin)
+  namespace prelude_TypeScript {
+    class Channel {
+      +call(ns, method, args) Promise
+      +notify(ns, method, args)
+      +receive(json)
+      +onEnvelope
+    }
+    class Dispatcher {
+      +dispatch(DispatchEnvelope)
+      +cancel(id)
+    }
+    class createHost {
+      <<function>>
+      host per dispatch: environment, preferences, signal, namespaces
+    }
+    class Timers {
+      +set(callback, delay, args, repeat) id
+      +clear(id)
+      +fire(id)
+    }
+    class Views {
+      +handle(channel, view) ViewHandle
+      +deliver(view, name, payload)
+    }
+    class Polyfills {
+      URL and URLSearchParams (core-js)
+      TextEncoder, TextDecoder, atob, btoa, structuredClone
+      AbortController, AbortSignal, EventTarget, DOMException
+      fetch, Request, Response, Headers
+      crypto
+    }
   }
-  class EngineContext {
-    <<interface>>
-    +state: ContextState
-    +load(prelude: String, bundle: String) async throws
-    +send(Envelope) async
-    +setReceiver(handler)
+  namespace BaronRuntime_Swift {
+    class PluginRuntime {
+      <<actor>>
+      +limits: RuntimeLimits
+      +register(RuntimePlugin)
+      +load(pluginID) PluginRuntimeState
+      +dispatch(pluginID, target, name, payload) Result
+      +reload(pluginID)
+      +reenable(pluginID)
+      -strike(pluginID)
+      -checkForStuckPlugins()
+    }
+    class PluginInstance {
+      +load(bundle)
+      +dispatch(target, name, payload, limit) Result
+      +failAll(HostError)
+    }
+    class JSCEngineContext {
+      -virtualMachine: JSVirtualMachine
+      -context: JSContext
+      -queue: serial DispatchQueue
+      +installNative(send)
+      +evaluate(script) String?
+      +deliver(json)
+      +busyFor: Duration?
+      +unload()
+    }
+    class RuntimeLimits {
+      load 2 s, action 10 s, options 5 s
+      stuck 10 s, idle 60 s, strikes 3 in 10 min
+    }
+    class PluginRuntimeState {
+      <<enumeration>>
+      unloaded
+      ready
+      broken(reason)
+      suspended(reason)
+    }
+    class HostCallHandler {
+      <<interface>>
+      +handle(HostCall, from) Result
+    }
   }
-  class JSCEngineContext {
-    -virtualMachine: JSVirtualMachine
-    -context: JSContext
-    -queue: DispatchQueue
-    -timers: TimerTable
-  }
-  class QuickJSEngineContext {
-    -runtime: JSRuntime
-    -interruptHandler
-    -memoryLimit
-  }
-  class Dispatch {
-    +target: DispatchTarget
-    +name: String
-    +payload: Value
-    +timeLimit: Duration
-  }
-  class DispatchTarget {
-    <<enumeration>>
-    action
-    options
-    button
-    lifecycle
-    event
-  }
-  class StrikeCounter {
-    +record(plugin)
-    +isOverLimit(plugin) Bool
-  }
-  class Prelude {
-    <<JavaScript>>
-    +host: Host
-    +handleDispatch(envelope)
-    +polyfills
-  }
-  PluginRuntime o-- "*" EngineContext
-  EngineContext <|.. JSCEngineContext : macOS
-  EngineContext <|.. QuickJSEngineContext : Windows, Linux, tests
-  PluginRuntime ..> Dispatch
-  Dispatch --> DispatchTarget
-  PluginRuntime --> StrikeCounter
-  EngineContext ..> Prelude : evaluates first
+  PluginRuntime *-- "*" PluginInstance
+  PluginRuntime --> RuntimeLimits
+  PluginRuntime --> PluginRuntimeState
+  PluginInstance *-- JSCEngineContext
+  PluginInstance --> HostCallHandler : relays calls
+  JSCEngineContext ..> Channel : JSON envelopes via __baronNative and __baronReceive
+  Channel --> Dispatcher : dispatch, cancel
+  Dispatcher ..> createHost
+  createHost --> Channel
+  Polyfills --> Channel : fetch and console
 ```
 
-A plugin's context, from first use to unloading:
+A plugin's context in stage 1:
 
 ```mermaid
 stateDiagram-v2
-  [*] --> Unloaded
-  Unloaded --> Loading: first need (action, settings pane, panel)
-  Loading --> Ready: prelude and bundle evaluated within 2 s
-  Loading --> Broken: throws, defines no actions, or takes over 2 s
-  Ready --> Idle: nothing pending, no panel or pane open
-  Idle --> Ready: new dispatch
-  Idle --> Unloaded: 60 s idle, timers cleared
-  Ready --> Unloaded: update, preference change or dev rebuild (reloaded on next need)
-  Ready --> Suspended: stuck 10 s in a loop, or 3 strikes in 10 minutes
-  Suspended --> Unloaded: user clicks Re-enable
-  Broken --> [*]: fixed only by an update
+  [*] --> Unloaded: register
+  Unloaded --> Ready: first dispatch or load; prelude and bundle evaluated within 2 s, actions defined
+  Unloaded --> Broken: bundle missing, throws, defines no actions, or loads past 2 s
+  Ready --> Unloaded: idle 60 s with nothing in flight, or reload
+  Ready --> Suspended: stuck 10 s in one synchronous run, or 3 timeouts in 10 minutes
+  Suspended --> Unloaded: reenable (a fresh context)
+  Broken --> [*]
 ```
 
 ## Gate (task-005 for stage 1, task-011 for stage 2)
 
-- [ ] A sample plugin with an uppercase action and a `fetch`-based lookup runs from Baron's bar
-- [ ] Its tests pass on JavaScriptCore and QuickJS-NG with the same prelude
-- [ ] Timers, errors, time limits, idle unload and reload are covered by tests
+- [ ] A sample plugin with an uppercase action and a `fetch`-based lookup runs from Baron's bar (`examples/uppercase` and `examples/lookup` run end to end in Baron's runtime; the bar run, `macos/scripts/uitest-plugins.sh`, is waiting for the user)
+- [x] Its tests pass on JavaScriptCore and QuickJS-NG with the same prelude
+- [x] Timers, errors, time limits, idle unload and reload are covered by tests
 - [ ] Stage 2: the same plugin runs in the helper; killing the helper mid-action yields `unavailable` and the next action works

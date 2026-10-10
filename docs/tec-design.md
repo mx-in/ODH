@@ -464,7 +464,7 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 
 ## UML: the selection bar as built
 
-Drawn from the code at the end of tasks 001 and 002 (`macos/Sources`). Pure logic lives in `BaronCore`, which has unit tests; anything that touches Accessibility, events or windows lives in `BaronPlatform`; the app target wires them together.
+Drawn from the code at the end of task-005 (`macos/Sources`): the selection bar of tasks 001 and 002, now offering plugin actions. Pure logic lives in `BaronCore`, which has unit tests; anything that touches Accessibility, events or windows lives in `BaronPlatform`; the app target wires them together.
 
 ```mermaid
 classDiagram
@@ -474,8 +474,18 @@ classDiagram
       +apply(BaronSettings)
       +start()
       +stop()
+      +onPluginAction: (Entry, SelectionRun)
       -handle(Trigger)
       -perform(BarItem)
+    }
+    class PluginController {
+      +runtime: PluginRuntime
+      +catalog: PluginActionCatalog
+      +reload() scans the development folder
+      +run(entry, selection) Result
+    }
+    class ToastPresenter {
+      +show(message, kind)
     }
   }
   namespace BaronPlatform {
@@ -504,6 +514,12 @@ classDiagram
     class AXTextRetriever
     class AXWebRetriever
     class CopyRetriever
+    class ToastPanel {
+      +show(message, kind, near)
+    }
+    class SelectionReplacer {
+      +replace(with: text)$ AX, else paste
+    }
   }
   namespace BaronCore {
     class PointerTriggerDetector
@@ -518,6 +534,7 @@ classDiagram
       +gate: Gate
       +retrievalRules: AppRetrievalRules
       +actions: BuiltInActions
+      +plugins: PluginActionCatalog
       +isPaused: Bool
       +run(Trigger, SelectionSource) async PipelineOutcome
       +cancel()
@@ -525,6 +542,8 @@ classDiagram
     class SelectionSource {
       <<interface>>
       +bundleIdentifier: String?
+      +selectionApp: SelectionApp
+      +isEditable: Bool
       +gateInput(for: Trigger) GateInput
       +retrievalChain() RetrievalChain
       +selectionBounds(after: RetrievalStep) CGRect?
@@ -564,6 +583,16 @@ classDiagram
     class BarPlacement {
       +frame(barSize, selection, pointer, visibleFrame)$ CGRect
     }
+    class PluginActionCatalog {
+      +entries: [Entry]
+      +items(for: WhenInput) [BarItem]
+      +entry(forItemID) Entry?
+    }
+    class PluginActionResult {
+      <<enumeration>>
+      nothing, copy, replace, toast, openURL
+      +parse(value, editable, mayReplace)$
+    }
     class ExcludedAppRule
     class SecureInputRule
     class TextRoleRule
@@ -602,6 +631,12 @@ classDiagram
   BuiltInAction <|.. SearchAction
   BuiltInAction <|.. OpenLinkAction
   ActionBarController ..> BarPlacement
+  SelectionPipeline --> PluginActionCatalog
+  SelectionCoordinator ..> PluginController : plugin buttons
+  PluginController ..> PluginActionResult
+  PluginController ..> ToastPresenter
+  ToastPresenter --> ToastPanel
+  ActionEffectPerformer ..> SelectionReplacer : replace
 ```
 
 From a selection to a performed action:
@@ -643,10 +678,18 @@ sequenceDiagram
     end
   end
   Note over Coord: after every run, onRun lets the debug panel probe the context
-  User->>Bar: clicks Copy, Search or Open Link
-  Bar->>Coord: onSelect(item)
-  Coord->>Pipe: actions.effect(of: item, for: text)
-  Coord->>Perf: perform(copy or openURL)
+  alt a built-in action
+    User->>Bar: clicks Copy, Search or Open Link
+    Bar->>Coord: onSelect(item)
+    Coord->>Pipe: actions.effect(of: item, for: text)
+    Coord->>Perf: perform(copy or openURL)
+  else a plugin action (shown when its when rules match)
+    User->>Bar: clicks a plugin's button
+    Bar->>Coord: onSelect(item)
+    Coord->>Coord: onPluginAction(entry, run)
+    Note over Coord: PluginController dispatches with the selection's context (02-runtime, 03-host-api)
+    Coord->>Perf: perform the result (copy, replace, openURL) or show a toast, also for errors
+  end
 ```
 
 The context readers. Today only `SelectionProbe` uses them, for `baron-probe`, `baron-uitest` and the debug panel; task-009 builds each action's `SelectionContext` from them.

@@ -2,3 +2,5 @@
 /build/
 .swiftpm/
 /UITests/results/
+Xcode/Baron.xcodeproj/xcuserdata/
+Xcode/Baron.xcodeproj/project.xcworkspace/xcuserdata/

@@ -1,0 +1,44 @@
+# Generates Baron.xcodeproj. The generated project is committed, so Xcode users don't need
+# XcodeGen; regenerate after changing this file:  scripts/generate-xcode-project.sh
+name: Baron
+options:
+  bundleIdPrefix: org.odh
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: R24YD8KS22
+    CODE_SIGN_STYLE: Automatic
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    SWIFT_VERSION: "5.0"
+packages:
+  BaronPackage:
+    path: ..
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts.git
+    from: 3.1.0
+targets:
+  Baron:
+    type: application
+    platform: macOS
+    sources:
+      - path: ../Sources/Baron
+    settings:
+      base:
+        PRODUCT_NAME: Baron
+        PRODUCT_BUNDLE_IDENTIFIER: org.odh.baron
+        INFOPLIST_FILE: ../Resources/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        # A stable signature keeps the Accessibility grant across rebuilds.
+        CODE_SIGN_IDENTITY: Apple Development
+        ENABLE_HARDENED_RUNTIME: YES
+    dependencies:
+      - package: BaronPackage
+        product: BaronCore
+      - package: BaronPackage
+        product: BaronPlatform
+      - package: KeyboardShortcuts
+    scheme:
+      commandLineArguments:
+        "--debug-panel": false

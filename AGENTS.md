@@ -100,6 +100,7 @@
     - [x] Fix what they found: paragraph spill in native, Chromium and WebKit (5b91f5b, engine choice), Pages tree and focused-window search (d082f47)
     - [x] Re-run the apps and update `docs/research/ax-coverage.md` (8 apps pass all modes)
 - [ ] Bar in the hand-checked apps (Pages, Preview, VS Code, Slack): covered by task-001's hand checks
+- [x] Xcode project (user request 2026-10-10; commit: see next): `macos/Xcode/Baron.xcodeproj`, generated from `project.yml` by XcodeGen, signed with team R24YD8KS22
 - [ ] Gate: the user reviews tasks 1–2 (then archive this task)
 
 **Notes for the next agent:** all task-002 code is committed and unit tested (76 tests in `BaronCore`). The user tried the bar by hand on 2026-10-10, and `baron-uitest` verified it in 8 apps. **Stop here:** the user reviews tasks 1–2 and adds UI automation tests before task-003 starts. To try the bar: `cd macos && scripts/build-app.sh && open build/Baron.app`, grant Accessibility to Baron, then select text in another app. Known gaps: Pages, Preview, VS Code and Slack are unmeasured; a copy-fallback copy can still be recorded by clipboard managers; the settings window needs the built `.app` for launch at login. UI elements carry accessibility identifiers for automation: `baron.actionBar`, `baron.action.<id>`, `baron.settings`, `settings.pause`, `settings.searchTemplate`, `settings.excludedApps`, `settings.launchAtLogin`.

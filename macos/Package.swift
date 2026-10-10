@@ -6,6 +6,9 @@ let package = Package(
     name: "Baron",
     platforms: [.macOS(.v14)],
     products: [
+        // Libraries for the Xcode app target in Xcode/Baron.xcodeproj.
+        .library(name: "BaronCore", targets: ["BaronCore"]),
+        .library(name: "BaronPlatform", targets: ["BaronPlatform"]),
         .executable(name: "Baron", targets: ["Baron"]),
         .executable(name: "baron-probe", targets: ["baron-probe"]),
         .executable(name: "baron-uitest", targets: ["baron-uitest"]),

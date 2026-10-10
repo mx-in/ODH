@@ -11,6 +11,12 @@ Baron shows an action bar when text is selected in any app. Design: [docs/tec-de
 | `Baron` | The menu-bar app |
 | `baron-probe` | CLI that prints what the Accessibility API returns for the current selection |
 
+## Build in Xcode
+
+Open `Xcode/Baron.xcodeproj`, pick the **Baron** scheme and press Run (⌘R). The project signs with team `R24YD8KS22` (Apple Development), so the Accessibility grant survives rebuilds and is shared with builds from `scripts/build-app.sh`. To start with the debug panel open, enable the `--debug-panel` argument in **Product › Scheme › Edit Scheme… › Run › Arguments**.
+
+The project is generated from `Xcode/project.yml` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) and committed. After changing `project.yml`, or adding files to `Sources/Baron`, regenerate it with `scripts/generate-xcode-project.sh`. Unit tests, `baron-probe` and `baron-uitest` still build with `swift` (below), or open `Package.swift` in Xcode to run them.
+
 ## Build
 
 ```sh

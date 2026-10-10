@@ -54,22 +54,22 @@
 **Task:** task-009-context-builder: give actions the context they may read (gate: a test plugin receives sentence, paragraph, page and window in Safari, Chrome, Mail, Notes, Pages and TextEdit, and receives none of them without the permission.)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [Context capture](docs/tec-design.md#context-capture) in the app design, context permissions in [04](docs/design/plugin-platform/04-permissions-and-security.md#permission-catalogue), `needs` in [01](docs/design/plugin-platform/01-package-and-manifest.md#actions). The readers from tasks 001 and 002 already exist; this task turns them into each action's `SelectionContext`.
 
-- [ ] Assembly
+- [x] Assembly
     - [x] Build a `SelectionContext` from the existing readers (1ffb20c)
     - [x] Read only the fields that some matching action `needs` and its plugin is granted
     - [x] Give each action only its own `needs` and granted fields (0ebfe18)
-- [ ] Timing
+- [x] Timing
     - [x] Read context in the background right after the text, within 200 ms; an action waits at most 300 ms more (eadbd77)
     - [x] Wake Chrome and Electron accessibility only for the frontmost app, and only when a field needs it (d562761)
-- [ ] Fields
+- [x] Fields
     - [x] Apply the caps and the `truncated` flag on the web paths, as the native path already does (4d8ebcf)
     - [x] Check that every offset is in UTF-16 units (a0b8bd0)
     - [x] Fall back to AppleScript for the page URL, behind a user setting (cbe3597)
     - [x] Read the sentence and paragraph from Preview's PDF text blocks (gap from task-001) (0a3c02a)
 - [ ] Verification
     - [ ] **⏸ BLOCKED (needs: an unlocked screen)** Run the test plugin in the six apps in `baron-uitest`, with and without the permissions
-- [ ] Design UML
-    - [ ] **▶ IN PROGRESS** Add as-built UML to the design docs this task built or changed
+- [x] Design UML
+    - [x] Add as-built UML to the design docs this task built or changed
 
 **Notes for the next agent:** Started while task-008 waits on one blocked item (author timing needs an unlocked screen); finish that item first when the screen is available, then archive task-008. The six-app check is written (`macos/scripts/uitest-context.sh`, baron-uitest `--context`, fixtures `context-probe` and `context-blind`) but couldn't run: the display can't be captured (asleep or locked) since 2026-10-11 02:00. Run it with the screen unlocked; it also covers the Automation prompt only if "Ask browsers for the page address" is on, which it isn't by default. Preview's PDF context was checked with baron-probe against a selection made through Accessibility (paragraph and sentence read).
 

@@ -115,7 +115,7 @@ Steps 3 and 4 save every clipboard item first and restore it afterwards. The cop
 
 ## Context capture
 
-Context is read in the background right after the text, within a 200 ms budget, and only when an enabled plugin has the matching permission. The bar does not wait for it. An action that needs context waits at most 300 ms more, then runs with whatever arrived.
+Context is read in the background right after the text, off the main thread, within a 200 ms budget, and only the fields that some action on the bar `needs` and its plugin is granted. The bar does not wait for it. An action that needs context waits at most 300 ms more, then runs with whatever arrived, and receives only its own fields.
 
 Context must be read before the user clicks anything. The bar is non-activating, so the source app keeps its focus and selection, but scrolling or typing would change them.
 
@@ -123,17 +123,17 @@ Context must be read before the user clicks anything. The bar is non-activating,
 
 - **App:** `NSWorkspace.frontmostApplication` gives the bundle ID, name and PID.
 - **Window:** the app's `AXFocusedWindow`, then `AXTitle` and `AXDocument` (a file URL for document apps).
-- **Page:** walk `AXParent` up from the focused element to the first `AXWebArea`, then read `AXURL` and `AXTitle`. If that fails and the user has allowed it, ask Safari or the Chrome family through AppleScript.
+- **Page:** walk `AXParent` up from the focused element to the first `AXWebArea`, then read `AXURL` and `AXTitle`. If that fails for a web selection and the user has turned on Settings › General › Advanced › Ask browsers for the page address (off by default), ask Safari or the Chrome family (Chrome, Arc, Edge, Brave, Vivaldi, Opera) through `osascript`, with a 0.5 s limit. macOS asks the user once per browser; Baron carries the Apple Events entitlement and usage text for that.
 - **Sentence and paragraph on web pages:** the method depends on the engine, because each breaks a different way ([measurements](research/ax-coverage.md)). Chromium marks its elements with `ChromeAXNodeId`; WebKit doesn't.
     - **WebKit (Safari, Mail):** take the start and end markers of `AXSelectedTextMarkerRange`, ask for `AXSentenceTextMarkerRangeForTextMarker` (or `AXParagraph…`) at each, join the two ranges, then read `AXStringForTextMarkerRange`. A triple-click selection includes trailing line breaks, so its end marker sits in the next paragraph; step back over those breaks with `AXPreviousTextMarkerForTextMarker` first. Don't rebuild from the tree here: WebKit's tree hides `<br>` breaks, so lines would run together.
     - **Chromium (Chrome, Arc, Edge, Electron):** markers stop at inline elements (a word in a `<span>` returns only itself) and pull in neighbouring blocks at block edges. Instead, find the text element under the first selected character (`AXUIElementForTextMarker` after `AXNextTextMarkerForTextMarker`), walk up to the nearest ancestor that isn't inline text or a link, and join its `AXStaticText` values in order. That is the paragraph; the sentence is cut from it with `NLTokenizer`. Markers are the fallback.
     - **Bounds:** `AXBoundsForTextMarkerRange`, or in Chromium, which returns none, the frame of the text element under the selection.
 - **Sentence and paragraph in native text:** read `AXSelectedTextRange`, then fetch only about 1,000 characters on each side with `AXStringForRange`. Never read `AXValue` whole, because documents can be megabytes. The paragraph is that slice cut at the nearest line breaks; a selection's trailing line breaks (a triple-click) are ignored when expanding, or the next paragraph would be pulled in. The sentence comes from `NLTokenizer(unit: .sentence)` over the paragraph, which also handles Chinese and Japanese punctuation.
-- **Waking apps that build their tree on demand:** Chrome builds a basic tree once `AXRole` is read on the app element. Electron apps need `AXManualAccessibility = true`. iWork apps (Pages, Numbers, Keynote) expose their document text only after `AXEnhancedUserInterface = true`, even though the call reports an error; Baron sets it for those apps only (see Risks).
-- **Apps without readable text:** VS Code exposes no editor text unless its "screen reader optimized" mode (`editor.accessibilitySupport`) is on, so Baron gets VS Code text through the copy steps, without context. PDFs in Preview expose one `AXStaticText` per text block; Baron doesn't read context from those blocks yet (planned for task-009).
+- **Waking apps that build their tree on demand:** Chrome builds a basic tree once `AXRole` is read on the app element, which text retrieval needs anyway. Electron apps need `AXManualAccessibility = true`, which costs them CPU and memory, so Baron sets it on the frontmost app only while some enabled action can receive context; otherwise their text comes through the copy steps. iWork apps (Pages, Numbers, Keynote) expose their document text only after `AXEnhancedUserInterface = true`, even though the call reports an error; Baron sets it for those apps only (see Risks).
+- **Apps without readable text:** VS Code exposes no editor text unless its "screen reader optimized" mode (`editor.accessibilitySupport`) is on, so Baron gets VS Code text through the copy steps, without context. PDFs in Preview expose one `AXStaticText` per text block, with wrapped lines joined by spaces, under a focused group that reports the selected text but not its range. Every block reports the selected text; only the block holding the selection reports a real `AXSelectedTextRange` (the others say NSNotFound). That block is the paragraph, and the sentence is cut from it as for native text.
 - **Copy fallback:** text only. All context fields stay `undefined`, and `source` says `"menu-copy"` or `"key-copy"`.
 
-The paragraph is capped at 4,000 characters and the sentence at 1,000; a `truncated` flag says when a cap was hit. Offsets are UTF-16 code units. That is what `CFRange` uses and what JavaScript string indices use, so plugins can slice without converting.
+The paragraph is capped at 4,000 characters and the sentence at 1,000; a `truncated` flag says when a cap was hit, or when a Chromium paragraph rebuilt from the tree stopped at its 2,000-element walk limit. A cap never cuts inside a surrogate pair. Offsets are UTF-16 code units. That is what `CFRange` uses and what JavaScript string indices use, so plugins can slice without converting.
 
 **The contract plugins receive**
 
@@ -168,7 +168,7 @@ interface TextSpan {
 | `editable` | Always present, best effort | Derived from the focused element's role |
 | `window.title` | Present when the app has a focused window | All 9 measured apps |
 | `bounds` | Usually present; the bar falls back to the pointer | All 8 apps passing every field |
-| `sentence`, `paragraph` | **Optional.** Present when Accessibility exposes the text | All 8 apps passing every field; missing in VS Code (default settings), Preview and copy-only apps |
+| `sentence`, `paragraph` | **Optional.** Present when Accessibility exposes the text | All 8 apps passing every field, and Preview's PDFs; missing in VS Code (default settings) and copy-only apps |
 | `page` | **Optional.** Present on web pages | Safari, Chrome, Arc, Mail |
 | `window.documentUrl` | **Optional.** Present for document-based apps | TextEdit, Xcode, Terminal, Chrome |
 | `html` | **Optional.** Only when the app put HTML on the clipboard | Not measured yet |
@@ -464,7 +464,7 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 
 ## UML: the selection bar as built
 
-Drawn from the code at the end of task-006 (`macos/Sources`): the selection bar of tasks 001 and 002, offering plugin actions whose host calls are permission-checked. Pure logic lives in `BaronCore`, which has unit tests; anything that touches Accessibility, events or windows lives in `BaronPlatform`; the app target wires them together.
+Drawn from the code at the end of task-009 (`macos/Sources`): the selection bar of tasks 001 and 002, offering plugin actions whose host calls are permission-checked and which receive the context they need. Pure logic lives in `BaronCore`, which has unit tests; anything that touches Accessibility, events or windows lives in `BaronPlatform`; the app target wires them together.
 
 ```mermaid
 classDiagram
@@ -664,7 +664,7 @@ sequenceDiagram
   Mon->>Mon: PointerTriggerDetector or KeyboardTriggerDetector (300 ms quiet)
   Mon->>Coord: Trigger
   Coord->>Bar: hide the previous bar
-  Coord->>Src: current(): frontmost app and focused element
+  Coord->>Src: current(wakeElectron: some action uses context)
   Coord->>Pipe: run(trigger, source)
   alt paused, and not the hotkey
     Pipe-->>Coord: paused
@@ -694,72 +694,161 @@ sequenceDiagram
   else a plugin action (shown when its when rules match)
     User->>Bar: clicks a plugin's button
     Bar->>Coord: onSelect(item)
-    Coord->>Coord: onPluginAction(entry, run)
-    Note over Coord: PluginController dispatches with the selection's context (02-runtime, 03-host-api)
+    Coord->>Coord: wait for the ContextCapture, at most 300 ms
+    Coord->>Coord: onPluginAction(entry, run, context)
+    Note over Coord: PluginController dispatches with SelectionContextJSON: the run plus the entry's own context fields (02-runtime, 03-host-api)
     Coord->>Perf: perform the result (copy, replace, openURL) or show a toast, also for errors
   end
 ```
 
-The context readers. Today only `SelectionProbe` uses them, for `baron-probe`, `baron-uitest` and the debug panel; task-009 builds each action's `SelectionContext` from them.
+The context readers and how an action's context is built, as of task-009. `SelectionProbe` uses the same readers for `baron-probe`, `baron-uitest` and the debug panel.
 
 ```mermaid
 classDiagram
-  class SelectionProbe {
-    <<BaronPlatform>>
-    +run(on: app, includeCopy) async ProbeReport$
+  namespace BaronCore {
+    class CapturedContext {
+      +window: title, documentURL
+      +page: url, title
+      +sentence: TextSpan?
+      +paragraph: TextSpan?
+      +fields: Set~ContextField~
+    }
+    class ContextCapture {
+      <<MainActor>>
+      +actionWait: 300 ms$
+      +init(fields, read)
+      +value(waitingAtMost) async CapturedContext?
+    }
+    class PluginActionCatalog {
+      +contextFields(for: items) Set~ContextField~
+      +usesContext: Bool
+    }
+    class Entry {
+      +context: needs ∩ permissions
+    }
+    class SelectionContextJSON {
+      +make(from: run, context, fields) JSONValue$
+    }
+    class BrowserPageScript {
+      +source(for: bundleID)$ String?
+      +page(fromOutput)$ Page?
+    }
+    class NativeTextContext {
+      +paragraph(in: text, selection)$ TextSpan?
+      +sentence(paragraph)$ TextSpan?
+      +capped(span, to: cap)$ never splits a surrogate pair
+    }
+    class TextSpan {
+      +text: String
+      +selectionStart: Int
+      +selectionEnd: Int
+      +truncated: Bool
+    }
   }
-  class AccessibilityWaker {
-    +wake(app)$ Electron, Chrome, iWork
+  namespace BaronPlatform {
+    class SelectionContextReader {
+      +budget: 200 ms$
+      +read(fields, from: Target)$ CapturedContext
+    }
+    class Target {
+      +app, focused: AXElement
+      +step: RetrievalStep
+      +bundleIdentifier
+      +askBrowsers: Bool
+    }
+    class AccessibilityWaker {
+      +wake(app, electron)$
+    }
+    class WindowReader {
+      +focusedWindow(of: app)$
+      +title(window)$
+      +documentURL(window)$
+    }
+    class WebAreaReader {
+      +webArea(containing: element)$
+      +url(area)$
+      +title(area)$
+    }
+    class BrowserPageReader {
+      +page(of: bundleID)$ osascript, 0.5 s
+    }
+    class WebSelectionReader {
+      +selectedRange(near: element)$ marker range and owner
+    }
+    class WebContextReader {
+      +contextSpan(sentence or paragraph, around: range, in: owner)$ TextSpan?
+    }
+    class WebTreeContextReader {
+      Chromium: paragraph rebuilt from the tree
+    }
+    class NativeTextWindowReader {
+      +window(around: element)$ about 1,000 units each side
+      +realSelectedRange(of: element)$
+    }
+    class PDFTextBlockReader {
+      +selectedBlock(under: focused)$ Preview
+    }
+    class SelectionProbe {
+      +run(on: app, includeCopy) async ProbeReport$
+    }
   }
-  class WindowReader {
-    +focusedWindow(of: app)$
-    +title(window)$
-    +documentURL(window)$
+  class SelectionCoordinator {
+    <<Baron app>>
+    -capture: ContextCapture?
+    -startCapture(fields, source, run)
+    -runPlugin(entry, run)
   }
-  class WebAreaReader {
-    +webArea(containing: element)$
-    +url(area)$
-    +title(area)$
-  }
-  class WebSelectionReader {
-    +selectedRange(near: element)$ marker range and owner
-  }
-  class WebContextReader {
-    +contextSpan(sentence or paragraph, around: range, in: owner)$ TextSpan?
-  }
-  class WebTreeContextReader {
-    Chromium: paragraph rebuilt from the tree
-  }
-  class NativeTextWindowReader {
-    +window(around: element)$ about 1,000 units each side
-  }
-  class NativeTextContext {
-    <<BaronCore>>
-    +paragraph(in: text, selection)$ TextSpan?
-    +sentence(paragraph)$ TextSpan?
-  }
-  class SelectionBoundsReader {
-    +bounds(ofNativeSelectionIn: element)$
-    +bounds(ofWebSelection: range, in: owner)$
-  }
-  class TextSpan {
-    <<BaronCore>>
-    +text: String
-    +selectionStart: Int
-    +selectionEnd: Int
-    +truncated: Bool
-  }
+  PluginActionCatalog *-- Entry
+  SelectionCoordinator ..> PluginActionCatalog : which fields
+  SelectionCoordinator --> ContextCapture
+  ContextCapture ..> SelectionContextReader : read, off the main thread
+  SelectionContextReader ..> Target
+  SelectionContextReader ..> CapturedContext
+  SelectionContextReader ..> WindowReader
+  SelectionContextReader ..> WebAreaReader
+  SelectionContextReader ..> BrowserPageReader : page fallback, if allowed
+  BrowserPageReader ..> BrowserPageScript
+  SelectionContextReader ..> WebSelectionReader
+  SelectionContextReader ..> WebContextReader : ax-web
+  SelectionContextReader ..> NativeTextWindowReader : ax-text
+  SelectionContextReader ..> PDFTextBlockReader : no range on the focused element
+  SelectionContextReader ..> NativeTextContext
+  WebContextReader ..> WebTreeContextReader : Chromium (ChromeAXNodeId)
+  NativeTextContext ..> TextSpan
+  CapturedContext --> TextSpan
+  SelectionContextJSON ..> CapturedContext
   SelectionProbe ..> AccessibilityWaker
-  SelectionProbe ..> WindowReader
-  SelectionProbe ..> WebAreaReader
-  SelectionProbe ..> WebSelectionReader
   SelectionProbe ..> WebContextReader
   SelectionProbe ..> NativeTextWindowReader
-  SelectionProbe ..> NativeTextContext
-  SelectionProbe ..> SelectionBoundsReader
-  WebContextReader ..> WebTreeContextReader : Chromium (ChromeAXNodeId)
-  WebContextReader ..> TextSpan
-  NativeTextContext ..> TextSpan
+  SelectionProbe ..> PDFTextBlockReader
+```
+
+Context capture over time, as built:
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Coord as SelectionCoordinator
+  participant Cap as ContextCapture
+  participant Reader as SelectionContextReader (background)
+  participant Bar as ActionBarController
+  participant Ctrl as PluginController
+  Coord->>Coord: show(run); fields = contextFields(for: bar items)
+  Coord->>Cap: ContextCapture(fields)
+  Cap->>Reader: read(fields, target), 200 ms budget
+  Coord->>Bar: show the bar (doesn't wait)
+  Note over Reader: copy steps: nothing; window, then page, then paragraph and sentence
+  User->>Bar: clicks a plugin action
+  Bar->>Coord: perform(item)
+  alt the action needs no context
+    Coord->>Ctrl: run(entry, run, nil)
+  else
+    Coord->>Cap: value(waitingAtMost: 300 ms)
+    Reader-->>Cap: CapturedContext
+    Cap-->>Coord: context, or nil after 300 ms
+    Coord->>Ctrl: run(entry, run, context)
+    Ctrl->>Ctrl: SelectionContextJSON.make(run, context, fields: entry.context)
+  end
 ```
 
 ## Sources

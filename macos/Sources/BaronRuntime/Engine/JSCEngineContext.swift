@@ -57,6 +57,27 @@ public final class JSCEngineContext: @unchecked Sendable {
         }
     }
 
+    /// Installs `__baronNative`, the only door the prelude has out of the context. `send` gets every envelope
+    /// the plugin sends; it is called on the plugin's queue.
+    public func installNative(send: @escaping @Sendable (String) -> Void) async throws {
+        try await withContext { context in
+            let native = JSValue(newObjectIn: context)!
+            let sendBlock: @convention(block) (String) -> Void = { json in send(json) }
+            native.setObject(sendBlock, forKeyedSubscript: "send" as NSString)
+            context.setObject(native, forKeyedSubscript: "__baronNative" as NSString)
+        }
+    }
+
+    /// Hands one envelope to the prelude's `__baronReceive`, on the plugin's queue.
+    public func deliver(_ json: String) {
+        queue.async {
+            guard let context = self.context else { return }
+            context.exception = nil
+            context.objectForKeyedSubscript("__baronReceive")?.call(withArguments: [json])
+            context.exception = nil
+        }
+    }
+
     /// Drops the context and its virtual machine; later calls fail with `unloaded`.
     public func unload() {
         queue.async {

@@ -19,8 +19,8 @@
     - [x] Provide `fetch`, `Request`, `Response` and `Headers` over `host.http` (ca9369d)
     - [x] Compile the prelude to one script, copied into the Swift runtime's resources with a sync test (2d7de23)
 - [ ] Engine contexts (Swift, new `BaronRuntime` target)
-    - [ ] **▶ IN PROGRESS** Create one `JSVirtualMachine` and context per plugin, on its own serial queue
-    - [ ] Expose `__baronNative.send` and deliver envelopes back to the context
+    - [x] Create one `JSVirtualMachine` and context per plugin, on its own serial queue (4afe0ed)
+    - [ ] **▶ IN PROGRESS** Expose `__baronNative.send` and deliver envelopes back to the context
     - [ ] Back the timer functions with native timers on the plugin's queue
     - [ ] Provide `crypto.getRandomValues`, `crypto.randomUUID` and `crypto.subtle.digest`
     - [ ] Load the prelude and the bundle within 2 s, and mark a plugin that fails to load as broken

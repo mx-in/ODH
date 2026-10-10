@@ -72,7 +72,10 @@ export async function devPlugin(directory: string, options: DevOptions = {}): Pr
     const watcher = watch(join(folder, "src"), { recursive: true }, () => {
         clearTimeout(timer);
         timer = setTimeout(async () => {
+            const previous = built.code;
             built = await buildPlugin(folder);
+            // macOS can deliver file events late (such as the folder's own creation); an unchanged bundle isn't a save.
+            if (built.ok && built.code === previous) return;
             if (!built.ok) {
                 for (const error of built.errors) log(`error: ${error}`);
             } else {

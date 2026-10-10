@@ -8,7 +8,7 @@ A plugin author needs Bun, the `baron` CLI and a few npm packages. `baron create
 
 ## Packages
 
-They live in this repository under `packages/` as a Bun workspace, with examples under `examples/`; publishing to npm comes later.
+They live in this repository under `packages/`, with the ODH plugin under `plugins/` and examples under `examples/`. All are workspaces of the root `package.json`, so one `npm install` and one lockfile serve ODH and Baron; Bun runs their tests and builds. Publishing to npm comes later.
 
 | Package | For | Contents |
 | --- | --- | --- |

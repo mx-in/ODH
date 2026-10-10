@@ -83,7 +83,7 @@ During development the package is a plain folder. To share it, `baron pack` zips
 | `icon` | SVG in the package; falls back to the plugin icon |
 | `when` | Rules that decide whether the button appears (below) |
 | `needs` | Context the handler reads: any of `sentence`, `paragraph`, `page`, `window`. Each must also be granted as a permission. Baron reads only what some matching action needs, so selections stay fast |
-| `autoRun` | `"allowed"` lets the user switch this action to run straight after a selection instead of showing a button. Off by default; only for actions without side effects, such as lookups |
+| `autoRun` | `"allowed"` (or the default, `"never"`) lets the user switch this action to run straight after a selection instead of showing a button. Off by default; only for actions without side effects, such as lookups |
 
 ## `when` rules
 
@@ -92,20 +92,22 @@ Baron checks these in Swift for every selection, before loading any plugin. All 
 | Rule | Type | Holds when |
 | --- | --- | --- |
 | `minLength`, `maxLength` | integer | The trimmed text's length, in UTF-16 units, is within bounds |
-| `regex` | string | The trimmed text matches. ECMAScript syntax; the validator rejects patterns that don't compile in both JavaScript and ICU |
-| `contentTypes` | array | The text is one of: `word` (one word, letters only), `url`, `email`, `number`, `text` (anything) |
-| `apps`, `excludeApps` | array | The source app is (not) listed. Entries are bundle IDs, or `{ "macos": "…", "windows": "…" }` |
+| `regex` | string | The pattern is found anywhere in the trimmed text, as with JavaScript's `RegExp.test`; use `^` and `$` to match all of it. ECMAScript syntax with the `u` flag; the validator rejects patterns that don't compile in both JavaScript and ICU (for example `(?i)` or `[]`) |
+| `contentTypes` | array | The text is one of: `word` (letters, with apostrophes or hyphens between them: `don't`, `well-known`, `狐狸`), `url` (one whole http or https link, a bare domain counts), `email`, `number` (optional sign, thousands separators, fraction and `%`), `text` (anything not empty) |
+| `apps`, `excludeApps` | array | The source app is (not) listed for this platform. Entries are bundle IDs (macOS), or `{ "macos": "…", "windows": "…" }`. An unknown app matches no entry |
 | `editable` | boolean | The selection can be replaced |
 
 ## Localisation
 
-Any string field may be `%key%`. Baron looks the key up in `locales/<language>.json`, a flat key-to-string map, trying the user's preferred languages in order (BCP 47, so `zh-Hans` for Simplified Chinese), then `defaultLocale`, then shows the key itself. Plugin code reads the language from `host.environment.locale` and translates its own UI.
+Any user-visible string (names, titles, descriptions, labels, placeholders, option titles) may be `%key%`, written as the whole string; `100%` stays text. Baron looks the key up in `locales/<language>.json`, a flat key-to-string map, trying the user's preferred languages in order with subtags dropped one at a time (`zh-Hans-CN`, then `zh-Hans`, then `zh`), then `defaultLocale`, then shows the key itself. Plugin code reads the language from `host.environment.locale` and translates its own UI.
 
 ## Validation
 
 - **One schema, two checkers.** `@baron/api` publishes the JSON Schema (draft 2020-12). Baron's Swift validator decodes the same manifest and adds checks a schema can't express.
-- **Checks beyond the schema:** action and preference IDs are unique; every permission name is known; `regex` compiles in both dialects; every path stays inside the package (no `..`, no symlinks out); icons are SVG; `%key%` references exist in `defaultLocale`.
-- **Errors name the field** with a JSON Pointer (`/actions/0/when/regex`), in Baron's install sheet and in `baron build`.
+- **The schema is strict.** Unknown fields are errors, so typos surface at build time. Permission names, network patterns, paths (relative, no `.` or `..` parts, icons ending `.svg`, `main` ending `.js`) and IDs are checked by the schema itself, with patterns ICU reads the same way.
+- **Checks beyond the schema**, in Baron's validator: action and preference IDs are unique; `dependsOn` names another preference; each `needs` entry is granted as a `context.*` permission; `regex`, `pattern` and `itemPattern` compile in both dialects; `minLength` ≤ `maxLength` and defaults fall within their range or fixed options; `apiVersion`, `minBaronVersion` and `platforms` suit this Baron; the icon, action icons and settings page exist and no symlink leads out of the package (`main` is build output, so it is checked only once it exists, and again at install); `defaultLocale` has its file and every `%key%` is in it.
+- **Errors name the field** with a JSON Pointer (`/actions/0/when/regex`), in Baron's install sheet and in `baron build`. A missing or unknown field is named where it would be (`/id`); a dropdown with both or neither of `options` and `optionsFrom` is named by the preference (`/preferences/3`).
+- **One corpus keeps them in step.** `packages/api/test/corpus/` holds 58 plugin folders, each with one defect (or none) and the pointer it must produce; `bun test` runs them against the schema and the Swift tests against Baron's validator.
 
 ## Versioning
 
@@ -122,101 +124,151 @@ The runtime ([02](02-runtime.md)) loads `main`; permissions ([04](04-permissions
 
 ## UML
 
-Design-level diagrams: they show the planned types, and task-004 replaces them with diagrams of the code as built.
+Drawn from the code at the end of task-004: `@baron/api` in `packages/api`, Baron's side in `macos/Sources/BaronCore/Plugins`. How the bar picks actions with these rules is drawn in task-005, which builds it.
 
 ```mermaid
 classDiagram
-  class PluginManifest {
-    +id: String
-    +name: LocalizedString
-    +version: SemanticVersion
-    +apiVersion: Int
-    +main: String
-    +platforms: [Platform]
-    +minBaronVersion: SemanticVersion?
-    +permissions: [Permission]
-    +optionalPermissions: [Permission]
-    +defaultLocale: String?
+  namespace baron_api {
+    class PluginManifestTS["PluginManifest (TypeScript)"] {
+      types for every field
+    }
+    class ManifestSchema["schema/manifest-1.json"] {
+      draft 2020-12, strict
+    }
+    class definePlugin {
+      +definePlugin(definition) definition
+    }
+    class BaronError {
+      +code: ErrorCode
+      +data
+      +isBaronError(error, code?)$ Bool
+    }
   }
-  class ManifestAction {
-    +id: String
-    +run: String?
-    +title: LocalizedString
-    +icon: String?
-    +needs: [ContextField]
-    +autoRun: AutoRun
-    +handlerName() String
+  namespace BaronCore {
+    class ManifestValidator {
+      +environment: ManifestEnvironment
+      +validate(package: URL) ManifestValidation
+      +validate(data, package) ManifestValidation
+    }
+    class ManifestEnvironment {
+      +baronVersion: String
+      +platform: PluginPlatform
+      +apiVersions: ClosedRange~Int~
+    }
+    class ManifestValidation {
+      +manifest: PluginManifest?
+      +issues: [ManifestIssue]
+    }
+    class ManifestIssue {
+      +pointer: String
+      +message: String
+    }
+    class JSONValue {
+      <<enumeration>>
+      null, bool, number, string, array, object
+    }
+    class ManifestStructure {
+      +check(JSONValue)$ [ManifestIssue]
+    }
+    class Shape {
+      <<enumeration>>
+      string, integer, number, boolean, array, object, either, preference
+      +check(value, at: JSONPointer, into: issues)
+    }
+    class PluginManifest {
+      +id, name, version, apiVersion, main
+      +platforms: [PluginPlatform]
+      +permissions: [String]
+      +preferences: [Preference]
+      +actions: [Action]
+    }
+    class WhenRules {
+      +minLength, maxLength, regex
+      +contentTypes: [ContentType]?
+      +apps, excludeApps: [AppMatch]?
+      +editable: Bool?
+      +matches(WhenInput) Bool
+    }
+    class WhenInput {
+      +text: String (trimmed)
+      +bundleIdentifier: String?
+      +editable: Bool
+      +platform: PluginPlatform
+    }
+    class ContentClassifier {
+      +types(of: text)$ Set~ContentType~
+    }
+    class RegexCache {
+      +regex(for: pattern) NSRegularExpression?
+    }
+    class SemanticChecks["ManifestReferenceChecks, ManifestValueChecks, PackagePathChecks, RegexDialectChecks, CompatibilityChecks, LocaleReferenceChecks"] {
+      +check(manifest, ...)$ [ManifestIssue]
+    }
+    class JavaScriptRegexCompiler {
+      -context: JSContext
+      +error(compiling: pattern) String?
+    }
+    class SemanticVersion {
+      +major, minor, patch, prerelease
+      +compare by semver precedence
+    }
+    class PluginLocales {
+      +key(in: text)$ String?
+      +table(for: language, in: package)$
+    }
+    class PluginLocalizer {
+      +resolve(text) String
+    }
   }
-  class WhenRules {
-    +minLength: Int?
-    +maxLength: Int?
-    +regex: String?
-    +contentTypes: [ContentType]?
-    +apps: [AppMatch]?
-    +excludeApps: [AppMatch]?
-    +editable: Bool?
-    +matches(selection: WhenInput) Bool
-  }
-  class Preference {
-    +id: String
-    +type: PreferenceType
-    +title: LocalizedString
-    +defaultValue: PreferenceValue?
-    +required: Bool
-    +optionsFrom: String?
-    +dependsOn: [String]
-  }
-  class ManifestValidator {
-    +validate(data: Data, package: URL) ManifestValidation
-  }
-  class ManifestError {
-    +pointer: String
-    +message: String
-  }
-  class Localizer {
-    +languages: [String]
-    +resolve(text: LocalizedString) String
-  }
-  class ContentType {
-    <<enumeration>>
-    word
-    url
-    email
-    number
-    text
-  }
-  PluginManifest *-- "1..*" ManifestAction
-  PluginManifest *-- "*" Preference
-  ManifestAction *-- "0..1" WhenRules
-  WhenRules ..> ContentType
-  ManifestValidator ..> PluginManifest : produces
-  ManifestValidator ..> ManifestError : reports
-  Localizer ..> PluginManifest : resolves strings of
+  ManifestSchema .. ManifestStructure : same rules, same pointers (shared corpus)
+  PluginManifestTS .. ManifestSchema : same fields (schema-sync test)
+  ManifestValidator --> ManifestEnvironment
+  ManifestValidator ..> ManifestValidation : returns
+  ManifestValidation o-- ManifestIssue
+  ManifestValidator ..> JSONValue : parses
+  ManifestValidator ..> ManifestStructure : 1. structure
+  ManifestStructure ..> Shape
+  ManifestValidator ..> PluginManifest : 2. decodes
+  ManifestValidator ..> SemanticChecks : 3. semantic checks
+  SemanticChecks ..> JavaScriptRegexCompiler
+  SemanticChecks ..> SemanticVersion
+  SemanticChecks ..> PluginLocales
+  PluginManifest *-- WhenRules
+  WhenRules ..> WhenInput
+  WhenRules ..> ContentClassifier
+  WhenRules ..> RegexCache
+  PluginLocalizer ..> PluginLocales
 ```
 
-Choosing the buttons for a selection, with no plugin code running:
+Validating a package, as installing (task-008) and `baron validate` will:
 
 ```mermaid
 sequenceDiagram
-  participant Pipeline as Selection pipeline
-  participant Registry as Plugin registry
-  participant Rules as WhenRules
-  participant Loc as Localizer
-  participant Bar as Action bar
-  Pipeline->>Registry: actions for (text, app, editable)
-  loop every enabled plugin, every action
-    Registry->>Rules: matches(selection)
-    Rules-->>Registry: true or false
+  participant Caller
+  participant V as ManifestValidator
+  participant S as ManifestStructure
+  participant D as JSONDecoder
+  participant C as Semantic checks
+  participant FS as Package folder
+  Caller->>V: validate(package)
+  V->>FS: read manifest.json
+  V->>V: JSONValue(data), or an issue at "" for broken JSON
+  V->>S: check(json)
+  alt structural issues
+    S-->>V: issues with JSON Pointers
+    V-->>Caller: issues, no manifest
+  else structure is fine
+    V->>D: decode PluginManifest
+    V->>C: references, values, paths, regex dialects, compatibility, locale keys
+    C->>FS: icons, settings page, symlinks, locales/defaultLocale.json
+    C-->>V: issues (empty when valid)
+    V-->>Caller: manifest when there are no issues, plus the issues
   end
-  Registry->>Loc: resolve titles of the matching actions
-  Loc-->>Registry: titles in the user's language
-  Registry-->>Pipeline: matching actions with their needs
-  Pipeline->>Bar: show built-in and plugin buttons
 ```
 
 ## Gate (task-004)
 
-- [ ] The JSON Schema and the Swift validator agree on a corpus of at least 30 valid and invalid manifests
-- [ ] `when` rules are unit tested in Swift, including each content type and regex edge case
-- [ ] Localised titles resolve for English and Simplified Chinese
-- [ ] ODH's manifest is written and validates
+- [x] The JSON Schema and the Swift validator agree on a corpus of at least 30 valid and invalid manifests
+- [x] `when` rules are unit tested in Swift, including each content type and regex edge case
+- [x] Localised titles resolve for English and Simplified Chinese
+- [x] ODH's manifest is written and validates

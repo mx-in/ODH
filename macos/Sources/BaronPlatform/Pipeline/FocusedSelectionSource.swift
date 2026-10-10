@@ -19,17 +19,18 @@ public final class FocusedSelectionSource: SelectionSource {
         return focused.isSettable(kAXSelectedTextAttribute)
     }
 
-    /// Nil when there is no frontmost app.
-    public static func current() -> FocusedSelectionSource? {
+    /// Nil when there is no frontmost app. Only the frontmost app is woken; `wakeElectron` switches on an Electron
+    /// app's full tree, which costs it CPU and memory, so Baron asks for it only while some action uses context.
+    public static func current(wakeElectron: Bool = false) -> FocusedSelectionSource? {
         guard let app = FocusedElementReader.frontmostApplication else { return nil }
-        return FocusedSelectionSource(app: app)
+        return FocusedSelectionSource(app: app, wakeElectron: wakeElectron)
     }
 
-    init(app: NSRunningApplication) {
+    init(app: NSRunningApplication, wakeElectron: Bool = false) {
         self.app = app
         let element = AXElement.application(pid: app.processIdentifier)
         // Chromium apps only answer once their accessibility tree is switched on.
-        AccessibilityWaker.wake(element)
+        AccessibilityWaker.wake(element, electron: wakeElectron)
         focused = FocusedElementReader.focusedElement(in: element)
     }
 

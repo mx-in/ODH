@@ -21,9 +21,11 @@ public enum AccessibilityWaker {
         public let role: String?
     }
 
+    /// - Parameter electron: also set `AXManualAccessibility`, which makes Electron apps build and keep their whole
+    ///   tree at a CPU and memory cost to them. Baron does so only while some action can receive context.
     @discardableResult
-    public static func wake(_ app: AXElement) -> Result {
-        let manual = app.set(manualAccessibilityAttribute, to: kCFBooleanTrue)
+    public static func wake(_ app: AXElement, electron: Bool = true) -> Result {
+        let manual = electron && app.set(manualAccessibilityAttribute, to: kCFBooleanTrue)
         if let pid = app.pid,
            let id = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier,
            enhancedUserInterfaceApps.contains(id) {

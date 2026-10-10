@@ -45,7 +45,7 @@ final class SelectionCoordinator {
 
     private func handle(_ trigger: Trigger) {
         bar.hide()
-        guard let source = FocusedSelectionSource.current() else { return }
+        guard let source = FocusedSelectionSource.current(wakeElectron: pipeline.plugins.usesContext) else { return }
         Task {
             let outcome = await pipeline.run(trigger, source: source)
             BaronLog.record(outcome, trigger: trigger, app: source.bundleIdentifier)
@@ -70,7 +70,7 @@ final class SelectionCoordinator {
     /// An action's own hotkey: reads the selection and runs that action, whatever its when rules say.
     func runAction(_ itemID: String) {
         bar.hide()
-        guard let source = FocusedSelectionSource.current() else { return }
+        guard let source = FocusedSelectionSource.current(wakeElectron: pipeline.plugins.usesContext) else { return }
         let trigger = Trigger(kind: .hotkey, location: ScreenGeometry.topLeft(fromAppKit: NSEvent.mouseLocation), windowDragged: false)
         Task {
             guard case .show(let run) = await pipeline.run(trigger, source: source) else { return }

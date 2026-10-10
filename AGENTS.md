@@ -59,7 +59,7 @@
     - [x] Read only the fields that some matching action `needs` and its plugin is granted
     - [x] Give each action only its own `needs` and granted fields (0ebfe18)
 - [ ] Timing
-    - [x] Read context in the background right after the text, within 200 ms; an action waits at most 300 ms more
+    - [x] Read context in the background right after the text, within 200 ms; an action waits at most 300 ms more (eadbd77)
     - [ ] **▶ IN PROGRESS** Wake Chrome and Electron accessibility only for the frontmost app, and only when a field needs it
 - [ ] Fields
     - [ ] Apply the caps and the `truncated` flag on the web paths, as the native path already does

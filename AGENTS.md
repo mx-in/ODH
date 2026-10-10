@@ -96,11 +96,11 @@
     - [x] Colour variables, dark mode and locale (65c224b)
     - [x] Play audio without an extra click (6deb357)
 - [ ] Lifecycle
-    - [ ] **▶ IN PROGRESS** Keep a closed web view loaded for 30 s
+    - [x] Keep a closed web view loaded for 30 s (75333ef)
 - [ ] Settings page
-    - [ ] Show a plugin's `settingsPage` under its generated preferences
+    - [x] Show a plugin's `settingsPage` under its generated preferences
 - [ ] Tooling
-    - [ ] Add the `webview` template and example
+    - [ ] **▶ IN PROGRESS** Add the `webview` template and example
 - [ ] Verification
     - [ ] Check the gate in a UI test; measure first paint (under 150 ms warm, 400 ms cold)
 - [ ] Design UML

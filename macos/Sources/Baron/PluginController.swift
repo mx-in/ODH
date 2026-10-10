@@ -38,6 +38,7 @@ final class PluginController {
     let installer: PluginInstaller
     /// The result panel for plugin pages (`host.ui.openWebView`).
     private(set) var panels: WebViewPanels!
+    private var pages: PluginPageViews!
     private let viewPresenter = WebViewPresenter()
 
     init(presenter: PluginPresenter) {
@@ -73,6 +74,7 @@ final class PluginController {
             guard let plugin = self?.plugins[id] else { return .failure(.notFound("\(id) isn't loaded")) }
             return await router.handle(call, from: plugin)
         }, openExternal: { NSWorkspace.shared.open($0) })
+        self.pages = pages
         panels = WebViewPanels(pages: pages, runtime: runtime, describe: { [weak self] plugin in
             (self?.displayName(plugin) ?? plugin.id, plugin.manifest.icon.flatMap { NSImage(contentsOf: plugin.package.appendingPathComponent($0)) })
         }, pageConfig: { [weak self] plugin, view, data in
@@ -80,6 +82,16 @@ final class PluginController {
             return PageConfig(environment: payload.environment.json(pluginVersion: plugin.manifest.version), preferences: .object(payload.preferences), view: view, data: data)
         }, userInput: { [actions] id in actions.record(id) })
         viewPresenter.panels = panels
+    }
+
+    /// The plugin's `settingsPage`, shown under its generated preferences. Clicks in it count as user actions.
+    func settingsPage(for plugin: RuntimePlugin) async -> PluginWebView? {
+        guard let path = plugin.manifest.settingsPage else { return nil }
+        let payload = await payload(for: plugin)
+        let page = pages.make(pluginID: plugin.id, path: path,
+                              config: PageConfig(environment: payload.environment.json(pluginVersion: plugin.manifest.version), preferences: .object(payload.preferences)))
+        page.onUserInput = { [actions] in actions.record(plugin.id) }
+        return page
     }
 
     func localizer(for plugin: RuntimePlugin) -> PluginLocalizer {

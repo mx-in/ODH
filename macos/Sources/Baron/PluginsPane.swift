@@ -2,6 +2,7 @@ import AppKit
 import BaronCore
 import BaronPlatform
 import BaronRuntime
+import BaronWeb
 import SwiftUI
 
 /// Settings › Plugins: installed plugins with Enabled switches, and the selected plugin's page.
@@ -98,6 +99,11 @@ struct PluginPageView: View {
                     ForEach(manifest.preferences, id: \.id) { preference in
                         PreferenceRow(preference: preference, page: page, highlighted: navigation.highlighted.contains(preference.id))
                     }
+                }
+            }
+            if manifest.settingsPage != nil {
+                Section {
+                    PluginSettingsPage(page: page)
                 }
             }
             Section("Permissions") {
@@ -197,4 +203,31 @@ struct PluginPageView: View {
     private func bytes(_ count: Int) -> String {
         ByteCountFormatter.string(fromByteCount: Int64(count), countStyle: .file)
     }
+}
+
+/// A plugin's own settings page (`settingsPage`), under its generated preferences. Design: 07-web-views.md
+struct PluginSettingsPage: View {
+    @ObservedObject var page: PluginPage
+    @State private var view: PluginWebView?
+
+    var body: some View {
+        Group {
+            if let view {
+                WebPageHost(view: view)
+            } else {
+                ProgressView().frame(maxWidth: .infinity)
+            }
+        }
+        .frame(height: 320)
+        .accessibilityIdentifier("page.settingsPage")
+        .task(id: page.manifest.id) {
+            if let plugin = page.controller.plugins[page.manifest.id] { view = await page.controller.settingsPage(for: plugin) }
+        }
+    }
+}
+
+private struct WebPageHost: NSViewRepresentable {
+    let view: PluginWebView
+    func makeNSView(context: Context) -> PluginWebView { view }
+    func updateNSView(_ nsView: PluginWebView, context: Context) {}
 }

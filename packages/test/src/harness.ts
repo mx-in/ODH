@@ -19,6 +19,8 @@ export interface HarnessOptions {
     engine?: Engine | string | undefined;
     /** Overrides the manifest's defaults. */
     preferences?: Preferences;
+    /** Replaces the manifest's permissions (contract tests). */
+    permissions?: { permissions?: string[]; optionalPermissions?: string[] };
     locale?: string;
 }
 
@@ -35,6 +37,7 @@ let prelude: Promise<string> | undefined;
 export async function createHarness(options: HarnessOptions = {}) {
     const folder = resolve(options.plugin ?? ".");
     const manifest = JSON.parse(readFileSync(join(folder, "manifest.json"), "utf8")) as PluginManifest;
+    if (options.permissions) Object.assign(manifest, options.permissions);
     const built = await buildPlugin(folder, { write: false });
     if (!built.ok) throw new Error(`The plugin doesn't build:\n${built.errors.join("\n")}`);
     prelude ??= buildPrelude();
@@ -80,8 +83,12 @@ export async function createHarness(options: HarnessOptions = {}) {
             get used() { return host.permissionsUsed; },
             grant: (name: string) => void host.granted.add(name),
         },
-        /** Runs an action by its manifest id with a selection; context fields default to a plain selection in TextEdit. */
-        runAction(actionID: string, context: Partial<SelectionContext> & { text: string }) {
+        /**
+         * Runs an action by its manifest id with a selection, as a click on its button would (pass `click: false` to
+         * run it without one); context fields default to a plain selection in TextEdit.
+         */
+        runAction(actionID: string, context: Partial<SelectionContext> & { text: string }, { click = true }: { click?: boolean } = {}) {
+            host.userAction = click;
             const action = manifest.actions.find((a) => a.id === actionID);
             if (!action) throw new Error(`The manifest has no action ${actionID}`);
             const full: SelectionContext = { source: "ax-text", editable: false, app: { id: "com.apple.TextEdit", name: "TextEdit", pid: 1 }, platform: "macos", ...context };

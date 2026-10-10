@@ -1,0 +1,424 @@
+{
+    "about": "Host calls and what Baron answers. Run by @baron/test against the mock host (both engines) and by BaronRuntimeTests against Baron's router. Storage, cache and secrets join with task-007. Unknown methods can't be called through the host object, so the router's own tests cover them.",
+    "clipboard": "contract clipboard",
+    "promptAnswer": "deny",
+    "cases": [
+        {
+            "name": "log lines need nothing",
+            "call": [
+                "log",
+                "info",
+                [
+                    "hello"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": null
+            }
+        },
+        {
+            "name": "toasts need nothing",
+            "call": [
+                "ui",
+                "toast",
+                [
+                    "hi",
+                    "success"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": null
+            }
+        },
+        {
+            "name": "openSettings needs nothing",
+            "call": [
+                "ui",
+                "openSettings",
+                []
+            ],
+            "expect": {
+                "ok": true,
+                "value": null
+            }
+        },
+        {
+            "name": "openUrl needs a click",
+            "userAction": false,
+            "call": [
+                "ui",
+                "openUrl",
+                [
+                    "https://example.com"
+                ]
+            ],
+            "expect": {
+                "code": "user_action_required"
+            }
+        },
+        {
+            "name": "openUrl opens https",
+            "call": [
+                "ui",
+                "openUrl",
+                [
+                    "https://example.com"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": null
+            }
+        },
+        {
+            "name": "openUrl opens mailto",
+            "call": [
+                "ui",
+                "openUrl",
+                [
+                    "mailto:a@example.com"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": null
+            }
+        },
+        {
+            "name": "openUrl refuses file URLs",
+            "call": [
+                "ui",
+                "openUrl",
+                [
+                    "file:///etc/passwd"
+                ]
+            ],
+            "expect": {
+                "code": "invalid_argument"
+            }
+        },
+        {
+            "name": "reading the clipboard needs clipboard.read",
+            "call": [
+                "clipboard",
+                "readText",
+                []
+            ],
+            "expect": {
+                "code": "permission_denied"
+            }
+        },
+        {
+            "name": "reading the clipboard needs a click",
+            "permissions": [
+                "clipboard.read"
+            ],
+            "userAction": false,
+            "call": [
+                "clipboard",
+                "readText",
+                []
+            ],
+            "expect": {
+                "code": "user_action_required"
+            }
+        },
+        {
+            "name": "reading the clipboard",
+            "permissions": [
+                "clipboard.read"
+            ],
+            "call": [
+                "clipboard",
+                "readText",
+                []
+            ],
+            "expect": {
+                "ok": true,
+                "value": "contract clipboard"
+            }
+        },
+        {
+            "name": "writing the clipboard needs a click",
+            "userAction": false,
+            "call": [
+                "clipboard",
+                "writeText",
+                [
+                    "x"
+                ]
+            ],
+            "expect": {
+                "code": "user_action_required"
+            }
+        },
+        {
+            "name": "writing the clipboard",
+            "call": [
+                "clipboard",
+                "writeText",
+                [
+                    "x"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": null
+            }
+        },
+        {
+            "name": "replacing needs selection.replace",
+            "call": [
+                "selection",
+                "replace",
+                [
+                    "X"
+                ]
+            ],
+            "expect": {
+                "code": "permission_denied"
+            }
+        },
+        {
+            "name": "replacing needs a click",
+            "permissions": [
+                "selection.replace"
+            ],
+            "userAction": false,
+            "call": [
+                "selection",
+                "replace",
+                [
+                    "X"
+                ]
+            ],
+            "expect": {
+                "code": "user_action_required"
+            }
+        },
+        {
+            "name": "replacing",
+            "permissions": [
+                "selection.replace"
+            ],
+            "call": [
+                "selection",
+                "replace",
+                [
+                    "X"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": null
+            }
+        },
+        {
+            "name": "sentences in UTF-16 offsets",
+            "call": [
+                "text",
+                "segment",
+                [
+                    "The fox runs. It is quick.",
+                    "sentence"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": [
+                    {
+                        "start": 0,
+                        "end": 14
+                    },
+                    {
+                        "start": 14,
+                        "end": 26
+                    }
+                ]
+            }
+        },
+        {
+            "name": "words skip punctuation and emoji",
+            "call": [
+                "text",
+                "segment",
+                [
+                    "The fox, 🦊 runs.",
+                    "word"
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": [
+                    {
+                        "start": 0,
+                        "end": 3
+                    },
+                    {
+                        "start": 4,
+                        "end": 7
+                    },
+                    {
+                        "start": 12,
+                        "end": 16
+                    }
+                ]
+            }
+        },
+        {
+            "name": "segment units are word or sentence",
+            "call": [
+                "text",
+                "segment",
+                [
+                    "x",
+                    "line"
+                ]
+            ],
+            "expect": {
+                "code": "invalid_argument"
+            }
+        },
+        {
+            "name": "fetching a declared host",
+            "permissions": [
+                "network:contract.example"
+            ],
+            "mock": {
+                "url": "https://contract.example/word",
+                "status": 200,
+                "body": "a fox"
+            },
+            "call": [
+                "http",
+                "fetch",
+                [
+                    "https://contract.example/word",
+                    {}
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": {
+                    "status": 200,
+                    "url": "https://contract.example/word",
+                    "body": "a fox"
+                }
+            }
+        },
+        {
+            "name": "fetching an undeclared host",
+            "call": [
+                "http",
+                "fetch",
+                [
+                    "https://contract.example/word",
+                    {}
+                ]
+            ],
+            "expect": {
+                "code": "permission_denied"
+            }
+        },
+        {
+            "name": "fetching only http and https",
+            "permissions": [
+                "network:contract.example"
+            ],
+            "call": [
+                "http",
+                "fetch",
+                [
+                    "ftp://contract.example/",
+                    {}
+                ]
+            ],
+            "expect": {
+                "code": "invalid_argument"
+            }
+        },
+        {
+            "name": "querying permissions",
+            "permissions": [
+                "clipboard.read"
+            ],
+            "optional": [
+                "network:*"
+            ],
+            "call": [
+                "permissions",
+                "query",
+                [
+                    [
+                        "clipboard.read",
+                        "network:dict.cn",
+                        "secrets"
+                    ]
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": {
+                    "clipboard.read": "granted",
+                    "network:dict.cn": "prompt",
+                    "secrets": "denied"
+                }
+            }
+        },
+        {
+            "name": "requesting asks, and a denial grants nothing",
+            "optional": [
+                "network:*"
+            ],
+            "call": [
+                "permissions",
+                "request",
+                [
+                    [
+                        "network:dict.cn"
+                    ]
+                ]
+            ],
+            "expect": {
+                "ok": true,
+                "value": []
+            }
+        },
+        {
+            "name": "requesting needs a click",
+            "optional": [
+                "network:*"
+            ],
+            "userAction": false,
+            "call": [
+                "permissions",
+                "request",
+                [
+                    [
+                        "network:dict.cn"
+                    ]
+                ]
+            ],
+            "expect": {
+                "code": "user_action_required"
+            }
+        },
+        {
+            "name": "requesting only optional permissions",
+            "call": [
+                "permissions",
+                "request",
+                [
+                    [
+                        "clipboard.read"
+                    ]
+                ]
+            ],
+            "expect": {
+                "code": "invalid_argument"
+            }
+        }
+    ]
+}

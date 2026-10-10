@@ -1,0 +1,9 @@
+{
+    "id": "org.baron.contract",
+    "name": "Host contract",
+    "description": "Makes whatever host call it's given, for the host contract tests.",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "main": "dist/main.js",
+    "actions": [{ "id": "call", "title": "Call" }]
+}

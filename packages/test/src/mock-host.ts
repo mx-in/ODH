@@ -26,9 +26,16 @@ export class MockHost {
     readonly replacements: string[] = [];
     readonly logs: Array<{ level: string; text: string }> = [];
     clipboard = "";
-    /** Optional permissions the user has allowed (or allows when asked, if `allowWhenAsked`). */
+    /** Optional permissions the user has allowed. */
     readonly granted = new Set<string>();
-    allowWhenAsked = false;
+    /** Permissions the user denied when asked; not asked again. */
+    readonly denied = new Set<string>();
+    /** What the user answers when the plugin asks for a permission. */
+    promptAnswer: "deny" | "allowOnce" | "alwaysAllow" = "deny";
+    /** Whether the user clicked the plugin recently (Baron records a click when it runs an action). */
+    userAction = true;
+    /** The questions the plugin asked. */
+    readonly prompts: string[] = [];
     private readonly routes: Array<{ match: string | RegExp; route: MockRoute }> = [];
     private readonly usedPermissions = new Set<string>();
 
@@ -48,18 +55,35 @@ export class MockHost {
         return (this.manifest.permissions ?? []).includes(name as never) || this.granted.has(name);
     }
 
-    private require(name: string): void {
-        if (!this.holds(name)) throw new Refusal("permission_denied", `${name} isn't granted`, { permission: name, requestable: false });
-        this.usedPermissions.add(name);
-    }
 
     async handle(call: CallEnvelope): Promise<ResultEnvelope> {
         try {
+            this.check(call.ns, call.method);
             return { v: 1, kind: "result", id: call.id, ok: true, value: await this.serve(call.ns, call.method, call.args) };
         } catch (error) {
             const refusal = error instanceof Refusal ? error : new Refusal("internal", String(error));
             return { v: 1, kind: "result", id: call.id, ok: false, error: { code: refusal.code, message: refusal.message, ...(refusal.data ? { data: refusal.data } : {}) } };
         }
+    }
+
+    /** Baron's PermissionGate: the method's permission, then a recent click where needed. */
+    private check(ns: string, method: string): void {
+        const requirement = requirements[`${ns}.${method}`];
+        if (!requirement) return;
+        const [permission, needsClick] = requirement;
+        if (permission && !this.holds(permission)) {
+            throw new Refusal("permission_denied", `${permission} isn't granted`, { permission, requestable: this.mayRequest(permission) && !this.denied.has(permission) });
+        }
+        if (needsClick && !this.userAction) throw new Refusal("user_action_required", `host.${ns}.${method} needs a click on the plugin`);
+    }
+
+    private mayRequest(name: string): boolean {
+        return (this.manifest.optionalPermissions ?? []).includes(name as never) || (name !== "network:*" && this.optionalNetwork(name));
+    }
+
+    private state(name: string): "granted" | "prompt" | "denied" {
+        if (this.holds(name) || (name.startsWith("network:") && !name.includes("*") && [...(this.manifest.permissions ?? []), ...this.granted].some((p) => networkPermissionCovers(p, `${name.includes("://") ? name.slice(8) : `https://${name.slice(8)}`}/`)))) return "granted";
+        return this.mayRequest(name) && !this.denied.has(name) && name !== "network:*" ? "prompt" : "denied";
     }
 
     private async serve(ns: string, method: string, args: unknown[]): Promise<unknown> {
@@ -79,21 +103,33 @@ export class MockHost {
             case "cache.set": this.cache.set(key, String(args[1])); return null;
             case "cache.remove": this.cache.delete(key); return null;
             case "cache.clear": this.cache.clear(); return null;
-            case "secrets.get": this.require("secrets"); return this.secrets.get(key) ?? null;
-            case "secrets.set": this.require("secrets"); this.secrets.set(key, String(args[1])); return null;
-            case "secrets.remove": this.require("secrets"); this.secrets.delete(key); return null;
-            case "clipboard.readText": this.require("clipboard.read"); return this.clipboard;
+            case "secrets.get": return this.secrets.get(key) ?? null;
+            case "secrets.set": this.secrets.set(key, String(args[1])); return null;
+            case "secrets.remove": this.secrets.delete(key); return null;
+            case "clipboard.readText": this.usedPermissions.add("clipboard.read"); return this.clipboard;
             case "clipboard.writeText": this.clipboard = key; return null;
-            case "selection.replace": this.require("selection.replace"); this.replacements.push(key); return null;
-            case "text.segment": return segment(key, args[1] === "word" ? "word" : "sentence");
+            case "selection.replace": this.usedPermissions.add("selection.replace"); this.replacements.push(key); return null;
+            case "text.segment":
+                if (args[1] !== "word" && args[1] !== "sentence") throw new Refusal("invalid_argument", "The unit is word or sentence", { path: "/1" });
+                return segment(key, args[1]);
             case "ui.toast": this.toasts.push({ message: key, kind: String(args[1] ?? "info") }); return null;
-            case "ui.openUrl": this.openedURLs.push(key); return null;
+            case "ui.openUrl":
+                if (!/^(https?|mailto):/i.test(key)) throw new Refusal("invalid_argument", `openUrl takes https, http and mailto URLs, not ${key}`, { path: "/0" });
+                this.openedURLs.push(key);
+                return null;
             case "ui.openSettings": return null;
             case "permissions.query":
-                return Object.fromEntries((args[0] as string[]).map((n) => [n, this.holds(n) ? "granted" : (this.manifest.optionalPermissions ?? []).includes(n as never) || this.optionalNetwork(n) ? "prompt" : "denied"]));
-            case "permissions.request":
-                for (const name of args[0] as string[]) if (this.allowWhenAsked && ((this.manifest.optionalPermissions ?? []).includes(name as never) || this.optionalNetwork(name))) this.granted.add(name);
-                return (args[0] as string[]).filter((n) => this.holds(n));
+                return Object.fromEntries((args[0] as string[]).map((n) => [n, this.state(n)]));
+            case "permissions.request": {
+                for (const name of args[0] as string[]) {
+                    if (!this.mayRequest(name) || name === "network:*") throw new Refusal("invalid_argument", `${name} can't be requested`, { permission: name });
+                    if (this.state(name) !== "prompt") continue;
+                    this.prompts.push(name);
+                    if (this.promptAnswer === "deny") this.denied.add(name);
+                    else this.granted.add(name);
+                }
+                return (args[0] as string[]).filter((n) => this.state(n) === "granted");
+            }
             default:
                 throw new Refusal("invalid_argument", `host.${ns}.${method} doesn't exist`);
         }
@@ -104,6 +140,7 @@ export class MockHost {
     }
 
     private async fetch(url: string, init: Record<string, unknown>) {
+        if (!/^https?:\/\//i.test(url)) throw new Refusal("invalid_argument", "Only http and https URLs can be fetched", { path: "/0" });
         const covering = [...(this.manifest.permissions ?? []), ...this.granted].find((p) => networkPermissionCovers(p, url));
         if (!covering) {
             const permission = networkPermissionFor(url);
@@ -135,3 +172,13 @@ function segment(text: string, unit: "word" | "sentence"): Array<{ start: number
     }
     return out;
 }
+
+/** What each host method needs, as Baron's HostMethodRequirement says: [permission, needs a click]. */
+const requirements: Record<string, [string | undefined, boolean]> = {
+    "clipboard.readText": ["clipboard.read", true],
+    "clipboard.writeText": [undefined, true],
+    "selection.replace": ["selection.replace", true],
+    "secrets.get": ["secrets", false], "secrets.set": ["secrets", false], "secrets.remove": ["secrets", false],
+    "ui.openUrl": [undefined, true], "ui.openWebView": [undefined, true], "ui.show": [undefined, true],
+    "permissions.request": [undefined, true],
+};

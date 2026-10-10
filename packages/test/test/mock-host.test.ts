@@ -17,7 +17,7 @@ describe("MockHost", () => {
         expect(await call(strict, "http", "fetch", "https://evil.example/", {})).toMatchObject({ ok: false, error: { code: "permission_denied", data: { permission: "network:evil.example", requestable: false } } });
         const asking = new MockHost({ optionalPermissions: ["network:*"] });
         expect(await call(asking, "http", "fetch", "https://dict.cn/", {})).toMatchObject({ error: { data: { requestable: true } } });
-        asking.allowWhenAsked = true;
+        asking.promptAnswer = "alwaysAllow";
         expect(await call(asking, "permissions", "request", ["network:dict.cn"])).toMatchObject({ value: ["network:dict.cn"] });
         asking.http.mock(/^https:\/\/dict\.cn\//, { body: "ok" });
         expect(await call(asking, "http", "fetch", "https://dict.cn/x", {})).toMatchObject({ ok: true });

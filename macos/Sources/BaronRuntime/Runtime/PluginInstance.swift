@@ -82,6 +82,11 @@ final class PluginInstance: @unchecked Sendable {
         lock.withLock { waiting.removeValue(forKey: id) }?.resume(returning: result)
     }
 
+    /// Delivers an event for one of the plugin's open views to its `ViewHandle`.
+    func deliverEvent(view: String, name: String, payload: JSONValue) {
+        engine.deliver(InboundEnvelope.event(view: view, name: name, payload: payload).json)
+    }
+
     var pendingDispatches: Int { lock.withLock { waiting.count } }
 
     /// Fails every waiting dispatch, for example when the plugin is suspended.

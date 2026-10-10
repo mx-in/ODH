@@ -100,6 +100,35 @@
             }
         },
         {
+            "name": "openWebView needs a click",
+            "userAction": false,
+            "call": [
+                "ui",
+                "openWebView",
+                [
+                    "views/page.html",
+                    {}
+                ]
+            ],
+            "expect": {
+                "code": "user_action_required"
+            }
+        },
+        {
+            "name": "openWebView refuses pages outside the package",
+            "call": [
+                "ui",
+                "openWebView",
+                [
+                    "../outside.html",
+                    {}
+                ]
+            ],
+            "expect": {
+                "code": "not_found"
+            }
+        },
+        {
             "name": "reading the clipboard needs clipboard.read",
             "call": [
                 "clipboard",

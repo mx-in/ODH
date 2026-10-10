@@ -15,6 +15,8 @@ public actor PluginRuntime {
     /// Dispatches in flight per plugin; changed only on the actor, together with `lastUsed`, so the idle
     /// check can't see a plugin between a dispatch ending and its time being recorded.
     private var active: [String: Int] = [:]
+    /// Views each plugin has open; a plugin with one stays loaded, so its `ViewHandle` keeps listening.
+    private var openViews: [String: Set<String>] = [:]
 
     public init(handler: HostCallHandler, limits: RuntimeLimits = RuntimeLimits()) {
         self.handler = handler
@@ -63,6 +65,22 @@ public actor PluginRuntime {
         if state(of: pluginID) == .ready { states[pluginID] = .unloaded }
     }
 
+    /// A view of the plugin opened: keep its context loaded until the view closes.
+    public func viewOpened(_ pluginID: String, view: String) {
+        openViews[pluginID, default: []].insert(view)
+    }
+
+    /// Delivers `message` events from a view's page, and `closed` when the view goes away, to the plugin's
+    /// `ViewHandle`. Dropped when the context isn't loaded: its handles went with it.
+    public func viewEvent(_ pluginID: String, view: String, name: String, payload: JSONValue = .null) {
+        if name == "closed" {
+            openViews[pluginID]?.remove(view)
+            if openViews[pluginID]?.isEmpty == true { openViews[pluginID] = nil }
+            lastUsed[pluginID] = .now
+        }
+        instances[pluginID]?.deliverEvent(view: view, name: name, payload: payload)
+    }
+
     /// Whether the plugin's context is loaded now.
     public func isLoaded(_ pluginID: String) -> Bool {
         instances[pluginID] != nil
@@ -98,7 +116,8 @@ public actor PluginRuntime {
         for (pluginID, instance) in instances {
             if let busy = instance.engine.busyFor, busy > limits.stuck {
                 suspend(pluginID, "It stopped responding (stuck for more than \(limits.stuck)); re-enable it to try again")
-            } else if active[pluginID, default: 0] == 0, instance.engine.busyFor == nil, now - (lastUsed[pluginID] ?? now) > limits.idle {
+            } else if active[pluginID, default: 0] == 0, openViews[pluginID] == nil, instance.engine.busyFor == nil,
+                      now - (lastUsed[pluginID] ?? now) > limits.idle {
                 reload(pluginID)
             }
         }

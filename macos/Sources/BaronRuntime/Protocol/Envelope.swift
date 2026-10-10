@@ -72,6 +72,8 @@ enum InboundEnvelope {
     case result(id: Int, Result<JSONValue, HostError>)
     case dispatch(id: Int, target: DispatchTarget, name: String, payload: JSONValue)
     case cancel(id: Int)
+    /// For an open view: `message` from its page, or `closed`.
+    case event(view: String, name: String, payload: JSONValue)
 
     var json: String {
         var object: [String: JSONValue] = ["v": .number(1)]
@@ -86,8 +88,28 @@ enum InboundEnvelope {
             object.merge(["kind": .string("dispatch"), "id": .number(Double(id)), "target": .string(target.rawValue), "name": .string(name), "payload": payload]) { $1 }
         case .cancel(let id):
             object.merge(["kind": .string("cancel"), "id": .number(Double(id))]) { $1 }
+        case .event(let view, let name, let payload):
+            object.merge(["kind": .string("event"), "view": .string(view), "name": .string(name), "payload": payload]) { $1 }
         }
         return JSONValue.object(object).jsonString
+    }
+}
+
+/// The envelopes a plugin page's bridge exchanges with Baron: the same calls and results as an engine context's,
+/// and the events its view receives.
+public enum PageEnvelope {
+    /// A call from the page; nil for anything else.
+    public static func call(fromJSON json: String) -> HostCall? {
+        if case .call(let call)? = OutboundEnvelope(json: json) { return call }
+        return nil
+    }
+
+    public static func result(id: Int, _ result: Result<JSONValue, HostError>) -> String {
+        InboundEnvelope.result(id: id, result).json
+    }
+
+    public static func event(view: String, name: String, payload: JSONValue) -> String {
+        InboundEnvelope.event(view: view, name: name, payload: payload).json
     }
 }
 

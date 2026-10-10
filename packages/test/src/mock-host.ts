@@ -23,6 +23,8 @@ export class MockHost {
     readonly secrets = new Map<string, string>();
     readonly toasts: Array<{ message: string; kind: string }> = [];
     readonly openedURLs: string[] = [];
+    /** Pages the plugin opened with `host.ui.openWebView`, with the messages it sent each one. */
+    readonly views: Array<{ id: string; path: string; data: unknown; messages: unknown[]; open: boolean }> = [];
     readonly replacements: string[] = [];
     readonly logs: Array<{ level: string; text: string }> = [];
     clipboard = "";
@@ -81,6 +83,12 @@ export class MockHost {
         return (this.manifest.optionalPermissions ?? []).includes(name as never) || (name !== "network:*" && this.optionalNetwork(name));
     }
 
+    private openView(id: string) {
+        const view = this.views.find((v) => v.id === id && v.open);
+        if (!view) throw new Refusal("not_found", `No open view ${id}`);
+        return view;
+    }
+
     private state(name: string): "granted" | "prompt" | "denied" {
         if (this.holds(name) || (name.startsWith("network:") && !name.includes("*") && [...(this.manifest.permissions ?? []), ...this.granted].some((p) => networkPermissionCovers(p, `${name.includes("://") ? name.slice(8) : `https://${name.slice(8)}`}/`)))) return "granted";
         return this.mayRequest(name) && !this.denied.has(name) && name !== "network:*" ? "prompt" : "denied";
@@ -118,6 +126,18 @@ export class MockHost {
                 this.openedURLs.push(key);
                 return null;
             case "ui.openSettings": return null;
+            case "ui.openWebView": {
+                const path = key.replace(/^\.\//, "");
+                if (!path || path.startsWith("/") || path.includes("://") || path.split("/").includes("..")) {
+                    throw new Refusal("not_found", `${key} isn't a file in the plugin's package`, { path: "/0" });
+                }
+                const id = `view-${this.views.length + 1}`;
+                this.views.push({ id, path, data: (args[1] as { data?: unknown } | undefined)?.data ?? null, messages: [], open: true });
+                return id;
+            }
+            case "ui.postMessage": this.openView(key).messages.push(args[1]); return null;
+            case "ui.closeView": this.openView(key).open = false; return null;
+            case "ui.show": throw new Refusal("unavailable", "Native views come after ODH; use openWebView");
             case "permissions.query":
                 return Object.fromEntries((args[0] as string[]).map((n) => [n, this.state(n)]));
             case "permissions.request": {

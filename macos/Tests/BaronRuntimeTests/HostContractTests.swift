@@ -64,7 +64,7 @@ struct HostContractTests {
             StubProtocol.lock.withLock { StubProtocol.replies[mock.url] = .init(status: mock.status, body: Data(mock.body.utf8)) }
         }
         let services: [HostService] = [
-            LogService(), UIService(presenter: RecordingPresenter(), system: system),
+            LogService(), UIService(presenter: RecordingPresenter(), system: system, views: RecordingViews()),
             HTTPService(configuration: configuration, policy: NetworkPolicy(grants: grants, resolve: { _ in ["93.184.216.34"] })),
             ClipboardService(system: system), SelectionService(system: system), TextService(),
             PermissionService(grants: grants, prompter: ScriptedPrompter(contract.promptAnswer)),

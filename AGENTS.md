@@ -37,15 +37,15 @@
     - [x] Dispatch a click with `text`, `source`, `editable`, `app` and `platform` (03d2b92)
     - [x] Carry out action results: copy, replace, toast, open URL (148a42e)
     - [x] Show a plugin's error as a toast naming the plugin (eb2fa5a)
-- [ ] Tooling
+- [x] Tooling
     - [x] `baron build`: bundle `src/` into one classic script with an inline source map (36f8f4f)
     - [x] `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic` (ab14943)
     - [x] `@baron/test`: a mock host with in-memory services (97504fd)
     - [x] Run plugin tests on JavaScriptCore through `node:vm` (640803a)
     - [x] Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output (29c4a95)
-    - [ ] **▶ IN PROGRESS** `baron test --engine jsc|quickjs|all`
+    - [x] `baron test --engine jsc|quickjs|all` (055eaa2)
 - [ ] Examples
-    - [ ] Write the uppercase action example with tests
+    - [ ] **▶ IN PROGRESS** Write the uppercase action example with tests
     - [ ] Write the `fetch`-based lookup example with tests
 - [ ] Verification
     - [ ] Test timers, errors, time limits, idle unload and reload

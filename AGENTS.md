@@ -8,7 +8,7 @@
 - [x] Setup
     - [x] Fetch a pinned QuickJS-NG `qjs` into `.tools/` with a checksum-verified script (33a9991)
     - [x] Write the envelope types and codec in `@baron/api` (shared by prelude, harness and docs) (7644216)
-- [ ] Prelude (`@baron/runtime`)
+- [x] Prelude (`@baron/runtime`)
     - [x] Build call envelopes and match results to calls by `id` (1ccd2cf)
     - [x] Build the `host` object over `__baronNative` (930e4b9)
     - [x] Serve dispatches: find the export, call it, await it, reply with a result or a classified error (5c7cce2)
@@ -17,9 +17,9 @@
     - [x] Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone` (40abfeb)
     - [x] Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal (46fb9d4)
     - [x] Provide `fetch`, `Request`, `Response` and `Headers` over `host.http` (ca9369d)
-    - [ ] **▶ IN PROGRESS** Compile the prelude to one script, copied into the Swift runtime's resources with a sync test
+    - [x] Compile the prelude to one script, copied into the Swift runtime's resources with a sync test (2d7de23)
 - [ ] Engine contexts (Swift, new `BaronRuntime` target)
-    - [ ] Create one `JSVirtualMachine` and context per plugin, on its own serial queue
+    - [ ] **▶ IN PROGRESS** Create one `JSVirtualMachine` and context per plugin, on its own serial queue
     - [ ] Expose `__baronNative.send` and deliver envelopes back to the context
     - [ ] Back the timer functions with native timers on the plugin's queue
     - [ ] Provide `crypto.getRandomValues`, `crypto.randomUUID` and `crypto.subtle.digest`

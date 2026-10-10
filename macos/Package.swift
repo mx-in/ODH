@@ -9,6 +9,7 @@ let package = Package(
         // Libraries for the Xcode app target in Xcode/Baron.xcodeproj.
         .library(name: "BaronCore", targets: ["BaronCore"]),
         .library(name: "BaronPlatform", targets: ["BaronPlatform"]),
+        .library(name: "BaronRuntime", targets: ["BaronRuntime"]),
         .executable(name: "Baron", targets: ["Baron"]),
         .executable(name: "baron-probe", targets: ["baron-probe"]),
         .executable(name: "baron-uitest", targets: ["baron-uitest"]),
@@ -20,6 +21,12 @@ let package = Package(
     targets: [
         // Pure logic: no AppKit, no Accessibility. Everything here is unit tested.
         .target(name: "BaronCore"),
+        // Runs plugin code: JavaScriptCore contexts, the prelude, the host router and its services.
+        .target(
+            name: "BaronRuntime",
+            dependencies: ["BaronCore"],
+            resources: [.copy("Resources/prelude.js")]
+        ),
         // macOS glue: Accessibility, event monitors, pasteboard, windows.
         .target(
             name: "BaronPlatform",
@@ -48,5 +55,6 @@ let package = Package(
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(name: "BaronCoreTests", dependencies: ["BaronCore"]),
+        .testTarget(name: "BaronRuntimeTests", dependencies: ["BaronRuntime", "BaronCore"]),
     ]
 )

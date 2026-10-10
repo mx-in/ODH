@@ -71,6 +71,18 @@ struct PageTests {
         #expect(await waitFor("matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'", in: view) == "dark")
     }
 
+    @Test func aWarmViewLoadsAgainWithNewData() async throws {
+        try write("views/page.html", #"<!doctype html><script src="page.js"></script>"#)
+        try write("views/page.js", #"document.title = baron.view.data.word;"#)
+        let recorder = Recorder()
+        let pages = views(recorder)
+        let view = pages.make(pluginID: "org.example.web", path: "views/page.html",
+                              config: PageConfig(environment: Self.environment, preferences: .object([:]), view: "view-1", data: .object(["word": .string("fox")])))
+        #expect(await waitFor("document.title", in: view) == "fox")
+        pages.reload(view, path: "views/page.html", config: PageConfig(environment: Self.environment, preferences: .object([:]), view: "view-2", data: .object(["word": .string("owl")])))
+        #expect(await waitFor("document.title === 'owl' ? 'owl' : ''", in: view) == "owl")
+    }
+
     @Test func callsCarryThePluginFromTheOrigin() async throws {
         try write("views/page.html", #"<!doctype html><script src="page.js"></script>"#)
         try write("views/page.js", #"baron.storage.get("k").then((v) => { document.title = "got " + v; });"#)

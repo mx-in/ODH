@@ -21,6 +21,9 @@ final class WebViewPanels {
     private var shown: (view: String, pluginID: String)?
     private var nextID = 1
     private let dismissal = PanelDismissMonitor()
+    /// The last closed page, kept loaded for `keepWarm` so the next one from the same plugin opens quickly.
+    private var warm: (page: PluginWebView, release: Task<Void, Never>)?
+    static let keepWarm: Duration = .seconds(30)
 
     init(pages: PluginPageViews, runtime: PluginRuntime, describe: @escaping (RuntimePlugin) -> (name: String, icon: NSImage?),
          pageConfig: @escaping (RuntimePlugin, String, JSONValue) async -> PageConfig, userInput: @escaping (String) -> Void) {
@@ -40,7 +43,15 @@ final class WebViewPanels {
         let id = "view-\(nextID)"
         nextID += 1
         let config = await pageConfig(plugin, id, request.data)
-        let page = pages.make(pluginID: plugin.id, path: path, config: config)
+        let page: PluginWebView
+        if let kept = warm, kept.page.pluginID == plugin.id {
+            kept.release.cancel()
+            page = kept.page
+            pages.reload(page, path: path, config: config)
+        } else {
+            page = pages.make(pluginID: plugin.id, path: path, config: config)
+        }
+        warm = nil
         page.onUserInput = { [userInput] in userInput(plugin.id) }
         page.bridge.viewCall = { [weak self] method, arguments in
             await self?.viewCall(method, arguments, view: id, pluginID: plugin.id) ?? .failure(.notFound("The view closed"))
@@ -81,7 +92,21 @@ final class WebViewPanels {
         panel.orderOut(nil)
         self.panel = nil
         self.shown = nil
+        keepWarm(panel.page)
         Task { await runtime.viewEvent(shown.pluginID, view: shown.view, name: "closed") }
+    }
+
+    private func keepWarm(_ page: PluginWebView) {
+        warm?.release.cancel()
+        page.removeFromSuperview()
+        page.onUserInput = nil
+        page.bridge.viewCall = nil
+        let release = Task { [weak self] in
+            try? await Task.sleep(for: Self.keepWarm)
+            guard !Task.isCancelled else { return }
+            self?.warm = nil
+        }
+        warm = (page, release)
     }
 
     private func viewCall(_ method: String, _ arguments: [JSONValue], view: String, pluginID: String) async -> Result<JSONValue, HostError> {

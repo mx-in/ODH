@@ -93,10 +93,10 @@
     - [x] `baron.view`: data, messages, resize and close
     - [x] `host.ui.openWebView` and `ViewHandle` on the engine side (9d24fb5)
 - [ ] Look and feel
-    - [ ] **▶ IN PROGRESS** Colour variables, dark mode and locale
+    - [x] Colour variables, dark mode and locale (65c224b)
     - [x] Play audio without an extra click (6deb357)
 - [ ] Lifecycle
-    - [ ] Keep a closed web view loaded for 30 s
+    - [ ] **▶ IN PROGRESS** Keep a closed web view loaded for 30 s
 - [ ] Settings page
     - [ ] Show a plugin's `settingsPage` under its generated preferences
 - [ ] Tooling

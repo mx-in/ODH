@@ -53,19 +53,26 @@ public final class PluginPageViews {
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
 
         let bridge = PageBridge(route: route)
-        let scripts = configuration.userContentController
-        scripts.addUserScript(WKUserScript(source: "window.__baronPageConfig = \(config.json);", injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        scripts.addUserScript(WKUserScript(source: Self.bridgeSource, injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        scripts.addUserScript(WKUserScript(source: PageTheme.script, injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        scripts.addScriptMessageHandler(bridge, contentWorld: .page, name: PageBridge.handlerName)
+        configuration.userContentController.addScriptMessageHandler(bridge, contentWorld: .page, name: PageBridge.handlerName)
 
         let view = PluginWebView(pluginID: pluginID, bridge: bridge, configuration: configuration)
         let policy = PageNavigationPolicy(pluginID: pluginID, openExternal: openExternal)
         view.policy = policy
         view.navigationDelegate = policy
         view.uiDelegate = policy
-        if let url = PluginPageServer.url(pluginID: pluginID, path: path) { view.load(URLRequest(url: url)) }
+        reload(view, path: path, config: config)
         return view
+    }
+
+    /// Loads `path` into a web view the plugin used before, with a new config: a view kept warm after closing
+    /// skips starting a web content process.
+    public func reload(_ view: PluginWebView, path: String, config: PageConfig) {
+        let scripts = view.configuration.userContentController
+        scripts.removeAllUserScripts()
+        scripts.addUserScript(WKUserScript(source: "window.__baronPageConfig = \(config.json);", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        scripts.addUserScript(WKUserScript(source: Self.bridgeSource, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        scripts.addUserScript(WKUserScript(source: PageTheme.script, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        if let url = PluginPageServer.url(pluginID: view.pluginID, path: path) { view.load(URLRequest(url: url)) }
     }
 
     /// One non-persistent store per plugin: nothing survives, and plugins can't see each other's.

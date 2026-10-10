@@ -15,8 +15,8 @@
     - [x] Provide `console`, the timer functions and `queueMicrotask` (a4fa8db)
     - [x] Polyfill `URL` and `URLSearchParams` (011a9b3)
     - [x] Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone` (40abfeb)
-    - [ ] **▶ IN PROGRESS** Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal
-    - [ ] Provide `fetch`, `Request`, `Response` and `Headers` over `host.http`
+    - [x] Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal (46fb9d4)
+    - [ ] **▶ IN PROGRESS** Provide `fetch`, `Request`, `Response` and `Headers` over `host.http`
     - [ ] Compile the prelude to one script, copied into the Swift runtime's resources with a sync test
 - [ ] Engine contexts (Swift, new `BaronRuntime` target)
     - [ ] Create one `JSVirtualMachine` and context per plugin, on its own serial queue

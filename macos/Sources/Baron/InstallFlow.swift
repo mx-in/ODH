@@ -62,6 +62,13 @@ final class InstallFlow {
             await finish(plan, consented: false)
             return
         }
+        // An update that adds permissions waits in Needs consent while the installed version keeps working;
+        // the plugin's settings page shows Review Update.
+        if case .update(_, let added) = plan.kind, !added.isEmpty {
+            await finish(plan, consented: false)
+            controller.openSettings(package.manifest.id, [])
+            return
+        }
         let name = PluginLocalizer(package: package.folder, defaultLocale: package.manifest.defaultLocale).resolve(package.manifest.name)
         var notes: [String] = []
         if let other = plan.otherSource { notes.append("The installed copy came from \(other.label); this one replaces it.") }

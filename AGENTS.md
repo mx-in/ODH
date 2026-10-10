@@ -32,16 +32,16 @@
     - [x] Show or hide each action (b805bfc)
     - [x] Run on selection for `autoRun: "allowed"` actions, optionally limited to some apps (b805bfc)
     - [x] Give an action its own hotkey (b805bfc)
-- [ ] Development mode
+- [x] Development mode
     - [x] Turn it on in Settings › Advanced and listen on a same-user socket (1221865)
     - [x] Load a registered folder as "Development" and reload it on each rebuild (1221865)
-    - [ ] **▶ IN PROGRESS** Stream logs and errors with TypeScript line numbers; make contexts inspectable
-- [ ] CLI
-    - [ ] `baron create` with the `action`, `lookup` and `settings` templates
-    - [ ] `baron dev`
-    - [ ] `baron validate`, and `baron pack` printing the SHA-256
+    - [x] Stream logs and errors with TypeScript line numbers; make contexts inspectable (1f51ad1)
+- [x] CLI
+    - [x] `baron create` with the `action`, `lookup` and `settings` templates (1f51ad1)
+    - [x] `baron dev` (1f51ad1)
+    - [x] `baron validate`, and `baron pack` printing the SHA-256 (1f51ad1)
 - [ ] Verification
-    - [ ] Check the gate, including disk and Keychain after uninstall
+    - [ ] **▶ IN PROGRESS** Check the gate, including disk and Keychain after uninstall
     - [ ] Time a first-time author from `baron create` to the action on the bar
 - [ ] Design UML
     - [ ] Add as-built UML to the design docs this task built or changed

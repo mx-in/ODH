@@ -54,13 +54,13 @@
 **Task:** task-009-context-builder: give actions the context they may read (gate: a test plugin receives sentence, paragraph, page and window in Safari, Chrome, Mail, Notes, Pages and TextEdit, and receives none of them without the permission.)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [Context capture](docs/tec-design.md#context-capture) in the app design, context permissions in [04](docs/design/plugin-platform/04-permissions-and-security.md#permission-catalogue), `needs` in [01](docs/design/plugin-platform/01-package-and-manifest.md#actions). The readers from tasks 001 and 002 already exist; this task turns them into each action's `SelectionContext`.
 
-- [ ] **▶ IN PROGRESS** Assembly
-    - [ ] Build a `SelectionContext` from the existing readers
-    - [ ] Read only the fields that some matching action `needs` and its plugin is granted
-    - [ ] Give each action only its own `needs` and granted fields
+- [ ] Assembly
+    - [x] Build a `SelectionContext` from the existing readers (1ffb20c)
+    - [x] Read only the fields that some matching action `needs` and its plugin is granted
+    - [x] Give each action only its own `needs` and granted fields (0ebfe18)
 - [ ] Timing
-    - [ ] Read context in the background right after the text, within 200 ms; an action waits at most 300 ms more
-    - [ ] Wake Chrome and Electron accessibility only for the frontmost app, and only when a field needs it
+    - [x] Read context in the background right after the text, within 200 ms; an action waits at most 300 ms more
+    - [ ] **▶ IN PROGRESS** Wake Chrome and Electron accessibility only for the frontmost app, and only when a field needs it
 - [ ] Fields
     - [ ] Apply the caps and the `truncated` flag on the web paths, as the native path already does
     - [ ] Check that every offset is in UTF-16 units

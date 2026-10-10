@@ -46,9 +46,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         hotkeys.register(BarActionInfo.builtIns)
         plugins.presentError = { [weak self] message in self?.toasts.show(message, kind: .error) }
         plugins.openSettings = { [weak self] id, highlight in self?.settingsWindow.showPlugin(id, highlight: highlight) }
-        coordinator.onPluginAction = { [weak self] entry, run in
+        coordinator.onPluginAction = { [weak self] entry, run, context in
             guard let self else { return }
-            Task { await self.runPluginAction(entry, run) }
+            Task { await self.runPluginAction(entry, run, context) }
         }
         Task {
             await plugins.reload()
@@ -131,10 +131,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// Runs a plugin action and carries out what it returns; failures show as a toast naming the plugin.
-    private func runPluginAction(_ entry: PluginActionCatalog.Entry, _ run: SelectionRun) async {
+    private func runPluginAction(_ entry: PluginActionCatalog.Entry, _ run: SelectionRun, _ context: CapturedContext?) async {
         toasts.anchor = run.bounds.map { CGPoint(x: $0.midX, y: $0.minY) } ?? run.trigger.location
         let mayReplace = plugins.plugins[entry.pluginID]?.manifest.permissions.contains("selection.replace") ?? false
-        switch await plugins.run(entry, for: run) {
+        switch await plugins.run(entry, for: run, context: context) {
         case .success(let value):
             let parsed = PluginActionResult.parse(value, editable: run.editable, mayReplace: mayReplace)
             BaronLog.plugins.info("\(entry.pluginID, privacy: .public) result: \(String(describing: parsed).prefix(40), privacy: .private) editable=\(run.editable, privacy: .public)")

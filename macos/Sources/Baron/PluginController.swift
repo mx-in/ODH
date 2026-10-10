@@ -133,8 +133,9 @@ final class PluginController {
         return missing
     }
 
-    /// Runs the action for a selection with the plugin's preferences and the user's environment.
-    func run(_ entry: PluginActionCatalog.Entry, for selection: SelectionRun) async -> Result<JSONValue, HostError> {
+    /// Runs the action for a selection with the plugin's preferences and the user's environment, and the context
+    /// fields the action needs and is granted.
+    func run(_ entry: PluginActionCatalog.Entry, for selection: SelectionRun, context: CapturedContext? = nil) async -> Result<JSONValue, HostError> {
         guard let plugin = plugins[entry.pluginID] else { return .failure(.notFound("\(entry.pluginName) is no longer loaded")) }
         let missing = await missingRequired(plugin)
         if !missing.isEmpty {
@@ -143,7 +144,7 @@ final class PluginController {
         }
         let action = plugin.manifest.actions.first { $0.id == entry.actionID }
         await runUpdateHookIfNeeded(plugin)
-        let payload = await payload(for: plugin, context: SelectionContextJSON.make(from: selection))
+        let payload = await payload(for: plugin, context: SelectionContextJSON.make(from: selection, context: context, fields: entry.context))
         actions.record(plugin.id)
         let result = await runtime.dispatch(plugin.id, .action, name: action?.handlerName ?? entry.actionID, payload: payload)
         if result.isSuccess, installedRecords[plugin.id]?.previousVersion != nil {

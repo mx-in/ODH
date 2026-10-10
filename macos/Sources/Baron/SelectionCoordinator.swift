@@ -8,12 +8,13 @@ final class SelectionCoordinator {
     let pipeline: SelectionPipeline
     /// Called after every run, with the source it read from (used by the debug panel).
     var onRun: ((Trigger, PipelineOutcome, FocusedSelectionSource) -> Void)?
-    /// Runs a plugin's action for the selection; set by the app delegate.
-    var onPluginAction: ((PluginActionCatalog.Entry, SelectionRun) -> Void)?
+    /// Runs a plugin's action for the selection with the context read for it; set by the app delegate.
+    var onPluginAction: ((PluginActionCatalog.Entry, SelectionRun, CapturedContext?) -> Void)?
     private let events = SelectionEventMonitor()
     private let hotkey = HotkeyMonitor()
     private let bar = ActionBarController()
     private var current: SelectionRun?
+    private var capture: ContextCapture?
 
     init(pipeline: SelectionPipeline) {
         self.pipeline = pipeline
@@ -55,8 +56,11 @@ final class SelectionCoordinator {
                 if trigger.kind != .hotkey,
                    let automatic = pipeline.arrangement.automaticAction(among: run.items, allowed: allowed, app: run.app.bundleIdentifier),
                    let entry = pipeline.plugins.entry(forItemID: automatic) {
-                    onPluginAction?(entry, run)
+                    startCapture(entry.context, source: source, run: run)
+                    runPlugin(entry, run)
                 } else {
+                    // Read the context now, before the user clicks: scrolling or typing would change it.
+                    startCapture(pipeline.plugins.contextFields(for: run.items), source: source, run: run)
                     bar.show(run.items, selection: run.bounds, pointer: run.trigger.location)
                 }
             }
@@ -72,10 +76,31 @@ final class SelectionCoordinator {
             guard case .show(let run) = await pipeline.run(trigger, source: source) else { return }
             current = run
             if let entry = pipeline.plugins.entry(forItemID: itemID) {
-                onPluginAction?(entry, run)
+                startCapture(entry.context, source: source, run: run)
+                runPlugin(entry, run)
             } else if let effect = pipeline.actions.effect(of: itemID, for: run.text) {
                 ActionEffectPerformer.perform(effect)
             }
+        }
+    }
+
+    private func startCapture(_ fields: Set<ContextField>, source: FocusedSelectionSource, run: SelectionRun) {
+        let target = SelectionContextReader.Target(app: AXElement.application(pid: source.app.processIdentifier), focused: source.focused, step: run.step)
+        capture = ContextCapture(fields) { fields in
+            let started = ContinuousClock.now
+            let context = SelectionContextReader.read(fields, from: target)
+            let read = context.fields.map(\.rawValue).sorted(), asked = fields.map(\.rawValue).sorted()
+            BaronLog.plugins.info("context: read \(read, privacy: .public) of \(asked, privacy: .public) in \((ContinuousClock.now - started).milliseconds, privacy: .public) ms")
+            return context
+        }
+    }
+
+    /// Runs the action once its context has arrived, or after waiting at most `ContextCapture.actionWait`.
+    private func runPlugin(_ entry: PluginActionCatalog.Entry, _ run: SelectionRun) {
+        let capture = entry.context.isEmpty ? nil : capture
+        Task {
+            let context = await capture?.value()
+            onPluginAction?(entry, run, context)
         }
     }
 
@@ -83,7 +108,7 @@ final class SelectionCoordinator {
         guard let run = current else { return }
         if let entry = pipeline.plugins.entry(forItemID: item.id) {
             bar.hide()
-            onPluginAction?(entry, run)
+            runPlugin(entry, run)
             return
         }
         guard let effect = pipeline.actions.effect(of: item.id, for: run.text) else { return }

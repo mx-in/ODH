@@ -1,0 +1,6 @@
+{
+  "description": "defaultLocale is a BCP 47 tag",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/defaultLocale"
+}

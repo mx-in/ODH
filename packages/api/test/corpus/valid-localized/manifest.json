@@ -1,0 +1,28 @@
+{
+  "id": "org.example.upper",
+  "name": "%name%",
+  "description": "%description%",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "main": "dist/main.js",
+  "actions": [
+    {
+      "id": "upper",
+      "title": "%action.upper%"
+    }
+  ],
+  "defaultLocale": "en",
+  "preferences": [
+    {
+      "id": "audio",
+      "type": "dropdown",
+      "title": "%pref.audio%",
+      "options": [
+        {
+          "value": "uk",
+          "title": "%pref.audio.uk%"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "description": "network patterns name a host, not a URL path",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/permissions/0"
+}

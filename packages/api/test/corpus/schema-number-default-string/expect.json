@@ -1,0 +1,6 @@
+{
+  "description": "a number's default is a number",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/preferences/0/default"
+}

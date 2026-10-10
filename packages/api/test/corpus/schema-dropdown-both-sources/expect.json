@@ -1,0 +1,6 @@
+{
+  "description": "a dropdown can't have both options and optionsFrom",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/preferences/0"
+}

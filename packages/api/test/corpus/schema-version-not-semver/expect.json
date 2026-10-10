@@ -1,0 +1,6 @@
+{
+  "description": "version is a semantic version",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/version"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "Upper",
+  "description": "Uppercases the selection",
+  "action.upper": "UPPER",
+  "pref.audio": "Audio",
+  "pref.audio.uk": "UK"
+}

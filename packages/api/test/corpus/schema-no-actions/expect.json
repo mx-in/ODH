@@ -1,0 +1,6 @@
+{
+  "description": "at least one action",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions"
+}

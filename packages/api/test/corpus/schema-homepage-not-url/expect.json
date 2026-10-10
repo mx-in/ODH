@@ -1,0 +1,6 @@
+{
+  "description": "homepage is an http or https URL",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/homepage"
+}

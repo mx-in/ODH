@@ -1,0 +1,6 @@
+{
+  "description": "minLength is not negative",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/when/minLength"
+}

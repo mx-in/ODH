@@ -1,0 +1,6 @@
+{
+  "description": "id is lowercase reverse-DNS",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/id"
+}

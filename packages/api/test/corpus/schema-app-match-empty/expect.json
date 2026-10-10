@@ -1,0 +1,6 @@
+{
+  "description": "an app match names at least one platform",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/when/apps/0"
+}

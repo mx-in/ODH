@@ -1,0 +1,6 @@
+{
+  "description": "unknown action fields are errors",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/hotkey"
+}

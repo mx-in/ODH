@@ -1,0 +1,6 @@
+{
+  "description": "preference types are a fixed list",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/preferences/0/type"
+}

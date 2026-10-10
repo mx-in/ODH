@@ -1,0 +1,6 @@
+{
+  "description": "permission names are a fixed list plus network patterns",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/permissions/0"
+}

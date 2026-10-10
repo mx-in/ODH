@@ -1,0 +1,6 @@
+{
+  "description": "needs has no duplicates",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/needs"
+}

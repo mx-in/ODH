@@ -1,0 +1,6 @@
+{
+  "description": "unknown fields are errors, catching typos",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/permisions"
+}

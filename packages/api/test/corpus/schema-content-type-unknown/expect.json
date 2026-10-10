@@ -1,0 +1,6 @@
+{
+  "description": "contentTypes is a fixed list",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/when/contentTypes/0"
+}

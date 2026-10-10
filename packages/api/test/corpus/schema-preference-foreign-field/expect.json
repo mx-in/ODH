@@ -1,0 +1,6 @@
+{
+  "description": "a type's fields are only allowed on that type",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/preferences/0/placeholder"
+}

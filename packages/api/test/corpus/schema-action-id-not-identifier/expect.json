@@ -1,0 +1,6 @@
+{
+  "description": "an action id is a JavaScript identifier",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/id"
+}

@@ -1,0 +1,6 @@
+{
+  "description": "network:* is only an optional permission",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/permissions/0"
+}

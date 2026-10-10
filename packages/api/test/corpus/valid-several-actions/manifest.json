@@ -1,0 +1,45 @@
+{
+  "id": "org.example.upper",
+  "name": "Upper",
+  "description": "Uppercases the selection",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "main": "dist/main.js",
+  "actions": [
+    {
+      "id": "lookup",
+      "title": "Look up",
+      "when": {
+        "contentTypes": [
+          "word"
+        ],
+        "maxLength": 64
+      },
+      "needs": [
+        "sentence",
+        "paragraph"
+      ],
+      "autoRun": "allowed"
+    },
+    {
+      "id": "upper",
+      "run": "toUpper",
+      "title": "UPPER",
+      "when": {
+        "editable": true
+      }
+    },
+    {
+      "id": "copyTitle",
+      "title": "Copy window title",
+      "needs": [
+        "window"
+      ]
+    }
+  ],
+  "permissions": [
+    "context.sentence",
+    "context.paragraph",
+    "context.window"
+  ]
+}

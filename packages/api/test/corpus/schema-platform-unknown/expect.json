@@ -1,0 +1,6 @@
+{
+  "description": "platforms is a fixed list",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/platforms/0"
+}

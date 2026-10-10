@@ -1,0 +1,123 @@
+{
+  "id": "org.example.upper",
+  "name": "Upper",
+  "description": "Uppercases the selection",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "main": "dist/main.js",
+  "actions": [
+    {
+      "id": "upper",
+      "title": "UPPER"
+    }
+  ],
+  "preferences": [
+    {
+      "id": "anki",
+      "type": "heading",
+      "title": "Anki"
+    },
+    {
+      "id": "ankiUrl",
+      "type": "text",
+      "title": "URL",
+      "default": "http://127.0.0.1:8765",
+      "pattern": "^https?://",
+      "required": true
+    },
+    {
+      "id": "maxExamples",
+      "type": "number",
+      "title": "Examples",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "default": 2
+    },
+    {
+      "id": "ankiEnabled",
+      "type": "checkbox",
+      "title": "Add cards",
+      "label": "Enabled",
+      "default": false
+    },
+    {
+      "id": "deck",
+      "type": "dropdown",
+      "title": "Deck",
+      "optionsFrom": "decks",
+      "dependsOn": [
+        "ankiUrl"
+      ]
+    },
+    {
+      "id": "audio",
+      "type": "dropdown",
+      "title": "Audio",
+      "options": [
+        {
+          "value": "uk",
+          "title": "UK"
+        },
+        {
+          "value": "us",
+          "title": "US"
+        }
+      ],
+      "default": "us"
+    },
+    {
+      "id": "dictionaries",
+      "type": "checklist",
+      "title": "Dictionaries",
+      "options": [
+        {
+          "value": "collins",
+          "title": "Collins"
+        }
+      ],
+      "default": [
+        "collins"
+      ]
+    },
+    {
+      "id": "scripts",
+      "type": "list",
+      "title": "Scripts",
+      "itemPattern": "^https://",
+      "maxItems": 20
+    },
+    {
+      "id": "apiKey",
+      "type": "secret",
+      "title": "API key"
+    },
+    {
+      "id": "wordList",
+      "type": "file",
+      "title": "Word list",
+      "extensions": [
+        "txt",
+        "csv"
+      ]
+    },
+    {
+      "id": "exportFolder",
+      "type": "directory",
+      "title": "Export folder"
+    },
+    {
+      "id": "browser",
+      "type": "app",
+      "title": "Browser",
+      "default": "com.apple.Safari"
+    },
+    {
+      "id": "testAnki",
+      "type": "button",
+      "title": "",
+      "label": "Test connection",
+      "run": "testAnki"
+    }
+  ]
+}

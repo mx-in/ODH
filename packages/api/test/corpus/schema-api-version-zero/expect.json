@@ -1,0 +1,6 @@
+{
+  "description": "apiVersion starts at 1",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/apiVersion"
+}

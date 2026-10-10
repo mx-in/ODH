@@ -1,0 +1,6 @@
+{
+  "description": "id needs at least two segments",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/id"
+}

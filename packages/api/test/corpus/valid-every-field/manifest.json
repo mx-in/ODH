@@ -1,0 +1,60 @@
+{
+  "id": "org.example.upper",
+  "name": "Upper",
+  "description": "Uppercases the selection",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "main": "dist/main.js",
+  "actions": [
+    {
+      "id": "upper",
+      "run": "toUpper",
+      "title": "UPPER",
+      "icon": "assets/upper.svg",
+      "when": {
+        "minLength": 1,
+        "maxLength": 500,
+        "regex": "\\p{L}",
+        "contentTypes": [
+          "text"
+        ],
+        "apps": [
+          "com.apple.TextEdit",
+          {
+            "macos": "com.apple.Notes",
+            "windows": "notepad.exe"
+          }
+        ],
+        "excludeApps": [
+          "com.apple.Terminal"
+        ],
+        "editable": true
+      },
+      "needs": [
+        "sentence",
+        "page"
+      ],
+      "autoRun": "never"
+    }
+  ],
+  "$schema": "https://baron.dev/schema/manifest-1.json",
+  "author": "Example",
+  "homepage": "https://example.com",
+  "license": "MIT",
+  "icon": "assets/icon.svg",
+  "platforms": [
+    "macos",
+    "windows",
+    "linux"
+  ],
+  "minBaronVersion": "0.1.0",
+  "permissions": [
+    "context.sentence",
+    "context.page",
+    "selection.replace"
+  ],
+  "optionalPermissions": [
+    "network:*"
+  ],
+  "settingsPage": "views/settings.html"
+}

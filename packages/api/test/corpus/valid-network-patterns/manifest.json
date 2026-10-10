@@ -1,0 +1,26 @@
+{
+  "id": "org.example.upper",
+  "name": "Upper",
+  "description": "Uppercases the selection",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "main": "dist/main.js",
+  "actions": [
+    {
+      "id": "upper",
+      "title": "UPPER"
+    }
+  ],
+  "permissions": [
+    "network:dict.cn",
+    "network:*.youdao.com",
+    "network:api.example.com:8443",
+    "network:http://example.com",
+    "network:127.0.0.1:8765",
+    "network:[::1]:8765"
+  ],
+  "optionalPermissions": [
+    "network:*",
+    "clipboard.read"
+  ]
+}

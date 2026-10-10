@@ -1,0 +1,6 @@
+{
+  "description": "needs lists context fields",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/needs/0"
+}

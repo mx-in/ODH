@@ -1,0 +1,6 @@
+{
+  "description": "id is required",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/id"
+}

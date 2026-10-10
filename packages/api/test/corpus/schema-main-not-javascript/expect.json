@@ -1,0 +1,6 @@
+{
+  "description": "main is the built JavaScript",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/main"
+}

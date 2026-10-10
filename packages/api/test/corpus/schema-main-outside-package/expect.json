@@ -1,0 +1,6 @@
+{
+  "description": "paths can't leave the package",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/main"
+}

@@ -1,0 +1,6 @@
+{
+  "description": "an action needs a title",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/title"
+}

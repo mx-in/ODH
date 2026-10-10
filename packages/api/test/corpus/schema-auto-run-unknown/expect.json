@@ -1,0 +1,6 @@
+{
+  "description": "autoRun is allowed or never",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/actions/0/autoRun"
+}

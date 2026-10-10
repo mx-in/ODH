@@ -1,0 +1,6 @@
+{
+  "description": "a button names its handler",
+  "valid": false,
+  "rejectedBy": "schema",
+  "pointer": "/preferences/0/run"
+}

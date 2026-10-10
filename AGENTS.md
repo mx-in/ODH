@@ -11,8 +11,8 @@
 - [ ] Prelude (`@baron/runtime`)
     - [x] Build call envelopes and match results to calls by `id` (1ccd2cf)
     - [x] Build the `host` object over `__baronNative` (930e4b9)
-    - [ ] **▶ IN PROGRESS** Serve dispatches: find the export, call it, await it, reply with a result or a classified error
-    - [ ] Provide `console`, the timer functions and `queueMicrotask`
+    - [x] Serve dispatches: find the export, call it, await it, reply with a result or a classified error (5c7cce2)
+    - [ ] **▶ IN PROGRESS** Provide `console`, the timer functions and `queueMicrotask`
     - [ ] Polyfill `URL` and `URLSearchParams`
     - [ ] Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone`
     - [ ] Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal

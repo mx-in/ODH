@@ -60,7 +60,6 @@ struct InstallSheetView: View {
         }
         .padding(20)
         .frame(width: 420)
-        .accessibilityIdentifier("baron.installSheet")
     }
 
     @ViewBuilder

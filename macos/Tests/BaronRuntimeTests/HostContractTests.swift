@@ -44,8 +44,9 @@ struct HostContractTests {
         #expect((Self.contract?.cases.count ?? 0) >= 20)
     }
 
-    @Test(.enabled(if: ExamplePluginTests.bun != nil, "needs Bun"), arguments: contract?.cases ?? [])
-    func baronHonoursTheContract(_ c: Case) async throws {
+    /// Every case runs with plugin code in Baron's process and in the helper (over XPC, task-011).
+    @Test(.enabled(if: ExamplePluginTests.bun != nil, "needs Bun"), arguments: contract?.cases ?? [], [false, true])
+    func baronHonoursTheContract(_ c: Case, inHelper: Bool) async throws {
         let contract = try #require(Self.contract)
         let base = try #require(Self.plugin)
         var manifest = base.manifest
@@ -69,7 +70,10 @@ struct HostContractTests {
             ClipboardService(system: system), SelectionService(system: system), TextService(),
             PermissionService(grants: grants, prompter: ScriptedPrompter(contract.promptAnswer)),
         ]
-        let runtime = PluginRuntime(handler: HostRouter(services: services, gate: PermissionGate(grants: grants, actions: actions)))
+        let router = HostRouter(services: services, gate: PermissionGate(grants: grants, actions: actions))
+        let runtime = inHelper
+            ? PluginRuntime(handler: router, engines: PluginHost(endpoint: HelperTests.listener.endpoint).engineFactory)
+            : PluginRuntime(handler: router)
         await runtime.register(plugin)
 
         guard case .string(let ns) = c.call[0], case .string(let method) = c.call[1] else { Issue.record("bad case"); return }

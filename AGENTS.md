@@ -19,14 +19,14 @@
 - [x] Network policy in `http.fetch`
     - [x] Check the first URL and every redirect hop against the granted set, answering permission_denied with requestable (e34bc99)
     - [x] Resolve hosts before connecting, so a public name can't reach a private address (9b6e418)
-- [ ] Services
+- [x] Services
     - [x] `clipboard.readText` and `clipboard.writeText` (aa56d94)
     - [x] `selection.replace` (only on an editable selection) (8520008)
     - [x] `text.segment` with `NLTokenizer` (8520008)
     - [x] `ui.openUrl` for `https`, `http` and `mailto`, and `ui.openSettings` (ab649f3)
-    - [ ] **▶ IN PROGRESS** `permissions.query` and `permissions.request`
+    - [x] `permissions.query` and `permissions.request` (b49d1b1)
 - [ ] Run-time prompt (UI)
-    - [ ] Show the native prompt naming the plugin and host: Deny, Allow Once, Always Allow; one at a time
+    - [ ] **▶ IN PROGRESS** Show the native prompt naming the plugin and host: Deny, Allow Once, Always Allow; one at a time
 - [ ] Install sheet (UI, used by task-008)
     - [ ] Describe permissions in plain words, grouped as Reads, Connects to, Can and Stores, with the disclosures
     - [ ] Show them in a SwiftUI install sheet

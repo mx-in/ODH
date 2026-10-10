@@ -35,12 +35,13 @@ public enum WebTreeContextReader {
         while let inline = block, inlineRoles.contains(inline.role ?? "") { block = inline.parent }
         var depth = 0
         while let candidate = block, depth < 8 {
-            let (text, leafOffset) = joinedText(of: candidate, locating: leaf)
+            let (text, leafOffset, complete) = joinedText(of: candidate, locating: leaf)
             if let leafOffset, text.utf16.count >= selectedText.utf16.count {
                 let within = leafText.range(of: selectedText).map { leafText.utf16.distance(from: leafText.utf16.startIndex, to: $0.lowerBound.samePosition(in: leafText.utf16)!) } ?? 0
                 let start = leafOffset + within
                 let end = min(start + selectedText.utf16.count, text.utf16.count)
-                return NativeTextContext.capped(TextSpan(text: text, selectionStart: start, selectionEnd: end), to: NativeTextContext.paragraphCap)
+                // A walk cut short by the element limit has lost the block's end: say so, as a cap would.
+                return NativeTextContext.capped(TextSpan(text: text, selectionStart: start, selectionEnd: end, truncated: !complete), to: NativeTextContext.paragraphCap)
             }
             if candidate.role == WebAreaReader.webAreaRole { break }
             block = candidate.parent
@@ -54,13 +55,14 @@ public enum WebTreeContextReader {
         leaf(at: AXTextMarkerRangeCopyStartMarker(selection), in: area)?.frame
     }
 
-    /// Joins every static text under `root` in tree order, and where `leaf` starts (UTF-16).
-    static func joinedText(of root: AXElement, locating leaf: AXElement, limit: Int = 2_000) -> (String, Int?) {
+    /// Joins every static text under `root` in tree order, where `leaf` starts (UTF-16), and whether the walk saw
+    /// every element before reaching `limit`.
+    static func joinedText(of root: AXElement, locating leaf: AXElement, limit: Int = 2_000) -> (String, Int?, Bool) {
         var text = ""
         var offset: Int?
         var stack = [root]
         var visited = 0
-        while let element = stack.popLast(), visited < limit {
+        while visited < limit, let element = stack.popLast() {
             visited += 1
             if element.role == staticTextRole {
                 if offset == nil, CFEqual(element.raw, leaf.raw) { offset = text.utf16.count }
@@ -69,6 +71,6 @@ public enum WebTreeContextReader {
             }
             stack += element.children.reversed()
         }
-        return (text, offset)
+        return (text, offset, stack.isEmpty)
     }
 }

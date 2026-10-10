@@ -114,20 +114,20 @@
 **Task:** task-011-sandboxed-helper: move plugins out of Baron's process (gate: the runtime, host API and UI tests pass with plugins in the helper; killing the helper mid-action gives `unavailable` and the next action works.)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [02 Runtime, stage 2](docs/design/plugin-platform/02-runtime.md#stage-2-the-sandboxed-helper).
 
-- [ ] Helper
-    - [x] Create `BaronPluginHost.xpc` with App Sandbox and no file or network entitlements
+- [x] Helper
+    - [x] Create `BaronPluginHost.xpc` with App Sandbox and no file or network entitlements (4bc015f)
     - [x] Move engine contexts into the helper, sending it the prelude and bundles over the connection (258936b)
     - [x] Carry the envelopes over `NSXPCConnection` (258936b)
-- [ ] Recovery
+- [x] Recovery
     - [x] Fail pending calls with `unavailable`, relaunch the helper on the next need, and count a strike (258936b)
     - [x] Restart the helper on a stuck loop or above 512 MB (258936b)
 - [ ] Verification
-    - [ ] Run the runtime, host API and UI tests against the helper
-    - [ ] Kill the helper mid-action and check recovery
-- [ ] Design UML
-    - [ ] Add as-built UML to the design docs this task built or changed
+    - [ ] **⏸ BLOCKED (needs: an unlocked screen)** Run the runtime, host API and UI tests against the helper
+    - [ ] **⏸ BLOCKED (needs: an unlocked screen)** Kill the helper mid-action and check recovery
+- [x] Design UML
+    - [x] Add as-built UML to the design docs this task built or changed
 
-**Notes for the next agent:** Started while tasks 008, 009 and 010 each wait on one UI run that needs an unlocked screen.
+**Notes for the next agent:** Started while tasks 008, 009 and 010 each wait on one UI run that needs an unlocked screen. Done headless: the runtime suite and all 27 host-contract cases pass with plugin code in the helper over a real NSXPCConnection (an anonymous listener in the test process, HelperTests and HostContractTests), including losing the helper mid-action (unavailable, then the next action works) and the memory restart. Still to run with the screen unlocked: `macos/scripts/uitest-helper.sh` (the real BaronPluginHost.xpc process: hook runs there, SIGKILL mid-hook, reinstall works; it presses buttons through Accessibility, but a locked session gets no open events) and the earlier UI scripts (plugins, permissions, settings, install), which now run against the helper.
 
 <!--
 Template while a task is active (replace the line above):

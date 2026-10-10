@@ -111,6 +111,7 @@ JavaScriptCore can't interrupt a running loop through public API, which is the m
 - **The helper reads no files.** Baron sends the prelude and each bundle's source over the connection, so the helper needs no file access at all.
 - **Same envelopes, new transport.** The envelopes are unchanged; an `NSXPCConnection` carries them both ways.
 - **Crash recovery.** If the helper crashes, pending calls fail with `unavailable`, Baron relaunches it on the next need, and the plugin that was running counts a strike.
+- **As built (task-011).** The runtime takes an engine factory: `JSCEngineContext` in Baron's process, or `HelperEngine`, which drives a context in the helper through `PluginHost`. Baron uses the helper whenever `Baron.app` carries `BaronPluginHost.xpc` (`scripts/build-app.sh` builds it), and stays in-process otherwise, as under `swift run`. The helper's `PluginHostService` is the same code the tests reach through an anonymous `NSXPCListener`, so the XPC path is unit tested. A plugin stuck in synchronous code, or a helper above 512 MB (checked every 10 s), restarts the helper with `SIGKILL`; every plugin's context goes with it and loads again on its next need.
 
 ## Debugging
 
@@ -133,7 +134,7 @@ In development mode (`baron dev`), contexts are marked inspectable, so Safari's 
 
 ## UML
 
-Drawn from the code at the end of task-005 (stage 1): `packages/runtime` (the prelude) and `macos/Sources/BaronRuntime`. Stage 2 (task-011) replaces the in-process engine with the helper.
+Drawn from the code at the end of task-005 (stage 1): `packages/runtime` (the prelude) and `macos/Sources/BaronRuntime`. Stage 2 (task-011) puts an engine protocol between the runtime and JavaScriptCore; its diagrams follow these.
 
 ```mermaid
 classDiagram
@@ -235,6 +236,87 @@ stateDiagram-v2
   Ready --> Suspended: stuck 10 s in one synchronous run, or 3 timeouts in 10 minutes
   Suspended --> Unloaded: reenable (a fresh context)
   Broken --> [*]
+```
+
+Stage 2, as built in task-011 (`macos/Sources/BaronRuntime/Engine` and `Helper`, `macos/Sources/BaronPluginHost`):
+
+```mermaid
+classDiagram
+  class PluginRuntime {
+    <<actor>>
+    +init(handler, limits, engines: EngineFactory)
+    -engineLost(pluginID, instance)
+  }
+  class PluginEngine {
+    <<protocol>>
+    +installNative(send) async throws
+    +evaluate(script, sourceURL) async throws String?
+    +deliver(json)
+    +unload()
+    +busyDuration() async Duration?
+    +abandon()
+    +onLost
+  }
+  class JSCEngineContext {
+    one VM and queue per plugin
+  }
+  class HelperEngine {
+    +id: context id in the helper
+  }
+  class PluginHost {
+    <<Baron side, PluginHostClientXPC>>
+    +serviceName: org.odh.baron.plugin-host
+    +engineFactory
+    +restart() SIGKILL
+    +checkMemory() above 512 MB
+    +send(id, json)
+  }
+  class PluginHostXPC {
+    <<@objc protocol>>
+    +createContext(id, pluginID, inspectable)
+    +evaluate(id, script, sourceURL)
+    +deliver(id, json)
+    +unload(id)
+    +busy(id)
+    +memoryFootprint()
+  }
+  class PluginHostService {
+    <<in BaronPluginHost.xpc>>
+    -contexts: id to JSCEngineContext
+  }
+  class PluginHostListener {
+    <<NSXPCListenerDelegate>>
+  }
+  PluginRuntime --> PluginEngine : one per loaded plugin
+  PluginEngine <|.. JSCEngineContext
+  PluginEngine <|.. HelperEngine
+  HelperEngine --> PluginHost
+  PluginHost ..> PluginHostXPC : NSXPCConnection
+  PluginHostXPC <|.. PluginHostService
+  PluginHostListener ..> PluginHostService : one per connection
+  PluginHostService *-- JSCEngineContext
+```
+
+The helper going away mid-action:
+
+```mermaid
+sequenceDiagram
+  participant RT as PluginRuntime
+  participant Eng as HelperEngine
+  participant Host as PluginHost
+  participant XPC as BaronPluginHost.xpc
+  RT->>Eng: dispatch (deliver the envelope)
+  Eng->>Host: proxy.deliver(id, json)
+  Host->>XPC: over NSXPCConnection
+  Note over XPC: crash, SIGKILL for a stuck plugin, or above 512 MB
+  XPC--xHost: connection interrupted
+  Host->>Host: drop the connection
+  Host->>Eng: lost()
+  Eng->>RT: onLost → engineLost
+  RT->>RT: pending dispatches fail with unavailable; a running plugin counts a strike
+  RT->>Eng: next dispatch: a new HelperEngine
+  Eng->>Host: proxy (connects, launchd starts the helper)
+  Host->>XPC: createContext, evaluate prelude and bundle
 ```
 
 ## Gate (task-005 for stage 1, task-011 for stage 2)

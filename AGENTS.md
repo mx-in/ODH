@@ -16,8 +16,8 @@
     - [x] Polyfill `URL` and `URLSearchParams` (011a9b3)
     - [x] Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone` (40abfeb)
     - [x] Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal (46fb9d4)
-    - [ ] **▶ IN PROGRESS** Provide `fetch`, `Request`, `Response` and `Headers` over `host.http`
-    - [ ] Compile the prelude to one script, copied into the Swift runtime's resources with a sync test
+    - [x] Provide `fetch`, `Request`, `Response` and `Headers` over `host.http` (ca9369d)
+    - [ ] **▶ IN PROGRESS** Compile the prelude to one script, copied into the Swift runtime's resources with a sync test
 - [ ] Engine contexts (Swift, new `BaronRuntime` target)
     - [ ] Create one `JSVirtualMachine` and context per plugin, on its own serial queue
     - [ ] Expose `__baronNative.send` and deliver envelopes back to the context

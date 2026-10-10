@@ -59,4 +59,16 @@ struct SystemServicesTests {
         #expect(words.last == [12, 16])
         #expect(await call(TextService(), "segment", [.string("x"), .string("line")]).failure?.data == .object(["path": .string("/1")]))
     }
+
+    @Test func opensWebAndMailURLsAndSettings() async throws {
+        let system = FakeSystem()
+        let ui = UIService(presenter: RecordingPresenter(), system: system)
+        _ = try await call(ui, "openUrl", [.string("https://dict.cn/fox")]).get()
+        _ = try await call(ui, "openUrl", [.string("mailto:a@example.com")]).get()
+        _ = try await call(ui, "openSettings").get()
+        for refused in ["file:///etc/passwd", "javascript:alert(1)", "x-apple.systempreferences:com.apple.preference.security", "not a url"] {
+            #expect(await call(ui, "openUrl", [.string(refused)]).failure?.code == "invalid_argument", "\(refused)")
+        }
+        #expect(system.calls == ["open https://dict.cn/fox", "open mailto:a@example.com", "settings \(plugin.id)"])
+    }
 }

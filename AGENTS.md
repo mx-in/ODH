@@ -21,9 +21,9 @@
     - [x] Resolve hosts before connecting, so a public name can't reach a private address (9b6e418)
 - [ ] Services
     - [x] `clipboard.readText` and `clipboard.writeText` (aa56d94)
-    - [ ] **▶ IN PROGRESS** `selection.replace` (only on an editable selection)
-    - [ ] `text.segment` with `NLTokenizer`
-    - [ ] `ui.openUrl` for `https`, `http` and `mailto`, and `ui.openSettings`
+    - [x] `selection.replace` (only on an editable selection) (8520008)
+    - [x] `text.segment` with `NLTokenizer` (8520008)
+    - [ ] **▶ IN PROGRESS** `ui.openUrl` for `https`, `http` and `mailto`, and `ui.openSettings`
     - [ ] `permissions.query` and `permissions.request`
 - [ ] Run-time prompt (UI)
     - [ ] Show the native prompt naming the plugin and host: Deny, Allow Once, Always Allow; one at a time

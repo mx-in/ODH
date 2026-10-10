@@ -76,6 +76,94 @@ Baron's own logs never contain selected text (app design). Plugin log lines go t
 
 Packages will carry a developer signature so updates can be tied to the same author. Until then, the install sheet shows the source and "Unsigned", and a package with the same `id` from a different source warns before replacing.
 
+## UML
+
+Design-level diagrams: they show the planned types, and task-006 replaces them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class Permission {
+    <<enumeration>>
+    contextSentence
+    contextParagraph
+    contextPage
+    contextWindow
+    network(NetworkPattern)
+    networkAny
+    clipboardRead
+    selectionReplace
+    secrets
+    codeDynamic
+  }
+  class NetworkPattern {
+    +scheme: String
+    +host: String
+    +wildcardSubdomains: Bool
+    +port: Int?
+    +matches(url, resolvedAddress) Bool
+  }
+  class GrantSet {
+    +installed: [Permission]
+    +runtime: [RuntimeGrant]
+    +allows(Permission) Bool
+  }
+  class RuntimeGrant {
+    +permission: Permission
+    +decision: alwaysAllow | deny
+    +expires: Date?
+  }
+  class GrantStore {
+    +grants(plugin) GrantSet
+    +save(RuntimeGrant, plugin)
+    +revoke(Permission, plugin)
+  }
+  class PermissionGate {
+    +check(plugin, method, args) throws
+  }
+  class PermissionPrompt {
+    +ask(plugin, Permission) async PromptAnswer
+  }
+  class PromptAnswer {
+    <<enumeration>>
+    deny
+    allowOnce
+    alwaysAllow
+  }
+  Permission ..> NetworkPattern
+  GrantSet *-- "*" RuntimeGrant
+  GrantStore ..> GrantSet : builds
+  PermissionGate --> GrantStore
+  PermissionGate ..> Permission
+  PermissionPrompt ..> PromptAnswer
+  PermissionPrompt --> GrantStore : saves answers
+```
+
+Reaching a website the plugin didn't declare (ODH's user scripts):
+
+```mermaid
+sequenceDiagram
+  participant P as Plugin
+  participant Router as HostRouter
+  participant Gate as PermissionGate
+  participant Prompt as PermissionPrompt
+  participant Store as GrantStore
+  participant HTTP as HTTPService
+  P->>Router: http.fetch("https://dict.cn/fox")
+  Router->>Gate: check network:dict.cn
+  Gate-->>Router: denied, requestable (network:* is optional)
+  Router-->>P: permission_denied, requestable true
+  P->>Router: permissions.request(["network:dict.cn"]) during a click
+  Router->>Prompt: ask(plugin, network:dict.cn)
+  Prompt-->>Router: Always Allow
+  Router->>Store: save grant
+  Router-->>P: ["network:dict.cn"]
+  P->>Router: http.fetch("https://dict.cn/fox") again
+  Router->>Gate: check network:dict.cn
+  Gate-->>Router: allowed
+  Router->>HTTP: resolve host, refuse private addresses, fetch, check each redirect
+  HTTP-->>P: response
+```
+
 ## Gate (task-006)
 
 - [ ] Every host method rejects calls without its permission, and those needing a user action reject without one

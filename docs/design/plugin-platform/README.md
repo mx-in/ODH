@@ -1,6 +1,6 @@
 # Baron Plugin Platform — Design
 
-2026-10-10 · mx_in · Mirror of the [Claude Docs version](https://claude.ai/code/artifact/c7b7a984-f745-4ca3-b858-81419c79e35e)
+2026-10-10 · mx_in · Approved 2026-10-10 · First written as a [Claude Doc](https://claude.ai/code/artifact/c7b7a984-f745-4ca3-b858-81419c79e35e); this folder is the maintained copy, and only it has the UML diagrams
 
 Baron's plugin platform lets third-party TypeScript plugins act on selected text, keep settings and data, and show UI, all inside a sandbox. It is split into ten sub-projects, each designed in its own file and built as its own task. The platform is done when ODH, today a Chrome extension, runs as a Baron plugin with the same features: [ODH on Baron (success test)](odh-on-baron.md).
 
@@ -105,6 +105,86 @@ Each task builds on the ones above it and ends at its gate. task-003, the resear
 - **Plugin-to-plugin calls, menu-bar items, command palettes.** Plugins add actions to the bar only.
 - **ODH's "hover with a modifier key" lookup.** Baron reads selections, not the word under the pointer.
 - **Windows and Linux hosts.** Every contract here is written so they can implement it later.
+
+## UML
+
+Design-level diagrams of the whole platform; each sub-project's file has its own. They are replaced by diagrams of the code as tasks finish.
+
+```mermaid
+classDiagram
+  class SelectionPipeline {
+    app design, tasks 001-002
+  }
+  class ContextBuilder {
+    task-009
+    +build(selection, needs, grants) SelectionContext
+  }
+  class PluginRegistry {
+    10 · task-008
+    +actionsForBar()
+  }
+  class PluginRuntime {
+    02 · tasks 005, 011
+    +dispatch(plugin, Dispatch)
+  }
+  class HostRouter {
+    03 · tasks 005-006
+    +handle(Envelope, from)
+  }
+  class PermissionGate {
+    04 · task-006
+  }
+  class PluginData {
+    05 · task-007
+  }
+  class PluginSettingsPage {
+    06 · task-007
+  }
+  class ResultPanel {
+    07, 08 · tasks 010, 013
+  }
+  class ManifestValidator {
+    01 · task-004
+  }
+  SelectionPipeline --> PluginRegistry : matching actions
+  SelectionPipeline --> ContextBuilder
+  SelectionPipeline --> PluginRuntime : dispatch on click
+  PluginRegistry --> ManifestValidator
+  PluginRuntime --> HostRouter : host calls
+  ResultPanel --> HostRouter : page calls
+  HostRouter --> PermissionGate
+  HostRouter --> PluginData
+  PluginSettingsPage --> PluginData
+  PluginSettingsPage --> PluginRuntime : options and buttons
+  HostRouter --> ResultPanel : ui.openWebView, ui.show
+```
+
+One action, end to end:
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant App as Any app
+  participant Pipe as SelectionPipeline
+  participant Reg as PluginRegistry
+  participant Ctx as ContextBuilder
+  participant RT as PluginRuntime
+  participant Router as HostRouter
+  User->>App: selects text
+  App->>Pipe: mouse-up, AX read of the text
+  Pipe->>Reg: actions whose when-rules match
+  Reg-->>Pipe: built-in and plugin actions, with their needs
+  Pipe->>Ctx: start reading the needed, granted context
+  Pipe-->>User: action bar
+  User->>Pipe: clicks a plugin action
+  Pipe->>Ctx: wait at most 300 ms more
+  Ctx-->>Pipe: SelectionContext
+  Pipe->>RT: dispatch action with the context
+  RT->>Router: host calls, each checked
+  Router-->>RT: results
+  RT-->>Pipe: ActionResult (copy, replace, toast, openUrl) or a panel
+  Pipe-->>User: result
+```
 
 ## Related docs and sources
 

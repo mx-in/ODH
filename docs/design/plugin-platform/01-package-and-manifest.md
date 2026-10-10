@@ -120,6 +120,100 @@ The runtime ([02](02-runtime.md)) loads `main`; permissions ([04](04-permissions
 - **Regex dialects differ** between JavaScript and ICU. The validator compiles each `regex` in both and the shared test corpus covers common patterns.
 - **The manifest grows.** New fields are optional, and anything that changes meaning waits for the next `apiVersion`.
 
+## UML
+
+Design-level diagrams: they show the planned types, and task-004 replaces them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class PluginManifest {
+    +id: String
+    +name: LocalizedString
+    +version: SemanticVersion
+    +apiVersion: Int
+    +main: String
+    +platforms: [Platform]
+    +minBaronVersion: SemanticVersion?
+    +permissions: [Permission]
+    +optionalPermissions: [Permission]
+    +defaultLocale: String?
+  }
+  class ManifestAction {
+    +id: String
+    +run: String?
+    +title: LocalizedString
+    +icon: String?
+    +needs: [ContextField]
+    +autoRun: AutoRun
+    +handlerName() String
+  }
+  class WhenRules {
+    +minLength: Int?
+    +maxLength: Int?
+    +regex: String?
+    +contentTypes: [ContentType]?
+    +apps: [AppMatch]?
+    +excludeApps: [AppMatch]?
+    +editable: Bool?
+    +matches(selection: WhenInput) Bool
+  }
+  class Preference {
+    +id: String
+    +type: PreferenceType
+    +title: LocalizedString
+    +defaultValue: PreferenceValue?
+    +required: Bool
+    +optionsFrom: String?
+    +dependsOn: [String]
+  }
+  class ManifestValidator {
+    +validate(data: Data, package: URL) ManifestValidation
+  }
+  class ManifestError {
+    +pointer: String
+    +message: String
+  }
+  class Localizer {
+    +languages: [String]
+    +resolve(text: LocalizedString) String
+  }
+  class ContentType {
+    <<enumeration>>
+    word
+    url
+    email
+    number
+    text
+  }
+  PluginManifest *-- "1..*" ManifestAction
+  PluginManifest *-- "*" Preference
+  ManifestAction *-- "0..1" WhenRules
+  WhenRules ..> ContentType
+  ManifestValidator ..> PluginManifest : produces
+  ManifestValidator ..> ManifestError : reports
+  Localizer ..> PluginManifest : resolves strings of
+```
+
+Choosing the buttons for a selection, with no plugin code running:
+
+```mermaid
+sequenceDiagram
+  participant Pipeline as Selection pipeline
+  participant Registry as Plugin registry
+  participant Rules as WhenRules
+  participant Loc as Localizer
+  participant Bar as Action bar
+  Pipeline->>Registry: actions for (text, app, editable)
+  loop every enabled plugin, every action
+    Registry->>Rules: matches(selection)
+    Rules-->>Registry: true or false
+  end
+  Registry->>Loc: resolve titles of the matching actions
+  Loc-->>Registry: titles in the user's language
+  Registry-->>Pipeline: matching actions with their needs
+  Pipeline->>Bar: show built-in and plugin buttons
+```
+
 ## Gate (task-004)
 
 - [ ] The JSON Schema and the Swift validator agree on a corpus of at least 30 valid and invalid manifests

@@ -134,6 +134,105 @@ Every exchange is one JSON envelope. Plugins never see envelopes; the prelude an
 
 On the Swift side, one router maps `ns.method` to a service. It asks the permission gate ([04](04-permissions-and-security.md)) and the user-action tracker before the service runs, so no service can forget a check.
 
+## UML
+
+Design-level diagrams: they show the planned types, and tasks 005 and 006 replace them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class Transport {
+    <<interface>>
+    +pluginID: PluginID
+    +receive(Envelope)
+    +send(Envelope)
+  }
+  class InProcessTransport
+  class XPCTransport
+  class PageBridgeTransport {
+    +origin: baron-plugin URL
+  }
+  class Envelope {
+    +v: Int
+    +kind: call | result | dispatch | event
+    +id: Int
+    +ns: String?
+    +method: String?
+    +args: [Value]?
+  }
+  class HostRouter {
+    +services: [String: HostService]
+    +handle(Envelope, from: PluginID) async Envelope
+  }
+  class PermissionGate {
+    +check(plugin, method, args) throws
+  }
+  class UserActionTracker {
+    +record(plugin)
+    +hasRecentAction(plugin) Bool
+  }
+  class HostService {
+    <<interface>>
+    +namespace: String
+    +requirement(method) MethodRequirement
+    +call(method, args, plugin) async throws Value
+  }
+  class MethodRequirement {
+    +permission: Permission?
+    +needsUserAction: Bool
+  }
+  class HostError {
+    +code: ErrorCode
+    +message: String
+    +data: Value?
+  }
+  Transport <|.. InProcessTransport : stage 1
+  Transport <|.. XPCTransport : stage 2
+  Transport <|.. PageBridgeTransport : pages
+  Transport --> HostRouter : calls
+  Transport ..> Envelope : carries
+  HostRouter --> PermissionGate
+  HostRouter --> UserActionTracker
+  HostRouter o-- "*" HostService
+  HostService ..> MethodRequirement
+  HostRouter ..> HostError : returns on failure
+  HostService <|.. HTTPService
+  HostService <|.. ClipboardService
+  HostService <|.. SelectionService
+  HostService <|.. StorageService
+  HostService <|.. TextService
+  HostService <|.. UIService
+```
+
+One host call, from plugin code to a Swift service and back:
+
+```mermaid
+sequenceDiagram
+  participant Code as Plugin code
+  participant Prelude
+  participant T as Transport
+  participant Router as HostRouter
+  participant Gate as PermissionGate
+  participant UA as UserActionTracker
+  participant Svc as HostService
+  Code->>Prelude: host.clipboard.writeText("fox")
+  Prelude->>T: call envelope id 41
+  T->>Router: envelope + plugin ID from the transport
+  Router->>Gate: check(plugin, clipboard.writeText)
+  Gate-->>Router: allowed
+  Router->>UA: hasRecentAction(plugin)
+  alt no click within 5 s
+    UA-->>Router: false
+    Router-->>T: result id 41, error user_action_required
+  else recent click
+    UA-->>Router: true
+    Router->>Svc: call(writeText, ["fox"])
+    Svc-->>Router: done
+    Router-->>T: result id 41, ok
+  end
+  T-->>Prelude: result envelope
+  Prelude-->>Code: resolve, or reject with BaronError
+```
+
 ## Gate (task-005 core, task-006 complete)
 
 - [ ] Every namespace is implemented with unit tests at the Swift service level

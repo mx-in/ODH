@@ -74,6 +74,94 @@ test("looks up a word", async () => {
 
 Each template is also a maintained example in `examples/`, built and tested in CI.
 
+## UML
+
+Design-level diagrams: they show the planned types, and tasks 004, 005 and 008 replace them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class BaronCLI {
+    +create(name, template)
+    +build()
+    +dev()
+    +test(engine)
+    +validate()
+    +pack()
+  }
+  class Bundler {
+    <<Bun.build>>
+    +bundle(src) classic script + source map
+  }
+  class BuildChecks {
+    +manifest()
+    +noNodeBuiltins()
+    +dynamicCode()
+    +literalHosts()
+    +size()
+  }
+  class ManifestSchema {
+    <<@baron/api>>
+    JSON Schema draft 2020-12
+  }
+  class Harness {
+    <<@baron/test>>
+    +http: MockHTTP
+    +permissions: MockGrants
+    +runAction(id, context) ActionResult
+  }
+  class MockHost {
+    +storage, cache, secrets in memory
+    +checks permissions like Baron
+  }
+  class EngineRunner {
+    <<interface>>
+    +load(prelude, bundle)
+    +dispatch(envelope)
+  }
+  class JSCRunner {
+    node:vm context, subset globals only
+  }
+  class QuickJSRunner {
+    qjs over stdin and stdout
+  }
+  class DevSession {
+    +socket: same-user only
+    +register(folder)
+    +reload()
+    +streamLogs()
+  }
+  BaronCLI --> Bundler
+  BaronCLI --> BuildChecks
+  BuildChecks --> ManifestSchema
+  BaronCLI --> Harness : test
+  BaronCLI --> DevSession : dev
+  Harness --> MockHost
+  Harness --> EngineRunner
+  EngineRunner <|.. JSCRunner
+  EngineRunner <|.. QuickJSRunner
+```
+
+`baron dev`, from a save to the new code on the bar:
+
+```mermaid
+sequenceDiagram
+  actor Author
+  participant CLI as baron dev
+  participant Bun as Bundler
+  participant Baron
+  participant RT as PluginRuntime
+  Author->>CLI: baron dev
+  CLI->>Baron: connect to the developer socket, register the folder
+  Baron-->>CLI: plugin loaded as "Development"
+  Author->>Author: saves src/main.ts
+  CLI->>Bun: rebuild dist/main.js
+  Bun-->>CLI: bundle, checks passed
+  CLI->>Baron: reload
+  Baron->>RT: discard the context, load the new bundle
+  Author->>Baron: selects text, clicks the action
+  RT-->>CLI: logs and errors, mapped to TypeScript lines
+```
+
 ## Gate (grows with tasks 004, 005 and 008)
 
 - [ ] task-004: `@baron/api` types and the manifest schema are published in the workspace and used by Baron's validator tests

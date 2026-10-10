@@ -56,6 +56,88 @@ Settings › Bar lists every action, built-in and from plugins:
 - **Run on selection:** for actions whose manifest says `"autoRun": "allowed"`, the user can choose to run them straight after a selection instead of showing a button. Off by default; it can be limited to certain apps. ODH's lookup uses this to open its popup on double-click, as the Chrome extension does.
 - **Hotkey:** any action can get its own shortcut, which runs it on the current selection.
 
+## UML
+
+Design-level diagrams: they show the planned types, and task-008 replaces them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class PluginInstaller {
+    +install(from: PluginSource) async throws InstalledPlugin
+    +update(InstalledPlugin, with: PackageContents) async throws
+    +uninstall(InstalledPlugin) async
+  }
+  class PluginSource {
+    <<enumeration>>
+    bundled
+    folder(URL)
+    file(URL)
+    link(URL)
+    development(URL)
+  }
+  class PackageReader {
+    +read(source) throws PackageContents
+  }
+  class PackageContents {
+    +manifest: PluginManifest
+    +files: [String]
+    +root: URL
+  }
+  class PluginRegistry {
+    +plugins: [InstalledPlugin]
+    +setState(plugin, PluginState)
+    +actionsForBar() [BarAction]
+  }
+  class InstalledPlugin {
+    +manifest: PluginManifest
+    +source: PluginSource
+    +folder: URL
+    +state: PluginState
+  }
+  class PluginState {
+    <<enumeration>>
+    enabled
+    disabled
+    needsConsent(newPermissions)
+    broken(reason)
+    suspended
+  }
+  class BarSettings {
+    +order: [ActionID]
+    +hidden: Set~ActionID~
+    +runOnSelection: [ActionID: AppFilter]
+    +hotkeys: [ActionID: Shortcut]
+  }
+  PluginInstaller --> PackageReader
+  PackageReader ..> PackageContents
+  PluginInstaller --> ManifestValidator
+  PluginInstaller --> InstallSheet : asks for consent
+  PluginInstaller --> PluginRegistry
+  PluginInstaller --> PluginData : removes on uninstall
+  PluginRegistry *-- "*" InstalledPlugin
+  InstalledPlugin --> PluginState
+  InstalledPlugin --> PluginSource
+  PluginRegistry --> BarSettings : orders the actions
+```
+
+The states an installed plugin moves through:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Enabled: installed, user accepted the sheet
+  Enabled --> Disabled: user turns it off
+  Disabled --> Enabled: user turns it on
+  Enabled --> NeedsConsent: update adds permissions (old version keeps running)
+  NeedsConsent --> Enabled: user accepts, or keeps the old version
+  Enabled --> Suspended: crash or stuck-loop limit
+  Suspended --> Enabled: Re-enable
+  Enabled --> Broken: fails to load, or needs a newer Baron
+  Broken --> Enabled: fixed by an update
+  Enabled --> [*]: uninstall removes package and data
+  Disabled --> [*]: uninstall
+  Broken --> [*]: uninstall
+```
+
 ## Gate (task-008)
 
 - [ ] Install from a folder and from a `.baronplugin` file, including refused cases: bad zip, symlink, invalid manifest, newer API

@@ -70,6 +70,90 @@ ODH's permissions: `context.sentence`, `context.paragraph`, `context.page`, `con
 4. The script's `findTerm` fetches through `baron.http.fetch`; the popup UI renders the definitions and sizes the panel.
 5. A play button plays audio in the page. A "+" button builds the card's fields from the mapping and calls AnkiConnect; the icon shows success or failure.
 
+## UML
+
+Design-level diagrams: they show the planned parts, and task-012 replaces them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class OdhPlugin {
+    <<engine side, dist/main.js>>
+    +lookup(ctx, host) action
+    +dictionaries() options
+    +decks() options
+    +noteTypes() options
+    +noteFields() options
+    +testAnki() button
+    +onInstall()
+  }
+  class PopupPage {
+    <<page side, views/popup.html>>
+    +render(word, definitions)
+    +playAudio(url)
+    +addCard(definition)
+  }
+  class ApiShim {
+    +fetch(url) via baron.http.fetch
+    +deinflect(word)
+    +locale()
+    +getBuiltin(name)
+  }
+  class DictionaryScript {
+    <<one of 26, or a user script>>
+    +findTerm(word) definitions
+    +setOptions(options)
+  }
+  class ScriptLoader {
+    +loadBuiltin(name)
+    +loadUserScript(url) via permission prompt and cache
+  }
+  class Deinflector {
+    +deinflect(word) base forms
+  }
+  class AnkiClient {
+    +addNote(fields, deck, model, tags)
+    +deckNames()
+    +modelNames()
+    +modelFieldNames(model)
+    +version()
+  }
+  OdhPlugin ..> PopupPage : openWebView with word, sentences, URL
+  OdhPlugin --> AnkiClient : options and Test connection
+  PopupPage --> ScriptLoader
+  ScriptLoader ..> DictionaryScript
+  DictionaryScript --> ApiShim
+  ApiShim --> Deinflector
+  PopupPage --> AnkiClient : "+" button
+```
+
+A lookup in any app, then adding a card:
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Baron
+  participant Engine as OdhPlugin (engine)
+  participant Page as PopupPage
+  participant Dict as DictionaryScript
+  participant Web as Dictionary website
+  participant Anki as AnkiConnect
+  User->>Baron: double-clicks "running" in Mail
+  Baron->>Engine: dispatch lookup (Run on selection), ctx with paragraph and window
+  Engine->>Engine: host.text.segment: maxcontext sentences around the word
+  Engine->>Baron: host.ui.openWebView("views/popup.html", {word, sentences, url})
+  Baron->>Page: show the result panel next to the word
+  Page->>Dict: findTerm("running")
+  Dict->>Page: api.deinflect gives "run"
+  Dict->>Web: api.fetch through baron.http.fetch
+  Web-->>Dict: HTML
+  Dict-->>Page: definitions
+  Page-->>User: definitions, audio buttons, "+"
+  User->>Page: clicks "+"
+  Page->>Anki: addNote with the mapped fields and tags (baron.http.fetch to 127.0.0.1:8765)
+  Anki-->>Page: note ID, or an error
+  Page-->>User: "+" turns into a tick or a cross
+```
+
 ## Parity checklist (gate for task-012)
 
 - [ ] With Run on selection on, double-clicking a word in Safari, Chrome, Mail, Notes, Pages and TextEdit shows ODH's definitions next to it within 1 s, warm

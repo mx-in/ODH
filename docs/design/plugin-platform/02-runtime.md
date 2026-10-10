@@ -116,6 +116,86 @@ In development mode (`baron dev`), contexts are marked inspectable, so Safari's 
 - **Polyfill fidelity.** `URL` and `fetch` are polyfills; plugins may hit edge cases. Mitigation: well-known implementations, and conformance tests shared with QuickJS.
 - **Stuck loops in stage 1** can't be interrupted. Mitigation: stage 2 before third-party plugins and before ODH ships.
 
+## UML
+
+Design-level diagrams: they show the planned types, and tasks 005 and 011 replace them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class PluginRuntime {
+    +contexts: [PluginID: EngineContext]
+    +dispatch(plugin, Dispatch) async throws Value
+    +unload(plugin)
+    +reload(plugin)
+  }
+  class EngineContext {
+    <<interface>>
+    +state: ContextState
+    +load(prelude: String, bundle: String) async throws
+    +send(Envelope) async
+    +setReceiver(handler)
+  }
+  class JSCEngineContext {
+    -virtualMachine: JSVirtualMachine
+    -context: JSContext
+    -queue: DispatchQueue
+    -timers: TimerTable
+  }
+  class QuickJSEngineContext {
+    -runtime: JSRuntime
+    -interruptHandler
+    -memoryLimit
+  }
+  class Dispatch {
+    +target: DispatchTarget
+    +name: String
+    +payload: Value
+    +timeLimit: Duration
+  }
+  class DispatchTarget {
+    <<enumeration>>
+    action
+    options
+    button
+    lifecycle
+    event
+  }
+  class StrikeCounter {
+    +record(plugin)
+    +isOverLimit(plugin) Bool
+  }
+  class Prelude {
+    <<JavaScript>>
+    +host: Host
+    +handleDispatch(envelope)
+    +polyfills
+  }
+  PluginRuntime o-- "*" EngineContext
+  EngineContext <|.. JSCEngineContext : macOS
+  EngineContext <|.. QuickJSEngineContext : Windows, Linux, tests
+  PluginRuntime ..> Dispatch
+  Dispatch --> DispatchTarget
+  PluginRuntime --> StrikeCounter
+  EngineContext ..> Prelude : evaluates first
+```
+
+A plugin's context, from first use to unloading:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Unloaded
+  Unloaded --> Loading: first need (action, settings pane, panel)
+  Loading --> Ready: prelude and bundle evaluated within 2 s
+  Loading --> Broken: throws, defines no actions, or takes over 2 s
+  Ready --> Idle: nothing pending, no panel or pane open
+  Idle --> Ready: new dispatch
+  Idle --> Unloaded: 60 s idle, timers cleared
+  Ready --> Unloaded: update, preference change or dev rebuild (reloaded on next need)
+  Ready --> Suspended: stuck 10 s in a loop, or 3 strikes in 10 minutes
+  Suspended --> Unloaded: user clicks Re-enable
+  Broken --> [*]: fixed only by an update
+```
+
 ## Gate (task-005 for stage 1, task-011 for stage 2)
 
 - [ ] A sample plugin with an uppercase action and a `fetch`-based lookup runs from Baron's bar

@@ -65,6 +65,74 @@ SwiftUI controls are accessible by default. Components take an `accessibilityLab
 - **React's size and parse time** in every context that uses it. Mitigation: loaded only when imported; QuickJS bytecode precompiled.
 - **Render-tree churn** on large lists. Mitigation: commits throttled to 16 ms; JSON Patch when needed.
 
+## UML
+
+Design-level diagrams: they show the planned types, and task-013 replaces them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class Reconciler {
+    <<JavaScript, in the engine>>
+    +root: RenderNode
+    +handlers: HandlerTable
+    +commit() throttled to 16 ms
+  }
+  class RenderNode {
+    +id: String
+    +type: String
+    +props: JSON with handler refs
+    +children: [RenderNode]
+  }
+  class HandlerTable {
+    +register(function) Int
+    +call(id, args)
+  }
+  class NativeViewHost {
+    <<Swift>>
+    +viewID: String
+    +tree: RenderTree
+    +apply(tree)
+    +send(event)
+  }
+  class NodeRenderer {
+    +view(for: RenderNode) AnyView
+  }
+  class NavigationModel {
+    +stack: [RenderTree]
+    +push(tree)
+    +pop()
+  }
+  Reconciler *-- RenderNode
+  Reconciler *-- HandlerTable
+  Reconciler ..> NativeViewHost : render tree (JSON)
+  NativeViewHost --> NodeRenderer
+  NativeViewHost --> NavigationModel
+  NativeViewHost ..> HandlerTable : event envelope
+  NodeRenderer ..> FormView
+  NodeRenderer ..> ListView
+  NodeRenderer ..> DetailView
+  NodeRenderer ..> ErrorPlaceholder : unknown type
+```
+
+A search box in a native List, one keystroke:
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant SwiftUI as SwiftUI List
+  participant Host as NativeViewHost
+  participant RT as Engine context
+  participant React as React and Reconciler
+  User->>SwiftUI: types "ser" in the search field
+  Note over SwiftUI: text kept locally (uncontrolled), no lag
+  SwiftUI->>Host: onSearchTextChange("ser")
+  Host->>RT: event envelope, handler 4, args ["ser"]
+  RT->>React: call handler 4
+  React->>React: setState, re-render, commit
+  React->>Host: new render tree (at most every 16 ms)
+  Host->>SwiftUI: diff and redraw the items
+```
+
 ## Gate (task-013)
 
 - [ ] A sample plugin shows a Form with every field type, a searchable List with actions, and a Detail with Markdown

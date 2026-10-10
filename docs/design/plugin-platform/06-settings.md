@@ -71,6 +71,95 @@ If a user clicks an action while a `required` preference is empty, the action do
 
 When generated fields aren't enough, a plugin adds a `settingsPage` (a web page, [07](07-web-views.md)) shown under its generated preferences. A native `settingsView` ([08](08-native-views.md)) follows after ODH. ODH needs neither.
 
+## UML
+
+Design-level diagrams: they show the planned types, and task-007 replaces them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class PluginsSection {
+    +plugins: [InstalledPlugin]
+    +select(plugin)
+  }
+  class PluginSettingsPage {
+    +header
+    +preferences: [PreferenceControl]
+    +permissions: PermissionsSection
+    +data: DataSection
+    +about: AboutSection
+  }
+  class PreferenceControl {
+    <<interface>>
+    +preference: Preference
+    +value: PreferenceValue?
+    +error: String?
+  }
+  class OptionsLoader {
+    +load(field, preferences) async OptionsState
+    +dependents(of: changedID) [Preference]
+  }
+  class OptionsState {
+    <<enumeration>>
+    loading
+    loaded(options)
+    failed(message)
+  }
+  class PreferenceValidator {
+    +validate(preference, value) ValidationResult
+  }
+  class AutosaveController {
+    +delay: 0.5 s
+    +changed(id, value)
+  }
+  PluginsSection --> PluginSettingsPage
+  PluginSettingsPage *-- "*" PreferenceControl
+  PreferenceControl <|.. TextControl
+  PreferenceControl <|.. NumberControl
+  PreferenceControl <|.. DropdownControl
+  PreferenceControl <|.. ChecklistControl
+  PreferenceControl <|.. ListControl
+  PreferenceControl <|.. SecretControl
+  PreferenceControl <|.. ButtonControl
+  DropdownControl --> OptionsLoader : optionsFrom
+  ChecklistControl --> OptionsLoader : optionsFrom
+  OptionsLoader ..> OptionsState
+  PluginSettingsPage --> AutosaveController
+  AutosaveController --> PreferenceValidator
+  AutosaveController --> PreferencesStore : saves valid values
+  OptionsLoader --> PluginRuntime : dispatch options
+```
+
+Opening ODH's settings and changing the note type:
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Page as PluginSettingsPage
+  participant Loader as OptionsLoader
+  participant RT as PluginRuntime
+  participant Anki as AnkiConnect
+  User->>Page: open ODH's settings
+  par each optionsFrom field
+    Page->>Loader: load(deck)
+    Loader->>RT: dispatch options.decks(preferences)
+    RT->>Anki: deckNames (through host.http)
+    Anki-->>RT: decks
+    RT-->>Loader: [{value, title}]
+    Loader-->>Page: loaded, spinner replaced
+  and
+    Page->>Loader: load(noteType)
+    Loader-->>Page: loaded
+  end
+  User->>Page: choose note type "Basic"
+  Page->>Page: autosave after 0.5 s
+  Page->>Loader: dependents(of: noteType)
+  Loader-->>Page: the 8 field-mapping dropdowns
+  Page->>Loader: load(fieldExpression), and the others
+  Loader->>RT: dispatch options.noteFields(preferences with noteType Basic)
+  RT-->>Loader: Front, Back
+  Loader-->>Page: loaded, a saved field missing from them shows "(not found)"
+```
+
 ## Gate (task-007)
 
 - [ ] A test plugin shaped like ODH renders every preference type in Settings

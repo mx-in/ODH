@@ -72,6 +72,83 @@ The bridge uses `WKScriptMessageHandlerWithReply` and the envelopes from [03](03
 
 The page bridge and policy are the contract; WebView2 on Windows and WebKitGTK on Linux implement the same scheme, policy and `window.baron`.
 
+## UML
+
+Design-level diagrams: they show the planned types, and task-010 replaces them with diagrams of the code as built.
+
+```mermaid
+classDiagram
+  class ResultPanel {
+    <<NSPanel, non-activating>>
+    +header: plugin icon, name, pin, close
+    +isPinned: Bool
+    +show(near: selection bounds)
+    +resize(height)
+    +close()
+  }
+  class PluginWebView {
+    -webView: WKWebView
+    -dataStore: non-persistent
+    +load(path, data)
+  }
+  class PluginSchemeHandler {
+    <<WKURLSchemeHandler>>
+    +scheme: baron-plugin
+    +serve(pluginID, path) file in package
+  }
+  class ContentSecurityPolicy {
+    +header(for: PluginManifest, grants) String
+  }
+  class PageBridge {
+    <<WKScriptMessageHandlerWithReply>>
+    +pluginID from page origin
+    +receive(envelope) async reply
+  }
+  class ViewHandle {
+    +postMessage(message)
+    +onMessage(listener)
+    +close()
+  }
+  class WebViewPool {
+    +keepWarm: 30 s
+    +take(pluginID) PluginWebView
+    +giveBack(view)
+  }
+  ResultPanel *-- PluginWebView
+  PluginWebView --> PluginSchemeHandler : loads pages through
+  PluginSchemeHandler --> ContentSecurityPolicy : adds header
+  PluginWebView --> PageBridge : window.baron
+  PageBridge --> HostRouter : same envelopes
+  ViewHandle --> PluginWebView : engine side
+  WebViewPool o-- "*" PluginWebView
+```
+
+Opening ODH's popup and fetching from the page:
+
+```mermaid
+sequenceDiagram
+  participant Action as Plugin action (engine)
+  participant UI as UIService
+  participant Panel as ResultPanel
+  participant Scheme as PluginSchemeHandler
+  participant Page as popup.html
+  participant Bridge as PageBridge
+  participant Router as HostRouter
+  Action->>UI: host.ui.openWebView("views/popup.html", {data})
+  UI->>UI: user action within 5 s?
+  UI->>Panel: show near the selection
+  Panel->>Scheme: GET baron-plugin://org.odh.dictionary/views/popup.html
+  Scheme-->>Panel: file + Content-Security-Policy
+  UI-->>Action: ViewHandle
+  Page->>Bridge: baron.http.fetch("https://dict.cn/fox")
+  Bridge->>Router: call envelope, plugin from the page origin
+  Router-->>Bridge: response (allowlist checked)
+  Bridge-->>Page: resolve
+  Page->>Bridge: baron.view.resize(280)
+  Bridge->>Panel: resize
+  Page->>Action: baron.view.postMessage(...) arrives at handle.onMessage
+```
+
 ## Gate (task-010)
 
 - [ ] A sample plugin opens a result panel next to the selection, sized to its content

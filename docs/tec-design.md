@@ -464,7 +464,7 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 
 ## UML: the selection bar as built
 
-Drawn from the code at the end of task-005 (`macos/Sources`): the selection bar of tasks 001 and 002, now offering plugin actions. Pure logic lives in `BaronCore`, which has unit tests; anything that touches Accessibility, events or windows lives in `BaronPlatform`; the app target wires them together.
+Drawn from the code at the end of task-006 (`macos/Sources`): the selection bar of tasks 001 and 002, offering plugin actions whose host calls are permission-checked. Pure logic lives in `BaronCore`, which has unit tests; anything that touches Accessibility, events or windows lives in `BaronPlatform`; the app target wires them together.
 
 ```mermaid
 classDiagram
@@ -486,6 +486,12 @@ classDiagram
     }
     class ToastPresenter {
       +show(message, kind)
+    }
+    class AlertPrompter {
+      run-time permission prompt
+    }
+    class AppSystemActions {
+      clipboard, replace, open URL, settings
     }
   }
   namespace BaronPlatform {
@@ -635,6 +641,8 @@ classDiagram
   SelectionCoordinator ..> PluginController : plugin buttons
   PluginController ..> PluginActionResult
   PluginController ..> ToastPresenter
+  PluginController --> AlertPrompter : PermissionService asks
+  PluginController --> AppSystemActions : host services use
   ToastPresenter --> ToastPanel
   ActionEffectPerformer ..> SelectionReplacer : replace
 ```

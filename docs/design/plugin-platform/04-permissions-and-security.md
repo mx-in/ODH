@@ -46,7 +46,7 @@ Always available, no permission: the selected text, the app's name and bundle ID
 | `network:http://example.com` | Plain HTTP to that host (must be written out) |
 | `network:127.0.0.1:8765` | Loopback, that port only; HTTP allowed for loopback |
 
-Private (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local and loopback addresses match only an exact entry, and hosts are resolved before connecting so a public name can't point at a private address. Redirects are checked hop by hop.
+Private (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `fc00::/7`), link-local and loopback addresses match only an exact entry, and hosts are resolved before connecting so a public name can't point at a private address (refused as `permission_denied` with `reason: private_address`; names that are themselves local, such as `localhost`, and IP literals are left to the exact entries). Redirects are checked hop by hop. `packages/api/test/network-corpus.json` holds the matching rules as cases; `@baron/api`'s matcher (tooling and tests) and Baron's Swift matcher both pass it.
 
 ## Asking at run time
 
@@ -54,13 +54,15 @@ Private (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), link-local and loopba
 2. A `fetch` to a host outside its granted set fails with `permission_denied` and `requestable: true`.
 3. The plugin calls `host.permissions.request(["network:dict.cn"])` during a user action. ODH's fetch wrapper does this automatically.
 4. Baron shows a native prompt naming the plugin and the host: **Deny**, **Allow Once**, **Always Allow**.
-5. "Always Allow" is saved; "Deny" is remembered for 24 hours so a plugin can't nag. Both can be changed in the plugin's Permissions settings.
+5. "Always Allow" is saved until revoked; "Deny" is remembered for 24 hours so a plugin can't nag; "Allow Once" lasts 10 minutes and is kept in memory only, so restarting Baron asks again. Saved answers live in `PluginData/<id>/grants.json` and can be changed in the plugin's Permissions settings (task-007).
 
-Only one prompt shows at a time, and never while the user isn't interacting with that plugin.
+Only one prompt shows at a time, across all plugins, and never while the user isn't interacting with that plugin (`permissions.request` needs a click within 5 s). A name outside `optionalPermissions`, or `network:*` itself, is refused with `invalid_argument`: plugins ask for one host at a time.
+
+Every call passes the permission gate before its service runs: first the method's permission (`permission_denied`, with `requestable` saying whether asking could help), then a recent click where the method needs one (`user_action_required`). `HostMethodRequirement` in BaronCore lists what each method needs.
 
 ## Install and update consent
 
-- **Install sheet:** name, author, source (folder, file or link), version, and the permissions in plain words grouped as Reads, Connects to, Can, Stores, plus the `code.dynamic` disclosure and "Unsigned" in v1.
+- **Install sheet:** name, author, source (folder, file or link), version, and the permissions in plain words grouped as Reads, Connects to, Can, Stores, plus the `code.dynamic` disclosure and "Unsigned" in v1. `PermissionWording` writes the words; launching Baron with `--preview-install-sheet <folder>` shows the sheet for any plugin.
 - **Updates:** an update that adds permissions installs disabled until the user accepts the new ones. An update with the same or fewer permissions installs silently.
 - **Revoking:** the Permissions section of a plugin's settings lists run-time grants with a remove button. Install-time permissions are revoked by disabling or uninstalling the plugin.
 
@@ -78,95 +80,136 @@ Packages will carry a developer signature so updates can be tied to the same aut
 
 ## UML
 
-Design-level diagrams: they show the planned types, and task-006 replaces them with diagrams of the code as built.
+Drawn from the code at the end of task-006: `macos/Sources/BaronCore/Plugins` (the rules), `macos/Sources/BaronRuntime/Permissions` (enforcement) and the app's prompt.
 
 ```mermaid
 classDiagram
-  class Permission {
-    <<enumeration>>
-    contextSentence
-    contextParagraph
-    contextPage
-    contextWindow
-    network(NetworkPattern)
-    networkAny
-    clipboardRead
-    selectionReplace
-    secrets
-    codeDynamic
+  namespace BaronCore {
+    class PluginPermission {
+      <<enumeration>>
+      context fields, clipboardRead, selectionReplace, secrets, codeDynamic
+      network(NetworkPattern)
+      anyNetwork
+    }
+    class NetworkPattern {
+      +scheme, wildcard, host, port
+      +covers(URL) Bool
+    }
+    class NetworkTarget {
+      +scheme, host, port
+      +permissionName: String
+    }
+    class NetworkAddress {
+      +isLoopback(host)$
+      +isRestricted(host)$
+    }
+    class HostMethodRequirement {
+      +permission: PluginPermission?
+      +needsUserAction: Bool
+      +checksNetwork: Bool
+      +of(namespace, method)$
+    }
+    class PermissionWording {
+      +phrase(permission)$
+      +promptTitle(pluginName, permission)$
+      +summary(of: manifest)$ Summary
+    }
   }
-  class NetworkPattern {
-    +scheme: String
-    +host: String
-    +wildcardSubdomains: Bool
-    +port: Int?
-    +matches(url, resolvedAddress) Bool
+  namespace BaronRuntime {
+    class GrantStore {
+      <<actor>>
+      +grantedSet(for: plugin) GrantedSet
+      +record(answer, for, pluginID)
+      +revoke(permission, pluginID)
+    }
+    class GrantedSet {
+      +permissions
+      +recentlyDenied
+      +optional
+      +holds(permission)
+      +networkPermission(covering: URL)
+      +mayRequest(permission)
+    }
+    class UserActionTracker {
+      +record(pluginID)
+      +hasRecentAction(pluginID) Bool
+    }
+    class PermissionGate {
+      +check(HostCall, plugin) HostError?
+    }
+    class NetworkPolicy {
+      +check(URL, for: plugin) HostError?
+      resolves names, refuses private addresses
+    }
+    class PermissionService {
+      +query, request
+    }
+    class PromptQueue {
+      <<actor>>
+      one prompt at a time
+    }
+    class PermissionPrompter {
+      <<interface>>
+      +ask(PermissionRequest) PromptAnswer
+    }
   }
-  class GrantSet {
-    +installed: [Permission]
-    +runtime: [RuntimeGrant]
-    +allows(Permission) Bool
+  namespace Baron_app {
+    class AlertPrompter {
+      NSAlert: Always Allow, Allow Once, Deny
+    }
+    class InstallSheetView
   }
-  class RuntimeGrant {
-    +permission: Permission
-    +decision: alwaysAllow | deny
-    +expires: Date?
-  }
-  class GrantStore {
-    +grants(plugin) GrantSet
-    +save(RuntimeGrant, plugin)
-    +revoke(Permission, plugin)
-  }
-  class PermissionGate {
-    +check(plugin, method, args) throws
-  }
-  class PermissionPrompt {
-    +ask(plugin, Permission) async PromptAnswer
-  }
-  class PromptAnswer {
-    <<enumeration>>
-    deny
-    allowOnce
-    alwaysAllow
-  }
-  Permission ..> NetworkPattern
-  GrantSet *-- "*" RuntimeGrant
-  GrantStore ..> GrantSet : builds
+  PluginPermission --> NetworkPattern
+  NetworkPattern ..> NetworkTarget
+  NetworkPattern ..> NetworkAddress
+  HostMethodRequirement --> PluginPermission
+  GrantStore ..> GrantedSet : builds
   PermissionGate --> GrantStore
-  PermissionGate ..> Permission
-  PermissionPrompt ..> PromptAnswer
-  PermissionPrompt --> GrantStore : saves answers
+  PermissionGate --> UserActionTracker
+  PermissionGate ..> HostMethodRequirement
+  NetworkPolicy --> GrantStore
+  PermissionService --> GrantStore
+  PermissionService --> PromptQueue
+  PermissionService --> PermissionPrompter
+  PermissionPrompter <|.. AlertPrompter
+  AlertPrompter ..> PermissionWording
+  InstallSheetView ..> PermissionWording
 ```
 
-Reaching a website the plugin didn't declare (ODH's user scripts):
+Reaching a host the plugin didn't declare, as built:
 
 ```mermaid
 sequenceDiagram
-  participant P as Plugin
+  participant P as Plugin code
   participant Router as HostRouter
   participant Gate as PermissionGate
-  participant Prompt as PermissionPrompt
-  participant Store as GrantStore
   participant HTTP as HTTPService
+  participant Policy as NetworkPolicy
+  participant Perm as PermissionService
+  participant Prompt as AlertPrompter
+  participant Store as GrantStore
   P->>Router: http.fetch("https://dict.cn/fox")
-  Router->>Gate: check network:dict.cn
-  Gate-->>Router: denied, requestable (network:* is optional)
-  Router-->>P: permission_denied, requestable true
-  P->>Router: permissions.request(["network:dict.cn"]) during a click
-  Router->>Prompt: ask(plugin, network:dict.cn)
-  Prompt-->>Router: Always Allow
-  Router->>Store: save grant
-  Router-->>P: ["network:dict.cn"]
-  P->>Router: http.fetch("https://dict.cn/fox") again
-  Router->>Gate: check network:dict.cn
-  Gate-->>Router: allowed
-  Router->>HTTP: resolve host, refuse private addresses, fetch, check each redirect
+  Router->>Gate: check (fetch needs no fixed permission)
+  Router->>HTTP: fetch
+  HTTP->>Policy: check(url)
+  Policy->>Store: grantedSet
+  Policy-->>P: permission_denied, permission network:dict.cn, requestable true
+  P->>Router: permissions.request(["network:dict.cn"])
+  Router->>Gate: check: needs a click within 5 s
+  Router->>Perm: request
+  Perm->>Prompt: ask (queued, one at a time)
+  Prompt-->>Perm: Always Allow, Allow Once or Deny
+  Perm->>Store: record the answer
+  Perm-->>P: ["network:dict.cn"] or []
+  P->>Router: http.fetch again
+  HTTP->>Policy: check(url), then resolve dict.cn: not a private address
   HTTP-->>P: response
 ```
 
 ## Gate (task-006)
 
-- [ ] Every host method rejects calls without its permission, and those needing a user action reject without one
-- [ ] The network matcher passes a test corpus: subdomains, ports, schemes, IP literals, private ranges, DNS pointing at private addresses, redirects
-- [ ] Run-time prompts work end to end in a UI test: Deny, Allow Once, Always Allow, revoke
-- [ ] The install sheet lists permissions in plain words; an update with new permissions waits for consent
+- [x] Every host method rejects calls without its permission, and those needing a user action reject without one
+- [x] The network matcher passes a test corpus: subdomains, ports, schemes, IP literals, private ranges, DNS pointing at private addresses, redirects
+- [x] Run-time prompts work end to end in a UI test: Deny, Allow Once, Always Allow (`macos/scripts/uitest-permissions.sh`); revoking from Settings comes with task-007
+- [x] The install sheet lists permissions in plain words
+- [ ] An update with new permissions waits for consent (task-008, which installs and updates plugins)

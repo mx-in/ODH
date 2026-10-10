@@ -32,10 +32,10 @@
     - [x] Show them in a SwiftUI install sheet (a546e6d; its look is checked with the prompt UI test: open Baron with --preview-install-sheet plugins/odh)
 - [x] Contract tests
     - [x] Call every method from JavaScript against Baron's router and against the mock host on both engines, from one shared corpus (6139825)
-- [ ] Verification
-    - [ ] **▶ IN PROGRESS** UI test of the prompt: Deny, Allow Once, Always Allow (revoking is tested in task-007)
+- [x] Verification
+    - [x] UI test of the prompt: Deny, Allow Once, Always Allow (revoking is tested in task-007) (2b8f2af)
 - [ ] Design UML
-    - [ ] Add as-built UML to 03 and 04
+    - [ ] **▶ IN PROGRESS** Add as-built UML to 03 and 04
 
 **Notes for the next agent:** Done in task-005 already: `http.fetch` basics (methods, headers, bodies, ephemeral session, 5 redirects) and private plugin log lines. Services that need AppKit or Accessibility (clipboard, replace, open URL, settings, prompts) go through protocols in BaronRuntime that the app implements, so BaronRuntime stays free of AppKit. Allow Once lasts 10 minutes in memory (the design leaves its scope open).
 

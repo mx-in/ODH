@@ -63,7 +63,7 @@ interface ViewHandle {
 | `selection.replace` | `selection.replace` | Yes | Only when the selection is editable; sets `AXSelectedText` where the app allows it, otherwise pastes with the clipboard saved and restored |
 | `storage`, `cache` | None (implicit) | No | [05](05-storage.md) |
 | `secrets` | `secrets` | No | [05](05-storage.md) |
-| `text.segment` | None | No | `NLTokenizer` on macOS, ICU elsewhere |
+| `text.segment` | None | No | `NLTokenizer` on macOS, ICU elsewhere; UTF-16 offsets; words need a letter or digit (no punctuation or emoji), sentences keep trailing spaces |
 | `ui.toast`, `ui.openSettings` | None | No | |
 | `ui.openUrl` | None | Yes | `https`, `http` and `mailto` only; opens the default app |
 | `ui.openWebView`, `ui.show` | None | Yes | Opens the result panel ([07](07-web-views.md), [08](08-native-views.md)) |
@@ -138,11 +138,11 @@ Unknown namespaces and methods, and arguments of the wrong type, answer `invalid
 | XPC | Helper process | `NSXPCConnection` in both directions, `Data` holding the JSON | 2 |
 | Page bridge | Plugin page in a web view | `WKScriptMessageHandlerWithReply`; identity from the page's `baron-plugin://<id>/` origin | 1 and 2 |
 
-On the Swift side, one router maps `ns.method` to a service. Every call passes the router's check first, where the permission gate ([04](04-permissions-and-security.md)) and the user-action tracker plug in (task-006), so no service can forget a check. As of task-005 the services are `log`, `ui.toast` and `http.fetch`; `environment` and `preferences` travel with each dispatch.
+On the Swift side, one router maps `ns.method` to a service. Every call passes the router's check first, where the permission gate ([04](04-permissions-and-security.md)) and the user-action tracker plug in (task-006), so no service can forget a check. As of task-006 the services are `log`, `ui` (toast, openUrl, openSettings), `http`, `clipboard`, `selection`, `text` and `permissions`; `storage`, `cache` and `secrets` come with task-007. `environment` and `preferences` travel with each dispatch. Services that need AppKit or Accessibility go through `SystemActions`, which the app implements. `packages/test/contract/host-contract.json` lists calls with Baron's answers; it runs against Baron's router and against `@baron/test`'s mock host on both engines.
 
 ## UML
 
-Drawn from the code at the end of task-005: `macos/Sources/BaronRuntime/Host` and `Protocol`. Task-006 adds the remaining services and fills the router's check.
+Drawn from the code at the end of task-006: `macos/Sources/BaronRuntime/Host` and `Protocol`. Storage, cache and secrets join in task-007.
 
 ```mermaid
 classDiagram
@@ -152,7 +152,8 @@ classDiagram
   }
   class HostRouter {
     -services: [namespace: HostService]
-    -check: (HostCall, RuntimePlugin) -> HostError?
+    -check: PermissionGate.check
+    +init(services, gate)
     +handle(HostCall, from) Result
   }
   class HostService {
@@ -160,70 +161,52 @@ classDiagram
     +namespace: String
     +call(method, HostArguments, plugin) async throws JSONValue
   }
-  class HostArguments {
-    +string(i) String
-    +optionalString(i) String?
-    +object(i) [String: JSONValue]
-    +number(i) Double
-    +unknownMethod() HostError
-  }
-  class HostCall {
-    +id: Int
-    +namespace: String
-    +method: String
-    +arguments: [JSONValue]
-  }
-  class HostError {
-    +code: String
-    +message: String
-    +data: JSONValue?
-    +stack: String?
-  }
-  class LogService {
-    os.Logger, private
-    +sink for baron dev
-  }
-  class UIService {
-    +toast
-  }
-  class PluginPresenter {
+  class SystemActions {
     <<interface>>
-    +toast(message, kind, from)
+    +readClipboard()
+    +writeClipboard(text)
+    +replaceSelection(with) Bool
+    +open(URL)
+    +openSettings(pluginID)
+  }
+  class AppSystemActions {
+    <<app>>
+    AppKit and Accessibility
+  }
+  class LogService
+  class UIService {
+    toast, openUrl, openSettings
   }
   class HTTPService {
-    -sessions: one ephemeral session per plugin
-    -requests: cancellable by requestID
-    +fetch, cancel
+    one ephemeral session per plugin
+    NetworkPolicy per URL and redirect
   }
-  class SessionDelegate {
-    collects bodies in chunks
-    stops past 20 MB
-    follows at most 5 redirects
+  class ClipboardService
+  class SelectionService
+  class TextService {
+    NLTokenizer, UTF-16 offsets
   }
-  class OutboundEnvelope {
-    <<enumeration>>
-    call(HostCall)
-    result(id, Result)
+  class PermissionService {
+    query, request
   }
-  class InboundEnvelope {
-    <<enumeration>>
-    result(id, Result)
-    dispatch(id, target, name, payload)
-    cancel(id)
+  class PermissionGate {
+    see 04
   }
   HostCallHandler <|.. HostRouter
   HostRouter o-- "*" HostService
-  HostRouter ..> HostArguments
-  HostRouter ..> HostCall
-  HostRouter ..> HostError
+  HostRouter --> PermissionGate : every call first
   HostService <|.. LogService
   HostService <|.. UIService
   HostService <|.. HTTPService
-  UIService --> PluginPresenter : the app shows toasts
-  HTTPService --> SessionDelegate
-  PluginInstance ..> OutboundEnvelope : decodes what the plugin sends
-  PluginInstance ..> InboundEnvelope : encodes what Baron sends
-  PluginInstance --> HostCallHandler
+  HostService <|.. ClipboardService
+  HostService <|.. SelectionService
+  HostService <|.. TextService
+  HostService <|.. PermissionService
+  UIService --> SystemActions
+  ClipboardService --> SystemActions
+  SelectionService --> SystemActions
+  SystemActions <|.. AppSystemActions
+  PluginInstance ..> HostCallHandler : relays calls, log calls in order
 ```
 
 A `fetch` from plugin code, as built:
@@ -240,7 +223,7 @@ sequenceDiagram
   Prelude->>Engine: __baronNative.send(call http.fetch, responseType bytes, requestID)
   Engine->>Instance: outbound JSON (on the plugin's queue)
   Instance->>Router: handle(HostCall)
-  Router->>Router: check (task-006 gate), find the service
+  Router->>Router: find the service, then the permission gate
   Router->>HTTP: call("fetch", arguments)
   HTTP-->>Router: status, url, headers, body as $bytes
   Router-->>Instance: Result
@@ -255,6 +238,6 @@ sequenceDiagram
 
 ## Gate (task-005 core, task-006 complete)
 
-- [ ] Every namespace is implemented with unit tests at the Swift service level (task-005: `log`, `ui.toast`, `http.fetch` done)
-- [ ] Contract tests call every method from JavaScript on both engines and check results and error codes
+- [ ] Every namespace is implemented with unit tests at the Swift service level (all but storage, cache and secrets, which come with task-007)
+- [x] Contract tests call every method from JavaScript on both engines and check results and error codes
 - [ ] A page and an engine context of the same plugin get identical answers to the same call

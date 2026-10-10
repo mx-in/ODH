@@ -42,12 +42,16 @@ public struct PluginDataManager: Sendable {
 
     /// Everything Baron kept for the plugin, for uninstalling: nothing is left on disk or in the Keychain.
     public func removeAll(_ pluginID: String) async throws {
-        try secrets.removeAll(pluginID: pluginID)
+        // Everything is attempted, so one failure doesn't leave the rest behind; the first error is thrown at the end.
+        var failure: Error?
         await grants.forget(pluginID: pluginID)
         await stores.forget(pluginID)
         for root in [stores.location.dataRoot, stores.location.cacheRoot] {
             let folder = root.appendingPathComponent(pluginID, isDirectory: true)
-            if FileManager.default.fileExists(atPath: folder.path) { try FileManager.default.removeItem(at: folder) }
+            guard FileManager.default.fileExists(atPath: folder.path) else { continue }
+            do { try FileManager.default.removeItem(at: folder) } catch { failure = failure ?? error }
         }
+        do { try secrets.removeAll(pluginID: pluginID) } catch { failure = failure ?? error }
+        if let failure { throw failure }
     }
 }

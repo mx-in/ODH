@@ -17,6 +17,7 @@ func makePlugin(_ bundle: String, id: String = "org.example.test") throws -> Run
     try FileManager.default.createDirectory(at: folder.appendingPathComponent("dist"), withIntermediateDirectories: true)
     try Data(bundle.utf8).write(to: folder.appendingPathComponent("dist/main.js"))
     let manifest = #"{"id": "\#(id)", "name": "Test", "description": "D", "version": "1.0.0", "apiVersion": 1, "main": "dist/main.js", "actions": [{"id": "run", "title": "Run"}]}"#
+    try Data(manifest.utf8).write(to: folder.appendingPathComponent("manifest.json"))
     return RuntimePlugin(manifest: try JSONDecoder().decode(PluginManifest.self, from: Data(manifest.utf8)), package: folder)
 }
 

@@ -27,12 +27,12 @@
     - [x] Enforce each dispatch's time limit and abort its signal (54cee8c)
     - [x] Disable a plugin stuck in a synchronous loop for 10 s, and one with 3 strikes in 10 minutes (53d9611)
     - [x] Unload a context after 60 s idle and load it again on the next need (192655a)
-- [ ] Host router (Swift)
+- [x] Host router (Swift)
     - [x] Decode envelopes and route `ns.method` to a service, returning the design's error codes (815a37c)
     - [x] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch (e21fc40)
-    - [ ] **▶ IN PROGRESS** Serve `http.fetch` with its time and size limits (permission checks come in task-006)
+    - [x] Serve `http.fetch` with its time and size limits (permission checks come in task-006) (87ccbca)
 - [ ] Bar integration
-    - [ ] Load plugins from the development folder (installing comes in task-008)
+    - [ ] **▶ IN PROGRESS** Load plugins from the development folder (installing comes in task-008)
     - [ ] Show plugin actions whose `when` rules match, after the built-in ones
     - [ ] Dispatch a click with `text`, `source`, `editable`, `app` and `platform`
     - [ ] Carry out action results: copy, replace, toast, open URL

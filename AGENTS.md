@@ -27,11 +27,11 @@
     - [x] `permissions.query` and `permissions.request` (b49d1b1)
 - [x] Run-time prompt (UI)
     - [x] Show the native prompt naming the plugin and host: Deny, Allow Once, Always Allow; one at a time (c303971)
-- [ ] Install sheet (UI, used by task-008)
+- [x] Install sheet (UI, used by task-008)
     - [x] Describe permissions in plain words, grouped as Reads, Connects to, Can and Stores, with the disclosures (179a710)
-    - [ ] **▶ IN PROGRESS** Show them in a SwiftUI install sheet
+    - [x] Show them in a SwiftUI install sheet (a546e6d; its look is checked with the prompt UI test: open Baron with --preview-install-sheet plugins/odh)
 - [ ] Contract tests
-    - [ ] Call every method from JavaScript against Baron's router and against the mock host on both engines, from one shared corpus
+    - [ ] **▶ IN PROGRESS** Call every method from JavaScript against Baron's router and against the mock host on both engines, from one shared corpus
 - [ ] Verification
     - [ ] UI test of the prompt: Deny, Allow Once, Always Allow (revoking is tested in task-007)
 - [ ] Design UML

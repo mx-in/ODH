@@ -169,9 +169,15 @@ public struct Preference: Decodable, Equatable, Sendable {
     public var extensions: [String]?
     public var run: String?
 
-    public struct Option: Decodable, Equatable, Sendable {
+    public struct Option: Decodable, Equatable, Sendable, Hashable {
         public var value: String
         public var title: String
         public var subtitle: String?
+
+        public init(value: String, title: String, subtitle: String? = nil) {
+            self.value = value
+            self.title = title
+            self.subtitle = subtitle
+        }
     }
 }

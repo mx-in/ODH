@@ -93,7 +93,7 @@ export interface TextPreference extends PreferenceBase {
     default?: string;
     placeholder?: LocalizedString;
     multiline?: boolean;
-    /** ECMAScript syntax; the whole value must match. */
+    /** ECMAScript syntax, searched for like `RegExp.test`; anchor with `^` and `$` to match the whole value. */
     pattern?: string;
     maxLength?: number;
 }
@@ -129,7 +129,7 @@ export interface ListPreference extends PreferenceBase {
     type: "list";
     default?: string[];
     itemPlaceholder?: LocalizedString;
-    /** ECMAScript syntax; every item must match. */
+    /** ECMAScript syntax, searched for in every item like `RegExp.test`; anchor with `^` and `$` for whole items. */
     itemPattern?: string;
     maxItems?: number;
 }

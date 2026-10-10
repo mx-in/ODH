@@ -19,11 +19,11 @@
 - [x] Secrets
     - [x] Keep secrets in the Keychain per plugin, not synchronisable (b5ad444)
     - [x] Serve `host.secrets` behind the `secrets` permission (b5ad444)
-- [ ] Data management
-    - [ ] **▶ IN PROGRESS** Report usage; Clear cache; Reset plugin data
-    - [ ] Remove every store and grant of a plugin (used by uninstall)
+- [x] Data management
+    - [x] Report usage; Clear cache; Reset plugin data (bb71fbf)
+    - [x] Remove every store and grant of a plugin (used by uninstall) (bb71fbf)
 - [ ] Settings: Plugins section (UI)
-    - [ ] List installed plugins with Enabled switches
+    - [ ] **▶ IN PROGRESS** List installed plugins with Enabled switches
     - [ ] Show a plugin's page: header, preferences, permissions, data, about
 - [ ] Settings: preference controls (UI)
     - [ ] `text`, `number` and `checkbox`

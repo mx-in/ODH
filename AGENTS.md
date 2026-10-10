@@ -13,11 +13,11 @@
     - [x] Store JSON values in SQLite, one actor per plugin (a500d9d)
     - [x] Enforce the 5 MB quota and 1 MB per value (a500d9d)
     - [x] Serve `host.storage` (a500d9d)
-- [ ] Cache
-    - [ ] **▶ IN PROGRESS** Store strings in SQLite in the Caches folder, evicting the least recently read past 10 MB
-    - [ ] Serve `host.cache`
+- [x] Cache
+    - [x] Store strings in SQLite in the Caches folder, evicting the least recently read past 10 MB (064e74f)
+    - [x] Serve `host.cache` (064e74f)
 - [ ] Secrets
-    - [ ] Keep secrets in the Keychain per plugin, not synchronisable
+    - [ ] **▶ IN PROGRESS** Keep secrets in the Keychain per plugin, not synchronisable
     - [ ] Serve `host.secrets` behind the `secrets` permission
 - [ ] Data management
     - [ ] Report usage; Clear cache; Reset plugin data

@@ -1,0 +1,10 @@
+{
+    "id": "org.baron.uitest.permission-probe",
+    "name": "Permission probe",
+    "description": "Asks for a network permission, for baron-uitest --permissions.",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "main": "dist/main.js",
+    "optionalPermissions": ["network:*"],
+    "actions": [{ "id": "probe", "title": "Probe" }]
+}

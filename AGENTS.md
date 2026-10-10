@@ -30,10 +30,10 @@
 - [x] Install sheet (UI, used by task-008)
     - [x] Describe permissions in plain words, grouped as Reads, Connects to, Can and Stores, with the disclosures (179a710)
     - [x] Show them in a SwiftUI install sheet (a546e6d; its look is checked with the prompt UI test: open Baron with --preview-install-sheet plugins/odh)
-- [ ] Contract tests
-    - [ ] **▶ IN PROGRESS** Call every method from JavaScript against Baron's router and against the mock host on both engines, from one shared corpus
+- [x] Contract tests
+    - [x] Call every method from JavaScript against Baron's router and against the mock host on both engines, from one shared corpus (6139825)
 - [ ] Verification
-    - [ ] UI test of the prompt: Deny, Allow Once, Always Allow (revoking is tested in task-007)
+    - [ ] **▶ IN PROGRESS** UI test of the prompt: Deny, Allow Once, Always Allow (revoking is tested in task-007)
 - [ ] Design UML
     - [ ] Add as-built UML to 03 and 04
 

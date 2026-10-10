@@ -16,6 +16,7 @@ import Foundation
 
 struct Options {
     var plugins = false
+    var permissions = false
     var only: Set<String>?
     var copy = true
     var modes = CoverageFixture.Mode.allCases
@@ -26,6 +27,7 @@ struct Options {
         while let argument = rest.popFirst() {
             switch argument {
             case "--plugins": plugins = true
+            case "--permissions": permissions = true
             case "--only": only = Set((rest.popFirst() ?? "").split(separator: ",").map { $0.lowercased() })
             case "--no-copy": copy = false
             case "--modes": modes = (rest.popFirst() ?? "").split(separator: ",").compactMap { CoverageFixture.Mode(rawValue: String($0)) }
@@ -216,16 +218,16 @@ func main() async {
         exit(1)
     }
 
-    if options.plugins {
+    if options.plugins || options.permissions {
         let previousApp = NSWorkspace.shared.frontmostApplication
         let clipboard = PasteboardBackup()
-        let checks = await runPluginChecks()
+        let checks = options.permissions ? await runPermissionChecks() : await runPluginChecks()
         clipboard.restore()
         previousApp?.activate()
-        var markdown = "# baron-uitest plugin checks\n\n| Check | Result | Detail |\n| --- | --- | --- |\n"
+        var markdown = "# baron-uitest \(options.permissions ? "permission" : "plugin") checks\n\n| Check | Result | Detail |\n| --- | --- | --- |\n"
         markdown += checks.map { "| \($0.name) | \($0.passed ? "pass" : "FAIL") | \($0.detail.replacingOccurrences(of: "|", with: "\\|")) |" }.joined(separator: "\n") + "\n"
         try? FileManager.default.createDirectory(at: options.out, withIntermediateDirectories: true)
-        try? markdown.write(to: options.out.appendingPathComponent("plugins.md"), atomically: true, encoding: .utf8)
+        try? markdown.write(to: options.out.appendingPathComponent(options.permissions ? "permissions.md" : "plugins.md"), atomically: true, encoding: .utf8)
         print(markdown)
         exit(checks.allSatisfy(\.passed) && !checks.isEmpty ? 0 : 1)
     }

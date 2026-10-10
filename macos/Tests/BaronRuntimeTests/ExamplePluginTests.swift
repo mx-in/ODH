@@ -46,13 +46,13 @@ struct ExamplePluginTests {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubProtocol.self]
         StubProtocol.lock.withLock {
-            StubProtocol.replies["https://api.dictionaryapi.dev/api/v2/entries/en/fox"] = .init(
+            StubProtocol.replies["https://dict.youdao.com/suggest?num=1&doctype=json&q=fox"] = .init(
                 headers: ["Content-Type": "application/json"],
-                body: Data(#"[{"word":"fox","meanings":[{"partOfSpeech":"noun","definitions":[{"definition":"A wild canine."}]}]}]"#.utf8))
+                body: Data(#"{"data":{"entries":[{"entry":"fox","explain":"n. 狐狸"}]}}"#.utf8))
         }
         let runtime = PluginRuntime(handler: HostRouter(services: [LogService(), HTTPService(configuration: configuration)]))
         await runtime.register(plugin)
         let value = try await runtime.dispatch(plugin.id, .action, name: "define", payload: DispatchPayload(context: context("fox", editable: false))).get()
-        #expect(PluginActionResult.parse(value, editable: false, mayReplace: false) == .success(.toast("fox (noun): A wild canine.", kind: "info")))
+        #expect(PluginActionResult.parse(value, editable: false, mayReplace: false) == .success(.toast("fox: n. 狐狸", kind: "info")))
     }
 }

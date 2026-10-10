@@ -66,7 +66,7 @@ func runPluginChecks() async -> [PluginCheck] {
         record("UPPERCASE replaces the selection", false, "couldn't press the button")
     }
 
-    // Define: double-click another word and wait for the plugin's toast (a real request to the dictionary).
+    // Define: double-click another word and wait for the plugin's toast (a real request to Youdao's dictionary).
     SyntheticInput.press(keyCode: 53)
     SyntheticInput.pause(0.5)
     guard let fox = WordLocator.locate("fox", inApp: safari.processIdentifier) else {
@@ -76,7 +76,7 @@ func runPluginChecks() async -> [PluginCheck] {
     SyntheticInput.doubleClick(at: fox.point)
     if BaronBarDetector.waitForBar(timeout: 2.5), BaronBarDetector.pressAction(defineID) {
         let toast = waitForToast(timeout: 8)
-        record("Define shows a definition", toast?.lowercased().hasPrefix("fox (") == true, toast.map { "toast: \($0)" } ?? "no toast within 8 s")
+        record("Define shows a definition", toast?.lowercased().hasPrefix("fox:") == true, toast.map { "toast: \($0)" } ?? "no toast within 8 s")
     } else {
         record("Define shows a definition", false, "no bar or no Define button")
     }

@@ -55,7 +55,7 @@
     - [x] Replace the design-level UML in 02, 03 (core) and 09 with diagrams of the code as built (6fdad68)
 
 **Notes for the next agent:** QuickJS-NG `qjs` comes from `scripts/fetch-qjs.sh` (pinned v0.17.0, SHA-256 checked) into `.tools/`; the user hadn't answered whether to vendor it, so this is the default.
-Everything else is done and committed. Left for the user (the screen was locked, so no UI test could run): with the Mac unlocked, run `cd macos && scripts/uitest-plugins.sh`. It builds both examples into `~/Library/Application Support/Baron/Development/`, rebuilds Baron.app, opens a text area in Safari, and presses UPPERCASE and Define on the bar (Define makes a real request to api.dictionaryapi.dev). Results: `macos/UITests/results/plugins/plugins.md`. TextEdit didn't open documents during this session (the existing TextEdit coverage case failed the same way), which is why the check uses Safari. When it passes: tick the item, update the 02 gate line, archive task-005.
+Everything else is done and committed. Left for the user (the screen was locked, so no UI test could run): with the Mac unlocked, run `cd macos && scripts/uitest-plugins.sh`. It builds both examples into `~/Library/Application Support/Baron/Development/`, rebuilds Baron.app, opens a text area in Safari, and presses UPPERCASE and Define on the bar (Define makes a real request to dict.youdao.com). Results: `macos/UITests/results/plugins/plugins.md`. TextEdit didn't open documents during this session (the existing TextEdit coverage case failed the same way), which is why the check uses Safari. When it passes: tick the item, update the 02 gate line, archive task-005.
 
 <!--
 Template while a task is active (replace the line above):

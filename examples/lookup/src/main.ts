@@ -1,25 +1,26 @@
 import { definePlugin, isBaronError } from "@baron/api";
 
-interface Entry {
-    word: string;
-    meanings: Array<{ partOfSpeech: string; definitions: Array<{ definition: string }> }>;
+interface Suggestion {
+    data?: { entries?: Array<{ entry: string; explain: string }> };
 }
+
+/** Gives up on a slow network well before Baron's 10 s action limit. */
+const requestTimeout = 8000;
 
 export default definePlugin({
     actions: {
         async define(context, host) {
             const word = context.text.trim().toLowerCase();
+            const url = `https://dict.youdao.com/suggest?num=1&doctype=json&q=${encodeURIComponent(word)}`;
             try {
-                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, { signal: host.signal });
-                if (response.status === 404) return { type: "toast", message: `No definition found for “${word}”.` };
+                const response = await fetch(url, { signal: AbortSignal.any([host.signal, AbortSignal.timeout(requestTimeout)]) });
                 if (!response.ok) return { type: "toast", message: `The dictionary answered ${response.status}.`, kind: "error" };
-                const [entry] = (await response.json()) as Entry[];
-                const meaning = entry?.meanings[0];
-                const definition = meaning?.definitions[0]?.definition;
-                if (!entry || !meaning || !definition) return { type: "toast", message: `No definition found for “${word}”.` };
-                return { type: "toast", message: `${entry.word} (${meaning.partOfSpeech}): ${definition}` };
+                const entry = ((await response.json()) as Suggestion).data?.entries?.find((e) => e.entry.toLowerCase() === word);
+                if (!entry) return { type: "toast", message: `No definition found for “${word}”.` };
+                return { type: "toast", message: `${entry.entry}: ${entry.explain}` };
             } catch (error) {
-                if (isBaronError(error, "network_error") || isBaronError(error, "timeout")) {
+                const name = (error as { name?: unknown } | null)?.name;
+                if (isBaronError(error, "network_error") || isBaronError(error, "timeout") || name === "TimeoutError" || name === "AbortError") {
                     return { type: "toast", message: "The dictionary can't be reached.", kind: "error" };
                 }
                 throw error;

@@ -236,7 +236,7 @@ sequenceDiagram
   participant Instance as PluginInstance
   participant Router as HostRouter
   participant HTTP as HTTPService
-  Code->>Prelude: fetch("https://api.dictionaryapi.dev/…", { signal })
+  Code->>Prelude: fetch("https://dict.youdao.com/suggest?…", { signal })
   Prelude->>Engine: __baronNative.send(call http.fetch, responseType bytes, requestID)
   Engine->>Instance: outbound JSON (on the plugin's queue)
   Instance->>Router: handle(HostCall)

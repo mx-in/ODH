@@ -73,6 +73,41 @@
 
 **Notes for the next agent:** Started while task-008 waits on one blocked item (author timing needs an unlocked screen); finish that item first when the screen is available, then archive task-008. The six-app check is written (`macos/scripts/uitest-context.sh`, baron-uitest `--context`, fixtures `context-probe` and `context-blind`) but couldn't run: the display can't be captured (asleep or locked) since 2026-10-11 02:00. Run it with the screen unlocked; it also covers the Automation prompt only if "Ask browsers for the page address" is on, which it isn't by default. Preview's PDF context was checked with baron-probe against a selection made through Accessibility (paragraph and sentence read).
 
+
+---
+
+**Task:** task-010-web-views: plugin pages in a result panel (gate: a sample plugin opens a result panel next to the selection, sized to its content; images and audio load from declared hosts and nothing loads from undeclared ones; `baron.*` calls from the page obey the plugin's permissions; messages flow both ways; the panel closes and pins as designed and follows dark mode.)
+**Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [07 Web views](docs/design/plugin-platform/07-web-views.md).
+
+- [ ] **▶ IN PROGRESS** Result panel (UI)
+    - [ ] Show a panel next to the selection that never takes focus from the source app, with Baron's header: icon, name, pin, close
+    - [ ] Close it on an outside click, Escape, an app switch or a new selection unless pinned; one panel at a time
+    - [ ] Size it to its content, up to 640 points
+- [ ] Serving pages
+    - [ ] Serve `baron-plugin://<id>/` from the installed package
+    - [ ] Give each plugin a non-persistent data store
+    - [ ] Block navigation to other origins and `window.open`; open links in the browser
+    - [ ] Apply the Content Security Policy, with declared hosts for images and media, and `'unsafe-eval'` only with `code.dynamic`
+- [ ] Page bridge
+    - [ ] Inject `window.baron` with the host API, taking the plugin's identity from the page's origin
+    - [ ] `baron.view`: data, messages, resize and close
+    - [ ] `host.ui.openWebView` and `ViewHandle` on the engine side
+- [ ] Look and feel
+    - [ ] Colour variables, dark mode and locale
+    - [ ] Play audio without an extra click
+- [ ] Lifecycle
+    - [ ] Keep a closed web view loaded for 30 s
+- [ ] Settings page
+    - [ ] Show a plugin's `settingsPage` under its generated preferences
+- [ ] Tooling
+    - [ ] Add the `webview` template and example
+- [ ] Verification
+    - [ ] Check the gate in a UI test; measure first paint (under 150 ms warm, 400 ms cold)
+- [ ] Design UML
+    - [ ] Add as-built UML to the design docs this task built or changed
+
+**Notes for the next agent:** Started while tasks 008 and 009 each wait on one UI run that needs an unlocked screen.
+
 <!--
 Template while a task is active (replace the line above):
 

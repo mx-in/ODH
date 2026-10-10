@@ -78,6 +78,8 @@ export interface Host {
     readonly environment: Environment;
     /** A snapshot taken before each dispatch. */
     readonly preferences: Preferences;
+    /** Aborted when this dispatch runs out of time or its caller goes away. */
+    readonly signal: AbortSignal;
     readonly http: Http;
     readonly clipboard: {
         /** Needs `clipboard.read` and a user action. */

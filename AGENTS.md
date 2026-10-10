@@ -9,8 +9,8 @@
     - [x] Fetch a pinned QuickJS-NG `qjs` into `.tools/` with a checksum-verified script (33a9991)
     - [x] Write the envelope types and codec in `@baron/api` (shared by prelude, harness and docs) (7644216)
 - [ ] Prelude (`@baron/runtime`)
-    - [ ] **▶ IN PROGRESS** Build call envelopes and match results to calls by `id`
-    - [ ] Build the `host` object over `__baronNative`
+    - [x] Build call envelopes and match results to calls by `id` (1ccd2cf)
+    - [ ] **▶ IN PROGRESS** Build the `host` object over `__baronNative`
     - [ ] Serve dispatches: find the export, call it, await it, reply with a result or a classified error
     - [ ] Provide `console`, the timer functions and `queueMicrotask`
     - [ ] Polyfill `URL` and `URLSearchParams`

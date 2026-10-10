@@ -5,11 +5,11 @@
 **Task:** task-005-runtime: run plugin code from the bar, in-process (gate: a sample plugin with an uppercase action and a `fetch`-based lookup runs from Baron's bar; its tests pass on JavaScriptCore and QuickJS-NG with the same prelude; timers, errors, time limits, idle unload and reload are tested)
 **Started:** 2026-10-10 · **Agent:** Claude (Claude Code) · design: [02](docs/design/plugin-platform/02-runtime.md), [03](docs/design/plugin-platform/03-host-api-and-ipc.md), [09](docs/design/plugin-platform/09-developer-tooling.md) · user: "continue until the runtime task is completed, I'll check then"
 
-- [ ] Setup
+- [x] Setup
     - [x] Fetch a pinned QuickJS-NG `qjs` into `.tools/` with a checksum-verified script (33a9991)
-    - [ ] **▶ IN PROGRESS** Write the envelope types and codec in `@baron/api` (shared by prelude, harness and docs)
+    - [x] Write the envelope types and codec in `@baron/api` (shared by prelude, harness and docs) (7644216)
 - [ ] Prelude (`@baron/runtime`)
-    - [ ] Build call envelopes and match results to calls by `id`
+    - [ ] **▶ IN PROGRESS** Build call envelopes and match results to calls by `id`
     - [ ] Build the `host` object over `__baronNative`
     - [ ] Serve dispatches: find the export, call it, await it, reply with a result or a classified error
     - [ ] Provide `console`, the timer functions and `queueMicrotask`

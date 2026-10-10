@@ -9,11 +9,12 @@ struct SettingsRoot: View {
     @ObservedObject var store: SettingsStore
     @ObservedObject var navigation: SettingsNavigation
     let plugins: PluginController
+    let install: InstallFlow
 
     var body: some View {
         TabView(selection: $navigation.tab) {
             SettingsView(store: store).tabItem { Label("General", systemImage: "gearshape") }.tag(SettingsNavigation.Tab.general)
-            PluginsPane(controller: plugins, store: store, navigation: navigation)
+            PluginsPane(controller: plugins, install: install, store: store, navigation: navigation)
                 .tabItem { Label("Plugins", systemImage: "puzzlepiece.extension") }.tag(SettingsNavigation.Tab.plugins)
         }
         .frame(minWidth: 640, idealWidth: 720, minHeight: SettingsWindowController.minimumSize.height, idealHeight: SettingsWindowController.size.height)
@@ -92,11 +93,13 @@ final class SettingsWindowController {
     private var window: NSWindow?
     private let store: SettingsStore
     private let plugins: PluginController
+    private let install: InstallFlow
     let navigation = SettingsNavigation()
 
-    init(store: SettingsStore, plugins: PluginController) {
+    init(store: SettingsStore, plugins: PluginController, install: InstallFlow) {
         self.store = store
         self.plugins = plugins
+        self.install = install
     }
 
     /// Opens the Plugins tab on a plugin, highlighting fields (required ones that are empty).
@@ -109,7 +112,7 @@ final class SettingsWindowController {
 
     func show() {
         if window == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsRoot(store: store, navigation: navigation, plugins: plugins)))
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsRoot(store: store, navigation: navigation, plugins: plugins, install: install)))
             window.title = "\(Baron.name) Settings"
             window.styleMask = [.titled, .closable, .resizable]
             window.setContentSize(Self.size)

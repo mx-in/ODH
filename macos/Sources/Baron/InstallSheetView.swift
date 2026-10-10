@@ -8,6 +8,12 @@ struct InstallSheetView: View {
     let name: String
     let manifest: PluginManifest
     let source: String
+    var title: String? = nil
+    var actionTitle = "Install"
+    /// Warnings shown above the permissions, such as a different source.
+    var notes: [String] = []
+    /// For an update: the permissions it adds, listed first.
+    var newPermissions: [String] = []
     var onInstall: () -> Void = {}
     var onCancel: () -> Void = {}
 
@@ -18,9 +24,21 @@ struct InstallSheetView: View {
             HStack(spacing: 12) {
                 Image(systemName: "puzzlepiece.extension").font(.system(size: 34)).foregroundStyle(.secondary)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Install “\(name)”?").font(.headline)
+                    Text(title ?? "Install “\(name)”?").font(.headline)
                     Text("Version \(manifest.version)\(manifest.author.map { " · \($0)" } ?? "")").foregroundStyle(.secondary)
                     Text("From \(source) · Unsigned").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            ForEach(notes, id: \.self) { note in
+                Label(note, systemImage: "exclamationmark.triangle").foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            }
+            if !newPermissions.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("New in this version", systemImage: "plus.circle").font(.subheadline.weight(.semibold))
+                    ForEach(newPermissions, id: \.self) { name in
+                        Text("• " + (PluginPermission(name).map { PermissionWording.phrase($0).prefix(1).uppercased() + PermissionWording.phrase($0).dropFirst() } ?? name))
+                            .padding(.leading, 22)
+                    }
                 }
             }
             if summary.isEmpty {
@@ -36,8 +54,8 @@ struct InstallSheetView: View {
             }
             HStack {
                 Spacer()
-                Button("Cancel", action: onCancel).keyboardShortcut(.cancelAction)
-                Button("Install", action: onInstall).keyboardShortcut(.defaultAction)
+                Button("Cancel", action: onCancel).keyboardShortcut(.cancelAction).accessibilityIdentifier("installSheet.cancel")
+                Button(actionTitle, action: onInstall).keyboardShortcut(.defaultAction).accessibilityIdentifier("installSheet.install")
             }
         }
         .padding(20)

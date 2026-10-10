@@ -7,19 +7,23 @@ public struct BaronSettings: Codable, Equatable, Sendable {
     public var retrievalRules: AppRetrievalRules
     /// Plugins the user switched off: installed, data kept, no actions on the bar.
     public var disabledPlugins: [String]
+    /// Bundled plugins already offered at first launch, whatever the answer.
+    public var offeredBundledPlugins: [String]
 
     public init(
         isPaused: Bool = false,
         excludedApps: [String] = ExcludedAppRule.defaults.sorted(),
         searchTemplate: String = SearchAction.defaultTemplate,
         retrievalRules: AppRetrievalRules = AppRetrievalRules(),
-        disabledPlugins: [String] = []
+        disabledPlugins: [String] = [],
+        offeredBundledPlugins: [String] = []
     ) {
         self.isPaused = isPaused
         self.excludedApps = excludedApps
         self.searchTemplate = searchTemplate
         self.retrievalRules = retrievalRules
         self.disabledPlugins = disabledPlugins
+        self.offeredBundledPlugins = offeredBundledPlugins
     }
 
     public init(from decoder: Decoder) throws {
@@ -30,6 +34,7 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         searchTemplate = try container.decodeIfPresent(String.self, forKey: .searchTemplate) ?? defaults.searchTemplate
         retrievalRules = try container.decodeIfPresent(AppRetrievalRules.self, forKey: .retrievalRules) ?? defaults.retrievalRules
         disabledPlugins = try container.decodeIfPresent([String].self, forKey: .disabledPlugins) ?? defaults.disabledPlugins
+        offeredBundledPlugins = try container.decodeIfPresent([String].self, forKey: .offeredBundledPlugins) ?? defaults.offeredBundledPlugins
     }
 
     public func isPluginEnabled(_ id: String) -> Bool {

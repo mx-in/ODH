@@ -38,6 +38,15 @@ for bundle in "$bin"/*.bundle; do
 done
 cp "$bin/baron-probe" "$out/baron-probe"
 
+# Bundled plugins, offered at first launch: the lookup example, built with Bun when it's available.
+if command -v bun >/dev/null 2>&1 && (cd .. && npm run build -w examples/lookup >/dev/null 2>&1); then
+    mkdir -p "$app/Contents/Resources/Plugins/lookup/dist"
+    cp ../examples/lookup/manifest.json "$app/Contents/Resources/Plugins/lookup/"
+    cp ../examples/lookup/dist/main.js "$app/Contents/Resources/Plugins/lookup/dist/"
+else
+    echo "note: Bun isn't available, so Baron.app has no bundled plugins." >&2
+fi
+
 codesign --force --options runtime --timestamp=none --sign "$identity" --identifier org.odh.baron.probe "$out/baron-probe"
 codesign --force --options runtime --timestamp=none --sign "$identity" "$app"
 codesign --verify --strict "$app"

@@ -11,7 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let pauseItem = NSMenuItem()
     private let store = SettingsStore()
     private let coordinator = SelectionCoordinator(pipeline: SelectionPipeline(gate: Gate(excludedApps: ExcludedAppRule.defaults)))
-    private lazy var settingsWindow = SettingsWindowController(store: store, plugins: plugins)
+    private lazy var settingsWindow = SettingsWindowController(store: store, plugins: plugins, install: install)
+    private lazy var install = InstallFlow(controller: plugins)
     private let debugPanel = DebugPanelController()
     private let debugItem = NSMenuItem()
     private var subscriptions: Set<AnyCancellable> = []
@@ -35,13 +36,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self, self.debugPanel.isVisible else { return }
             Task { await self.debugPanel.store.record(trigger: trigger, outcome: outcome, source: source) }
         }
-        plugins.onCatalogChange = { [weak self] in self?.coordinator.pipeline.plugins = $0 }
+        plugins.onCatalogChange = { [weak self] in
+            self?.coordinator.pipeline.plugins = $0
+            self?.settingsWindow.navigation.revision += 1
+        }
+        plugins.presentError = { [weak self] message in self?.toasts.show(message, kind: .error) }
         plugins.openSettings = { [weak self] id, highlight in self?.settingsWindow.showPlugin(id, highlight: highlight) }
         coordinator.onPluginAction = { [weak self] entry, run in
             guard let self else { return }
             Task { await self.runPluginAction(entry, run) }
         }
-        Task { await plugins.reload() }
+        Task {
+            await plugins.reload()
+            await install.offerBundled(settings: store)
+        }
         coordinator.start()
         // `open build/Baron.app --args --debug-panel` starts with the panel showing.
         if CommandLine.arguments.contains("--debug-panel") { debugPanel.toggle() }
@@ -138,8 +146,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
+    /// `.baronplugin` files opened in Finder, and `baron://install?url=https://…` links.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        Task {
+            for url in urls { await install.install(from: url) }
+        }
+    }
+
     @objc private func reloadPlugins() {
-        Task { await plugins.reload() }
+        Task {
+            await plugins.reload()
+            await install.offerBundled(settings: store)
+        }
     }
 
     @objc private func openPluginFolder() {

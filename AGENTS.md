@@ -10,15 +10,15 @@
     - [x] Unzip a `.baronplugin`: files only, no symlinks, at most 50 MB (ba394ce)
 - [ ] Install
     - [x] Refuse an invalid manifest, an unsupported `apiVersion`, a newer `minBaronVersion` or an excluded platform, with the reason (ba394ce)
-    - [ ] Show the install sheet, warning when the same `id` comes from another source
-    - [ ] **▶ IN PROGRESS** Copy the package to `Plugins/<id>/<version>/`
+    - [ ] **▶ IN PROGRESS** Show the install sheet, warning when the same `id` comes from another source
+    - [x] Copy the package to `Plugins/<id>/<version>/` (329c3a2)
     - [ ] Run `onInstall` with a 10 s limit and show a failure
 - [ ] States
     - [ ] Track Enabled, Disabled, Needs consent, Broken and Suspended
     - [ ] Disable, enable, and re-enable a suspended plugin
 - [ ] Updates
-    - [ ] Treat a higher version as an update; ask before installing a lower or equal one
-    - [ ] Install silently with the same or fewer permissions; with new ones, wait in Needs consent while the old version keeps working
+    - [x] Treat a higher version as an update; ask before installing a lower or equal one (329c3a2)
+    - [x] Install silently with the same or fewer permissions; with new ones, wait in Needs consent while the old version keeps working (329c3a2)
     - [ ] Run `onUpdate` before the first dispatch, and delete the previous version after the first successful load
 - [ ] Uninstall
     - [ ] Confirm, then remove the package and all of its data

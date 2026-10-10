@@ -10,6 +10,8 @@ final class SettingsNavigation: ObservableObject {
     @Published var tab: Tab = .general
     @Published var selectedPlugin: String?
     @Published var highlighted: Set<String> = []
+    /// Bumped whenever the plugin list changes, so the pane redraws.
+    @Published var revision = 0
 }
 
 /// One plugin's settings page. Values are validated as they change and saved 0.5 s after the last edit;
@@ -33,6 +35,7 @@ final class PluginPage: ObservableObject {
     @Published var usage: PluginDataUsage?
     @Published var grants: [RuntimeGrant] = []
     @Published var savedFlash: String?
+    @Published var state: PluginController.State = .enabled
     private var pendingSaves: [String: Task<Void, Never>] = [:]
 
     static let saveDelay: Duration = .milliseconds(500)
@@ -57,7 +60,12 @@ final class PluginPage: ObservableObject {
         await refreshData()
     }
 
+    func refreshState() async {
+        state = await controller.state(of: plugin.id)
+    }
+
     func refreshData() async {
+        await refreshState()
         usage = try? await controller.data.usage(plugin.id)
         grants = await controller.grants.runtimeGrants(for: plugin.id)
     }

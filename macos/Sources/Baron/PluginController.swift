@@ -12,6 +12,10 @@ final class PluginController {
     private(set) var plugins: [String: RuntimePlugin] = [:]
     /// Plugins found in the development folder, in folder order, valid or not.
     private(set) var found: [DevelopmentPlugins.Found] = []
+    /// Installed plugins and their records (version, source, pending update).
+    private(set) var installedRecords: [String: InstalledRecord] = [:]
+    /// Updated plugins whose onUpdate hasn't run yet, with the version they came from.
+    private var pendingUpdateHooks: [String: String] = [:]
     private(set) var disabled: Set<String> = []
     private let logger = Logger(subsystem: "org.odh.baron", category: "plugins")
     var onCatalogChange: ((PluginActionCatalog) -> Void)?
@@ -26,12 +30,14 @@ final class PluginController {
     let secrets = SecretStore()
     let data: PluginDataManager
     let system = AppSystemActions()
+    let installer: PluginInstaller
 
     init(presenter: PluginPresenter) {
         grants = GrantStore(folder: location.dataRoot)
         stores = PluginStores(location: location)
         preferences = PreferencesStore(location: location)
         data = PluginDataManager(stores: stores, preferences: preferences, secrets: secrets, grants: grants)
+        installer = PluginInstaller(data: data)
         let gate = PermissionGate(grants: grants, actions: actions)
         let services: [HostService] = [
             LogService(),
@@ -59,18 +65,26 @@ final class PluginController {
         localizer(for: plugin).resolve(plugin.manifest.name)
     }
 
-    /// Plugins in the order Settings lists them.
-    var orderedPlugins: [RuntimePlugin] {
-        found.compactMap(\.plugin).filter { plugins[$0.id] != nil }
+    /// Plugins in the order Settings lists them: installed ones, then development ones.
+    private(set) var orderedPlugins: [RuntimePlugin] = []
+
+    /// Where a listed plugin came from.
+    func source(of id: String) -> PluginSource {
+        installedRecords[id]?.source ?? found.first { $0.plugin?.id == id }.map { .development($0.folder.path) } ?? .development("")
     }
 
-    /// Scans the development folder again; changed plugins load fresh on their next use.
+    /// Reads the installed plugins and the development folder again; changed plugins load fresh on their next use.
     func reload() async {
+        let installed = await installer.installed()
+        installedRecords = Dictionary(installed.map { ($0.record.id, $0.record) }, uniquingKeysWith: { first, _ in first })
+        for item in installed where item.record.previousVersion != nil { pendingUpdateHooks[item.record.id] = item.record.previousVersion }
         found = DevelopmentPlugins.scan()
         for entry in found where entry.plugin == nil {
             logger.error("Skipped \(entry.folder.lastPathComponent, privacy: .public): \(entry.issues.map(\.description).joined(separator: "; "), privacy: .public)")
         }
-        let loaded = found.compactMap(\.plugin)
+        let installedIDs = Set(installed.map(\.plugin.id))
+        let loaded = installed.map(\.plugin) + found.compactMap(\.plugin).filter { !installedIDs.contains($0.id) }
+        orderedPlugins = loaded
         for plugin in plugins.values { await runtime.reload(plugin.id) }
         plugins = Dictionary(loaded.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         for plugin in loaded { await runtime.register(plugin) }
@@ -121,9 +135,14 @@ final class PluginController {
             return .failure(HostError("needs_settings", "\(entry.pluginName) needs some settings before it can run"))
         }
         let action = plugin.manifest.actions.first { $0.id == entry.actionID }
+        await runUpdateHookIfNeeded(plugin)
         let payload = await payload(for: plugin, context: SelectionContextJSON.make(from: selection))
         actions.record(plugin.id)
         let result = await runtime.dispatch(plugin.id, .action, name: action?.handlerName ?? entry.actionID, payload: payload)
+        if result.isSuccess, installedRecords[plugin.id]?.previousVersion != nil {
+            try? await installer.confirmLoaded(plugin.id)
+            installedRecords[plugin.id]?.previousVersion = nil
+        }
         switch result {
         case .success:
             logger.info("\(plugin.id, privacy: .public) \(entry.actionID, privacy: .public): done")
@@ -166,6 +185,74 @@ final class PluginController {
     func save(_ id: String, value: JSONValue?, for plugin: RuntimePlugin) async throws {
         try await preferences.set(id, to: value, pluginID: plugin.id)
         await runtime.reload(plugin.id)
+    }
+
+    // MARK: Lifecycle
+
+    /// onInstall, once after a fresh install (10 s limit); a failure is shown but doesn't undo the install.
+    func runInstallHook(_ id: String) async {
+        guard let plugin = plugins[id] else { return }
+        let result = await runtime.dispatch(id, .lifecycle, name: "onInstall", payload: await payload(for: plugin))
+        if case .failure(let error) = result { presentError(PluginErrorMessage.text(for: error, pluginName: displayName(plugin))) }
+    }
+
+    /// onUpdate({ previousVersion }), once, before an updated plugin's first dispatch.
+    func runUpdateHookIfNeeded(_ plugin: RuntimePlugin) async {
+        guard let previous = pendingUpdateHooks.removeValue(forKey: plugin.id) else { return }
+        var payload = await payload(for: plugin)
+        payload.arguments = [.object(["previousVersion": .string(previous)])]
+        if case .failure(let error) = await runtime.dispatch(plugin.id, .lifecycle, name: "onUpdate", payload: payload) {
+            presentError(PluginErrorMessage.text(for: error, pluginName: displayName(plugin)))
+        }
+    }
+
+    var presentError: (String) -> Void = { _ in }
+
+    // MARK: States
+
+    enum State: Equatable {
+        case enabled, disabled, needsConsent, broken(String), suspended(String)
+
+        var label: String {
+            switch self {
+            case .enabled: "Enabled"
+            case .disabled: "Disabled"
+            case .needsConsent: "Needs consent"
+            case .broken: "Broken"
+            case .suspended: "Suspended"
+            }
+        }
+    }
+
+    func state(of id: String) async -> State {
+        switch await runtime.state(of: id) {
+        case .broken(let reason): return .broken(reason)
+        case .suspended(let reason): return .suspended(reason)
+        default: break
+        }
+        if installedRecords[id]?.pending != nil { return .needsConsent }
+        return disabled.contains(id) ? .disabled : .enabled
+    }
+
+    func reenable(_ id: String) async {
+        await runtime.reenable(id)
+    }
+
+    func acceptUpdate(_ id: String) async {
+        try? await installer.acceptPending(id)
+        await reload()
+    }
+
+    func declineUpdate(_ id: String) async {
+        try? await installer.declinePending(id)
+        await reload()
+    }
+
+    /// Removes an installed plugin with all of its data; development plugins are only forgotten until the next scan.
+    func uninstall(_ id: String) async throws {
+        await runtime.reload(id)
+        try await installer.uninstall(id)
+        await reload()
     }
 
     func openFolder() {

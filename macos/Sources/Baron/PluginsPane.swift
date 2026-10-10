@@ -7,6 +7,7 @@ import SwiftUI
 /// Settings › Plugins: installed plugins with Enabled switches, and the selected plugin's page.
 struct PluginsPane: View {
     let controller: PluginController
+    let install: InstallFlow
     @ObservedObject var store: SettingsStore
     @ObservedObject var navigation: SettingsNavigation
     @State private var page: PluginPage?
@@ -29,6 +30,12 @@ struct PluginsPane: View {
                 }
             }
             .frame(width: 200)
+            .safeAreaInset(edge: .bottom) {
+                Button("Add from Folder…") { install.chooseFolder() }
+                    .padding(8).frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("plugins.add")
+            }
+            .id(navigation.revision)
             .overlay {
                 if controller.orderedPlugins.isEmpty {
                     Text("No plugins yet. Put plugin folders in the development folder (menu › Open Plugin Folder).")
@@ -37,19 +44,20 @@ struct PluginsPane: View {
             }
             Divider()
             if let page {
-                PluginPageView(page: page, store: store, navigation: navigation).id(page.plugin.id)
+                PluginPageView(page: page, store: store, navigation: navigation, install: install).id("\(page.plugin.id)-\(navigation.revision)")
             } else {
                 Text("Select a plugin").foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .onAppear { select(navigation.selectedPlugin ?? controller.orderedPlugins.first?.id) }
         .onChange(of: navigation.selectedPlugin) { _, id in select(id) }
+        .onChange(of: navigation.revision) { _, _ in select(navigation.selectedPlugin, force: true) }
     }
 
-    private func select(_ id: String?) {
+    private func select(_ id: String?, force: Bool = false) {
         if navigation.selectedPlugin != id { navigation.selectedPlugin = id }
         guard let id, let plugin = controller.plugins[id] else { page = nil; return }
-        guard page?.plugin.id != id else { return }
+        guard force || page?.plugin.id != id else { return }
         let next = PluginPage(plugin: plugin, controller: controller)
         page = next
         Task { await next.load() }
@@ -61,7 +69,9 @@ struct PluginPageView: View {
     @ObservedObject var page: PluginPage
     @ObservedObject var store: SettingsStore
     @ObservedObject var navigation: SettingsNavigation
+    let install: InstallFlow
     @State private var confirmReset = false
+    @State private var confirmUninstall = false
 
     private var manifest: PluginManifest { page.manifest }
 
@@ -72,8 +82,9 @@ struct PluginPageView: View {
                     Image(systemName: "puzzlepiece.extension").font(.title).foregroundStyle(.secondary)
                     VStack(alignment: .leading) {
                         Text(page.text(manifest.name)).font(.headline)
-                        Text("Version \(manifest.version)\(manifest.author.map { " · \($0)" } ?? "") · Development folder")
+                        Text("Version \(manifest.version)\(manifest.author.map { " · \($0)" } ?? "") · From \(page.controller.source(of: manifest.id).label)")
                             .font(.caption).foregroundStyle(.secondary)
+                        stateLine
                     }
                     Spacer()
                     Toggle("Enabled", isOn: Binding {
@@ -117,14 +128,61 @@ struct PluginPageView: View {
                 Text(page.text(manifest.description))
                 if let homepage = manifest.homepage, let url = URL(string: homepage) { Link(homepage, destination: url) }
                 if let license = manifest.license { Text("Licence: \(license)").foregroundStyle(.secondary) }
+                if page.controller.installedRecords[manifest.id] != nil {
+                    Button("Uninstall…", role: .destructive) { confirmUninstall = true }.accessibilityIdentifier("page.uninstall")
+                }
             }
         }
         .formStyle(.grouped)
+        .confirmationDialog("Uninstall \(page.text(manifest.name))?", isPresented: $confirmUninstall) {
+            Button("Uninstall", role: .destructive) {
+                Task {
+                    try? await page.controller.uninstall(manifest.id)
+                    navigation.selectedPlugin = nil
+                    navigation.revision += 1
+                }
+            }
+            .accessibilityIdentifier("page.uninstall.confirm")
+        } message: {
+            Text("The plugin and everything it kept are deleted: preferences, storage, cache, Keychain items and the permissions you granted.")
+        }
         .confirmationDialog("Reset \(page.text(manifest.name))?", isPresented: $confirmReset) {
             Button("Reset", role: .destructive) { Task { await page.reset() } }
         } message: {
             Text("Its preferences, storage, cache and Keychain items are deleted. Permissions you granted stay.")
         }
+    }
+
+    @ViewBuilder
+    private var stateLine: some View {
+        switch page.state {
+        case .enabled, .disabled:
+            EmptyView()
+        case .needsConsent:
+            HStack {
+                Text("An update is waiting for your consent.").font(.caption).foregroundStyle(.orange)
+                Button("Review Update…") { Task { await reviewUpdate() } }.controlSize(.small).accessibilityIdentifier("page.reviewUpdate")
+            }
+        case .broken(let reason):
+            Text("Broken: \(reason)").font(.caption).foregroundStyle(.red).accessibilityIdentifier("page.state")
+        case .suspended(let reason):
+            HStack {
+                Text("Suspended: \(reason)").font(.caption).foregroundStyle(.red).accessibilityIdentifier("page.state")
+                Button("Re-enable") { Task { await page.controller.reenable(manifest.id); await page.refreshState() } }.controlSize(.small)
+                    .accessibilityIdentifier("page.reenable")
+            }
+        }
+    }
+
+    private func reviewUpdate() async {
+        guard let pending = page.controller.installedRecords[manifest.id]?.pending else { return }
+        let folder = await page.controller.installer.folder(manifest.id, version: pending.version)
+        guard let next = ManifestValidator().validate(package: folder).manifest else { return }
+        let accepted = await install.ask(InstallSheetView(name: page.text(manifest.name), manifest: next, source: pending.source.label,
+                                                          title: "Update “\(page.text(manifest.name))” to \(pending.version)?", actionTitle: "Update",
+                                                          newPermissions: pending.newPermissions))
+        if accepted { await page.controller.acceptUpdate(manifest.id) } else { await page.controller.declineUpdate(manifest.id) }
+        navigation.revision += 1
     }
 
     private func grantLine(_ grant: RuntimeGrant) -> String {

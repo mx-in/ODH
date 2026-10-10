@@ -36,6 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Task { await self.debugPanel.store.record(trigger: trigger, outcome: outcome, source: source) }
         }
         plugins.onCatalogChange = { [weak self] in self?.coordinator.pipeline.plugins = $0 }
+        plugins.system.openSettingsWindow = { [weak self] _ in self?.settingsWindow.show() }
         coordinator.onPluginAction = { [weak self] entry, run in
             guard let self else { return }
             Task { await self.runPluginAction(entry, run) }

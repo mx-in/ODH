@@ -28,7 +28,7 @@
 - [ ] Run-time prompt (UI)
     - [ ] **▶ IN PROGRESS** Show the native prompt naming the plugin and host: Deny, Allow Once, Always Allow; one at a time
 - [ ] Install sheet (UI, used by task-008)
-    - [ ] Describe permissions in plain words, grouped as Reads, Connects to, Can and Stores, with the disclosures
+    - [x] Describe permissions in plain words, grouped as Reads, Connects to, Can and Stores, with the disclosures (179a710)
     - [ ] Show them in a SwiftUI install sheet
 - [ ] Contract tests
     - [ ] Call every method from JavaScript against Baron's router and against the mock host on both engines, from one shared corpus

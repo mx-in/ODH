@@ -15,10 +15,22 @@ final class PluginController {
     let actions = UserActionTracker()
     let grants = GrantStore(folder: GrantStore.defaultFolder)
 
+    let system = AppSystemActions()
+
     init(presenter: PluginPresenter) {
         let gate = PermissionGate(grants: grants, actions: actions)
-        let router = HostRouter(services: [LogService(), UIService(presenter: presenter), HTTPService(policy: NetworkPolicy(grants: grants))], gate: gate)
-        runtime = PluginRuntime(handler: router)
+        let services: [HostService] = [
+            LogService(),
+            UIService(presenter: presenter, system: system),
+            HTTPService(policy: NetworkPolicy(grants: grants)),
+            ClipboardService(system: system),
+            SelectionService(system: system),
+            TextService(),
+            PermissionService(grants: grants, prompter: AlertPrompter()) { plugin in
+                PluginLocalizer(package: plugin.package, defaultLocale: plugin.manifest.defaultLocale).resolve(plugin.manifest.name)
+            },
+        ]
+        runtime = PluginRuntime(handler: HostRouter(services: services, gate: gate))
     }
 
     /// Scans the development folder again; changed plugins load fresh on their next use.

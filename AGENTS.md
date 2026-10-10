@@ -41,12 +41,12 @@
     - [x] `baron dev` (1f51ad1)
     - [x] `baron validate`, and `baron pack` printing the SHA-256 (1f51ad1)
 - [ ] Verification
-    - [ ] **▶ IN PROGRESS** Check the gate, including disk and Keychain after uninstall
-    - [ ] Time a first-time author from `baron create` to the action on the bar
+    - [x] Check the gate, including disk and Keychain after uninstall (18ba67e)
+    - [ ] **⏸ BLOCKED (needs: an unlocked screen)** Time a first-time author from `baron create` to the action on the bar
 - [ ] Design UML
-    - [ ] Add as-built UML to the design docs this task built or changed
+    - [ ] **▶ IN PROGRESS** Add as-built UML to the design docs this task built or changed
 
-**Notes for the next agent:** Installed plugins live in Application Support/Baron/Plugins/<id>/<version>/ with a registry (installed.json); development-folder plugins keep working alongside. Archives are unpacked with the system unzip after listing their entries. @baron/* packages aren't on npm yet, so baron create links them with file: paths to this repository's packages/.
+**Notes for the next agent:** Author timing (2026-10-11): `macos/scripts/uitest-author.sh` measured `baron create` 0.2 s, `npm install` 1.8 s and `baron dev` loading in Baron at 2.8 s; the last step, the action on the bar in Safari, stopped because the screen locked. Rerun the script with the screen unlocked and tick the item if the total is under two minutes. The install gate passes: `macos/scripts/uitest-install.sh`, 11 of 11 checks. Installed plugins live in Application Support/Baron/Plugins/<id>/<version>/ with a registry (installed.json); development-folder plugins keep working alongside. Archives are unpacked with the system unzip after listing their entries. @baron/* packages aren't on npm yet, so baron create links them with file: paths to this repository's packages/.
 
 <!--
 Template while a task is active (replace the line above):

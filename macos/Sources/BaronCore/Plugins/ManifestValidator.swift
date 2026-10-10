@@ -47,6 +47,7 @@ public struct ManifestValidator: Sendable {
         }
         let issues = ManifestReferenceChecks.check(manifest)
             + ManifestValueChecks.check(manifest)
+            + PackagePathChecks.check(manifest, package: package)
         return ManifestValidation(manifest: issues.isEmpty ? manifest : nil, issues: issues)
     }
 }

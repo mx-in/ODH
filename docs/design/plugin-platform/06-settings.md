@@ -8,7 +8,7 @@ Most plugins never draw settings UI: they declare preferences, and Baron draws a
 
 ## Where settings live
 
-Baron's Settings window gains a **Plugins** section: a list of installed plugins with an Enabled switch each. Selecting one shows its page:
+Baron's Settings window has **General** and **Plugins** tabs. Plugins lists installed plugins with an Enabled switch each (kept in Baron's settings as the plugins switched off). Selecting one shows its page:
 
 1. **Header:** icon, name, version, author, source, Enabled.
 2. **Preferences:** generated from the manifest, then the plugin's `settingsPage` if it has one.
@@ -60,12 +60,12 @@ A `button` calls `buttons.<run>(preferences, host)` (10 s limit) and shows the r
 ## Validation and saving
 
 - **Saved as you type,** as macOS settings do: each change is validated and written about half a second after the last edit; there is no Save button.
-- **Invalid values** (a failed `pattern`, a number out of range, an empty required field) show an inline message and are not saved.
+- **Invalid values** (a failed `pattern`, a number out of range, an empty required field) show an inline message and are not saved. Patterns are searched for, like `when.regex`: anchor them with `^` and `$` to match the whole value.
 - **The plugin sees new values** in `host.preferences` on its next dispatch. A plugin whose context is loaded is reloaded when its preferences change.
 
 ## Required before first run
 
-If a user clicks an action while a `required` preference is empty, the action doesn't run. Baron opens the plugin's settings page with the missing fields highlighted and says why.
+If a user clicks an action while a `required` preference is empty (for a `secret`, nothing in the Keychain), the action doesn't run. Baron opens the plugin's settings page with the missing fields highlighted and shows a toast saying the plugin needs settings.
 
 ## Custom settings
 
@@ -73,96 +73,89 @@ When generated fields aren't enough, a plugin adds a `settingsPage` (a web page,
 
 ## UML
 
-Design-level diagrams: they show the planned types, and task-007 replaces them with diagrams of the code as built.
+Drawn from the code at the end of task-007: the app's `PluginsPane`, `PluginPageView`, `PreferenceControls` and `PluginSettingsModel`, over `PluginController`.
 
 ```mermaid
 classDiagram
-  class PluginsSection {
-    +plugins: [InstalledPlugin]
-    +select(plugin)
+  class SettingsRoot {
+    TabView: General, Plugins
   }
-  class PluginSettingsPage {
-    +header
-    +preferences: [PreferenceControl]
-    +permissions: PermissionsSection
-    +data: DataSection
-    +about: AboutSection
+  class SettingsNavigation {
+    <<ObservableObject>>
+    +tab
+    +selectedPlugin
+    +highlighted: Set~String~
   }
-  class PreferenceControl {
-    <<interface>>
-    +preference: Preference
-    +value: PreferenceValue?
-    +error: String?
+  class PluginsPane {
+    plugin list with Enabled switches
   }
-  class OptionsLoader {
-    +load(field, preferences) async OptionsState
-    +dependents(of: changedID) [Preference]
+  class PluginPageView {
+    header, Preferences, Permissions, Data, About
   }
-  class OptionsState {
-    <<enumeration>>
-    loading
-    loaded(options)
-    failed(message)
+  class PluginPage {
+    <<ObservableObject>>
+    +values, errors, options, buttonResults, secretSaved, usage, grants
+    +set(preference, value) validates, saves after 0.5 s
+    +loadOptions(preference)
+    +press(button)
+    +saveSecret(preference, text)
+    +revoke(grant), clearCache(), reset()
+  }
+  class PreferenceRow {
+    one control per type
+  }
+  class PluginController {
+    +options(provider, plugin, values)
+    +runButton(handler, plugin, values)
+    +save(id, value, plugin) reloads the plugin
+    +missingRequired(plugin)
   }
   class PreferenceValidator {
-    +validate(preference, value) ValidationResult
+    <<BaronCore>>
+    +problem(with: value, for: preference)$ String?
   }
-  class AutosaveController {
-    +delay: 0.5 s
-    +changed(id, value)
+  class PreferenceOptionsResult {
+    <<BaronCore>>
+    +parse(value)$
   }
-  PluginsSection --> PluginSettingsPage
-  PluginSettingsPage *-- "*" PreferenceControl
-  PreferenceControl <|.. TextControl
-  PreferenceControl <|.. NumberControl
-  PreferenceControl <|.. DropdownControl
-  PreferenceControl <|.. ChecklistControl
-  PreferenceControl <|.. ListControl
-  PreferenceControl <|.. SecretControl
-  PreferenceControl <|.. ButtonControl
-  DropdownControl --> OptionsLoader : optionsFrom
-  ChecklistControl --> OptionsLoader : optionsFrom
-  OptionsLoader ..> OptionsState
-  PluginSettingsPage --> AutosaveController
-  AutosaveController --> PreferenceValidator
-  AutosaveController --> PreferencesStore : saves valid values
-  OptionsLoader --> PluginRuntime : dispatch options
+  SettingsRoot --> SettingsNavigation
+  SettingsRoot --> PluginsPane
+  PluginsPane --> PluginPageView
+  PluginPageView --> PluginPage
+  PluginPageView *-- PreferenceRow
+  PreferenceRow --> PluginPage
+  PluginPage --> PluginController
+  PluginPage ..> PreferenceValidator
+  PluginController ..> PreferenceOptionsResult
+  PluginController --> PreferencesStore
+  PluginController --> PluginRuntime : options and button dispatches
 ```
 
-Opening ODH's settings and changing the note type:
+Changing ODH's note type, as built:
 
 ```mermaid
 sequenceDiagram
   actor User
-  participant Page as PluginSettingsPage
-  participant Loader as OptionsLoader
+  participant Row as Note type dropdown
+  participant Page as PluginPage
+  participant Ctl as PluginController
   participant RT as PluginRuntime
   participant Anki as AnkiConnect
-  User->>Page: open ODH's settings
-  par each optionsFrom field
-    Page->>Loader: load(deck)
-    Loader->>RT: dispatch options.decks(preferences)
-    RT->>Anki: deckNames (through host.http)
-    Anki-->>RT: decks
-    RT-->>Loader: [{value, title}]
-    Loader-->>Page: loaded, spinner replaced
-  and
-    Page->>Loader: load(noteType)
-    Loader-->>Page: loaded
-  end
-  User->>Page: choose note type "Basic"
-  Page->>Page: autosave after 0.5 s
-  Page->>Loader: dependents(of: noteType)
-  Loader-->>Page: the 8 field-mapping dropdowns
-  Page->>Loader: load(fieldExpression), and the others
-  Loader->>RT: dispatch options.noteFields(preferences with noteType Basic)
-  RT-->>Loader: Front, Back
-  Loader-->>Page: loaded, a saved field missing from them shows "(not found)"
+  User->>Row: chooses Cloze
+  Row->>Page: set(noteType, "Cloze")
+  Page->>Page: validate, then wait 0.5 s for more edits
+  Page->>Ctl: save(noteType) to preferences.json, reload the plugin
+  Page->>Page: fields whose dependsOn has noteType
+  Page->>Ctl: options(noteFields, values with Cloze)
+  Ctl->>RT: dispatch options noteFields
+  RT->>Anki: modelFieldNames(Cloze)
+  Anki-->>RT: Text, Back Extra
+  RT-->>Page: options, the dropdown redraws
 ```
 
 ## Gate (task-007)
 
-- [ ] A test plugin shaped like ODH renders every preference type in Settings
-- [ ] Deck, note type and field dropdowns fill from a mock AnkiConnect; changing the note type refreshes the field dropdowns
-- [ ] List and checklist editing, a button's result line, and a secret saved in the Keychain all work in a UI test
-- [ ] Clicking an action with an empty required preference opens Settings with the field highlighted
+- [x] A test plugin shaped like ODH renders every preference type in Settings
+- [x] Deck, note type and field dropdowns fill from a mock AnkiConnect; changing the note type refreshes the field dropdowns
+- [x] List and checklist editing, a button's result line, and a secret saved in the Keychain all work in a UI test
+- [x] Clicking an action with an empty required preference opens Settings with the field highlighted

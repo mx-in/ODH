@@ -36,7 +36,8 @@ SQLite, the copy built into macOS, because it gives atomic per-key writes and su
 
 ## How the stores behave
 
-- **One actor per plugin and store** serialises writes. The last write wins; v1 has no transactions.
+- **One actor per plugin and store** serialises writes (`PluginStores` opens each once). The last write wins; v1 has no transactions for plugins (each write is one SQLite transaction).
+- **Missing keys** read as `undefined` in plugin code (`null` on the wire; the prelude converts).
 - **Quotas** count bytes of keys plus values. A write that would exceed one fails with `quota_exceeded` and changes nothing.
 - **Cache eviction** runs after each write: least-recently-read entries are removed until the cache is under 10 MB.
 - **Secret preferences** are stored in the Keychain under the preference's `id` and read with `host.secrets.get(id)`; they never appear in `host.preferences`.
@@ -50,91 +51,99 @@ SQLite, the copy built into macOS, because it gives atomic per-key writes and su
 
 ## UML
 
-Design-level diagrams: they show the planned types, and task-007 replaces them with diagrams of the code as built.
+Drawn from the code at the end of task-007: `macos/Sources/BaronRuntime/Storage` and the storage services.
 
 ```mermaid
 classDiagram
-  class PluginData {
-    +pluginID: PluginID
-    +preferences: PreferencesStore
-    +storage: KeyValueStore
-    +cache: CacheStore
-    +secrets: SecretStore
-    +usage() DataUsage
-    +removeAll()
+  class PluginDataLocation {
+    +dataRoot: Application Support/Baron/PluginData
+    +cacheRoot: Caches/Baron/PluginCache
+    +dataFolder(for: id) URL
+    +cacheFolder(for: id) URL
   }
-  class PreferencesStore {
-    -file: preferences.json
-    +values() [String: PreferenceValue]
-    +set(id, value)
+  class PluginStores {
+    <<actor>>
+    +storage(for: id) KeyValueStore
+    +cache(for: id) CacheStore
+    +forget(id)
   }
   class KeyValueStore {
     <<actor>>
-    -database: SQLite
-    +quota: 5 MB
-    +valueLimit: 1 MB
-    +get(key) Value?
-    +set(key, value) throws
-    +remove(key)
-    +keys() [String]
-    +usage() Int
+    storage.sqlite
+    5 MB total, 1 MB per value
+    +get, set, remove, keys, usage, clear
   }
   class CacheStore {
     <<actor>>
-    -database: SQLite in Caches
-    +limit: 10 MB
-    +valueLimit: 2 MB
-    +get(key) String?
-    +set(key, value)
-    +clear()
-    -evictLeastRecentlyRead()
+    cache.sqlite
+    10 MB total, 2 MB per value
+    evicts least recently read
+  }
+  class PreferencesStore {
+    <<actor>>
+    preferences.json over manifest defaults
+    +values(for: manifest)
+    +set(id, value)
   }
   class SecretStore {
-    -service: org.odh.baron.plugin.ID
-    +get(key) String?
-    +set(key, value) throws
-    +remove(key)
-    +removeAll()
+    Keychain service org.odh.baron.plugin.id
+    this device only, 16 KB
   }
-  class Keychain {
-    <<system>>
+  class GrantStore {
+    <<actor>>
+    grants.json
   }
-  PluginData *-- PreferencesStore
-  PluginData *-- KeyValueStore
-  PluginData *-- CacheStore
-  PluginData *-- SecretStore
-  SecretStore --> Keychain : not synchronisable
-  StorageService ..> KeyValueStore : host.storage
-  CacheService ..> CacheStore : host.cache
+  class PluginDataManager {
+    +usage(id) PluginDataUsage
+    +clearCache(id)
+    +reset(id)
+    +removeAll(id)
+  }
+  class SQLiteDatabase {
+    system SQLite, WAL
+    +query(sql, values) rows
+    +transaction(body)
+  }
+  PluginStores --> PluginDataLocation
+  PluginStores *-- KeyValueStore
+  PluginStores *-- CacheStore
+  KeyValueStore --> SQLiteDatabase
+  CacheStore --> SQLiteDatabase
+  PreferencesStore --> PluginDataLocation
+  PluginDataManager --> PluginStores
+  PluginDataManager --> PreferencesStore
+  PluginDataManager --> SecretStore
+  PluginDataManager --> GrantStore
+  StorageService ..> PluginStores : host.storage
+  CacheService ..> PluginStores : host.cache
   SecretService ..> SecretStore : host.secrets
 ```
 
-A write that would go over the quota changes nothing:
+A write past the quota, as built:
 
 ```mermaid
 sequenceDiagram
-  participant P as Plugin
+  participant P as Plugin code
   participant Router as HostRouter
   participant Svc as StorageService
   participant KV as KeyValueStore (actor)
-  participant DB as SQLite
-  P->>Router: storage.set("history", list)
-  Router->>Svc: call(set, args, plugin)
+  participant DB as SQLiteDatabase
+  P->>Router: host.storage.set("history", list)
+  Router->>Svc: call(set)
   Svc->>KV: set("history", list)
-  KV->>KV: size of key + JSON value
-  alt value over 1 MB, or total over 5 MB
-    KV-->>Svc: quota_exceeded (limit, used)
-    Svc-->>P: reject with BaronError
-  else within limits
-    KV->>DB: INSERT OR REPLACE in one transaction
-    DB-->>KV: done
-    KV-->>Svc: ok
-    Svc-->>P: resolve
+  KV->>KV: JSON size of the value (over 1 MB: quota_exceeded)
+  KV->>DB: BEGIN IMMEDIATE, sum of the other entries
+  alt other entries plus this one over 5 MB
+    KV->>DB: ROLLBACK
+    KV-->>P: quota_exceeded (limit, used)
+  else fits
+    KV->>DB: INSERT OR REPLACE, COMMIT
+    KV-->>P: resolve
   end
 ```
 
 ## Gate (task-007)
 
-- [ ] Each store has unit tests: persistence across reload, quotas, per-value limits, cache eviction order
-- [ ] Uninstall removes every file and Keychain item for the plugin, checked on disk and in the Keychain
-- [ ] 1,000 small writes and reads finish in under a second
+- [x] Each store has unit tests: persistence across reload, quotas, per-value limits, cache eviction order
+- [x] Uninstall removes every file and Keychain item for the plugin, checked on disk and in the Keychain
+- [x] 1,000 small writes and reads finish in under a second

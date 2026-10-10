@@ -9,12 +9,12 @@
     - [x] Create each plugin's data and cache folders (6538503)
 - [x] Preferences store
     - [x] Save and load `preferences.json`, with defaults from the manifest (6538503)
-- [ ] Storage
-    - [ ] **▶ IN PROGRESS** Store JSON values in SQLite, one actor per plugin
-    - [ ] Enforce the 5 MB quota and 1 MB per value
-    - [ ] Serve `host.storage`
+- [x] Storage
+    - [x] Store JSON values in SQLite, one actor per plugin (a500d9d)
+    - [x] Enforce the 5 MB quota and 1 MB per value (a500d9d)
+    - [x] Serve `host.storage` (a500d9d)
 - [ ] Cache
-    - [ ] Store strings in SQLite in the Caches folder, evicting the least recently read past 10 MB
+    - [ ] **▶ IN PROGRESS** Store strings in SQLite in the Caches folder, evicting the least recently read past 10 MB
     - [ ] Serve `host.cache`
 - [ ] Secrets
     - [ ] Keep secrets in the Keychain per plugin, not synchronisable

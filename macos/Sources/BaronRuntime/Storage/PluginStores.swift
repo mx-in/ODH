@@ -5,6 +5,7 @@ import Foundation
 public actor PluginStores {
     public let location: PluginDataLocation
     private var storage: [String: KeyValueStore] = [:]
+    private var caches: [String: CacheStore] = [:]
 
     public init(location: PluginDataLocation) {
         self.location = location
@@ -14,6 +15,13 @@ public actor PluginStores {
         if let store = storage[pluginID] { return store }
         let store = try KeyValueStore(folder: location.dataFolder(for: pluginID))
         storage[pluginID] = store
+        return store
+    }
+
+    public func cache(for pluginID: String) throws -> CacheStore {
+        if let store = caches[pluginID] { return store }
+        let store = try CacheStore(folder: location.cacheFolder(for: pluginID))
+        caches[pluginID] = store
         return store
     }
 }

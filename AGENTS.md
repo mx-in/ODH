@@ -23,8 +23,8 @@
     - [x] Expose `__baronNative.send` and deliver envelopes back to the context (4447b2f)
     - [x] Back the timer functions with native timers on the plugin's queue (14c7632)
     - [x] Provide `crypto.getRandomValues`, `crypto.randomUUID` and `crypto.subtle.digest` (6f16fb1)
-    - [ ] **▶ IN PROGRESS** Load the prelude and the bundle within 2 s, and mark a plugin that fails to load as broken
-    - [ ] Enforce each dispatch's time limit and abort its signal
+    - [x] Load the prelude and the bundle within 2 s, and mark a plugin that fails to load as broken (0304cdd)
+    - [ ] **▶ IN PROGRESS** Enforce each dispatch's time limit and abort its signal
     - [ ] Disable a plugin stuck in a synchronous loop for 10 s, and one with 3 strikes in 10 minutes
     - [ ] Unload a context after 60 s idle and load it again on the next need
 - [ ] Host router (Swift)

@@ -31,6 +31,18 @@ public actor PluginRuntime {
         return state(of: pluginID)
     }
 
+    /// Runs one of the plugin's exports, loading the plugin first if needed. Gives up with `timeout` after the
+    /// target's limit and tells the plugin through its signal.
+    public func dispatch(_ pluginID: String, _ target: DispatchTarget, name: String, payload: DispatchPayload) async -> Result<JSONValue, HostError> {
+        let instance: PluginInstance
+        switch await self.instance(for: pluginID) {
+        case .success(let loaded): instance = loaded
+        case .failure(let error): return .failure(error)
+        }
+        let json = payload.json(pluginVersion: instance.plugin.manifest.version)
+        return await instance.dispatch(target, name: name, payload: json, limit: limits.timeLimit(for: target))
+    }
+
     func instance(for pluginID: String) async -> Result<PluginInstance, HostError> {
         guard let plugin = plugins[pluginID] else { return .failure(.notFound("No plugin \(pluginID)")) }
         switch state(of: pluginID) {

@@ -64,3 +64,47 @@ public struct RuntimePlugin: Sendable {
 public protocol HostCallHandler: Sendable {
     func handle(_ call: HostCall, from plugin: RuntimePlugin) async -> Result<JSONValue, HostError>
 }
+
+/// `host.environment`, sent with every dispatch.
+public struct PluginEnvironment: Sendable {
+    public var baronVersion = Baron.version
+    public var platform = "macos"
+    public var locale: String
+    public var appearance: String
+    public var development = false
+
+    public init(locale: String = Locale.preferredLanguages.first ?? "en", appearance: String = "light", development: Bool = false) {
+        self.locale = locale
+        self.appearance = appearance
+        self.development = development
+    }
+
+    func json(pluginVersion: String) -> JSONValue {
+        .object(["apiVersion": .number(1), "baronVersion": .string(baronVersion), "pluginVersion": .string(pluginVersion),
+                 "platform": .string(platform), "locale": .string(locale), "appearance": .string(appearance), "development": .bool(development)])
+    }
+}
+
+/// What a dispatch carries besides its target and name.
+public struct DispatchPayload: Sendable {
+    public var environment: PluginEnvironment
+    public var preferences: [String: JSONValue]
+    /// The selection, for actions.
+    public var context: JSONValue?
+    /// For lifecycle `onUpdate` and view events.
+    public var arguments: [JSONValue]?
+
+    public init(environment: PluginEnvironment = PluginEnvironment(), preferences: [String: JSONValue] = [:], context: JSONValue? = nil, arguments: [JSONValue]? = nil) {
+        self.environment = environment
+        self.preferences = preferences
+        self.context = context
+        self.arguments = arguments
+    }
+
+    func json(pluginVersion: String) -> JSONValue {
+        var object: [String: JSONValue] = ["environment": environment.json(pluginVersion: pluginVersion), "preferences": .object(preferences)]
+        if let context { object["context"] = context }
+        if let arguments { object["args"] = .array(arguments) }
+        return .object(object)
+    }
+}

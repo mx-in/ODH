@@ -10,8 +10,8 @@
     - [x] Write the envelope types and codec in `@baron/api` (shared by prelude, harness and docs) (7644216)
 - [ ] Prelude (`@baron/runtime`)
     - [x] Build call envelopes and match results to calls by `id` (1ccd2cf)
-    - [ ] **▶ IN PROGRESS** Build the `host` object over `__baronNative`
-    - [ ] Serve dispatches: find the export, call it, await it, reply with a result or a classified error
+    - [x] Build the `host` object over `__baronNative` (930e4b9)
+    - [ ] **▶ IN PROGRESS** Serve dispatches: find the export, call it, await it, reply with a result or a classified error
     - [ ] Provide `console`, the timer functions and `queueMicrotask`
     - [ ] Polyfill `URL` and `URLSearchParams`
     - [ ] Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone`

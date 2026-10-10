@@ -15,6 +15,7 @@ import Foundation
 // It takes over the mouse and keyboard while it runs.
 
 struct Options {
+    var plugins = false
     var only: Set<String>?
     var copy = true
     var modes = CoverageFixture.Mode.allCases
@@ -24,6 +25,7 @@ struct Options {
         var rest = arguments.dropFirst()
         while let argument = rest.popFirst() {
             switch argument {
+            case "--plugins": plugins = true
             case "--only": only = Set((rest.popFirst() ?? "").split(separator: ",").map { $0.lowercased() })
             case "--no-copy": copy = false
             case "--modes": modes = (rest.popFirst() ?? "").split(separator: ",").compactMap { CoverageFixture.Mode(rawValue: String($0)) }
@@ -212,6 +214,20 @@ func main() async {
     guard AccessibilityPermission.isGranted else {
         log("baron-uitest needs Accessibility access for the terminal it runs in.")
         exit(1)
+    }
+
+    if options.plugins {
+        let previousApp = NSWorkspace.shared.frontmostApplication
+        let clipboard = PasteboardBackup()
+        let checks = await runPluginChecks()
+        clipboard.restore()
+        previousApp?.activate()
+        var markdown = "# baron-uitest plugin checks\n\n| Check | Result | Detail |\n| --- | --- | --- |\n"
+        markdown += checks.map { "| \($0.name) | \($0.passed ? "pass" : "FAIL") | \($0.detail.replacingOccurrences(of: "|", with: "\\|")) |" }.joined(separator: "\n") + "\n"
+        try? FileManager.default.createDirectory(at: options.out, withIntermediateDirectories: true)
+        try? markdown.write(to: options.out.appendingPathComponent("plugins.md"), atomically: true, encoding: .utf8)
+        print(markdown)
+        exit(checks.allSatisfy(\.passed) && !checks.isEmpty ? 0 : 1)
     }
 
     let fixtures = Fixtures(directory: FileManager.default.temporaryDirectory.appendingPathComponent("baron-uitest"))

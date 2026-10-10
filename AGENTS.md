@@ -49,8 +49,8 @@
     - [x] Write the `fetch`-based lookup example with tests (316e545)
 - [ ] Verification
     - [x] Test timers, errors, time limits, idle unload and reload (covered by TimerTests, PluginLoadingTests, DispatchTests, StuckPluginTests, IdleTests in BaronRuntimeTests, and the prelude's bun tests)
-    - [ ] **▶ IN PROGRESS** Measure load time, dispatch overhead and idle memory against the targets in the design
-    - [ ] Run both examples from the bar in a UI test
+    - [x] Measure load time, dispatch overhead and idle memory against the targets in the design (ad419d4)
+    - [ ] **▶ IN PROGRESS** Run both examples from the bar in a UI test
 - [ ] Design UML
     - [ ] Replace the design-level UML in 02, 03 (core) and 09 with diagrams of the code as built
 

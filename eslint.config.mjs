@@ -55,6 +55,7 @@ export default [
             'macos/Sources/BaronRuntime/Resources/prelude.js',
             '**/dist/**',
             'macos/.build/**',
+            'macos/build/**',
             'src/bg/data/**',
             // Vendored dictionaries are eval-loaded third-party scripts; their
             // class names are persisted dictionary IDs, so they are excluded

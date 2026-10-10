@@ -20,6 +20,7 @@ public final class ToastPanel {
         label.textColor = kind == .error ? .systemRed : .labelColor
         label.preferredMaxLayoutWidth = 320
         label.maximumNumberOfLines = 4
+        label.setAccessibilityIdentifier("baron.toast.message")
         let symbol = NSImageView(image: NSImage(systemSymbolName: Self.symbol(kind), accessibilityDescription: kind.rawValue)!)
         symbol.contentTintColor = kind == .error ? .systemRed : kind == .success ? .systemGreen : .secondaryLabelColor
         let stack = NSStackView(views: [symbol, label])
@@ -46,6 +47,7 @@ public final class ToastPanel {
         panel.ignoresMouseEvents = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         panel.contentView = background
+        panel.setAccessibilityIdentifier("baron.toast")
         let screen = ScreenGeometry.visibleFrame(containing: point)
         let topLeft = CGRect(x: min(max(point.x - size.width / 2, screen.minX), screen.maxX - size.width),
                              y: max(point.y - size.height - 8, screen.minY), width: size.width, height: size.height)

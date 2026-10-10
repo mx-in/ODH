@@ -60,7 +60,6 @@ struct HTTPServiceTests {
         var limits = HTTPService.Limits()
         limits.maximumBody = 1024
         service = HTTPService(limits: limits, configuration: configuration)
-        StubProtocol.lock.withLock { StubProtocol.replies = [:]; StubProtocol.seen = [] }
     }
 
     func stub(_ url: String, _ reply: StubProtocol.Reply) {
@@ -84,7 +83,7 @@ struct HTTPServiceTests {
         let response = try await fetch("https://anki.example/", ["method": .string("post"), "headers": .object(["X-Key": .string("1")]),
                                                                  "body": .object(["$bytes": .string("AQI=")]), "responseType": .string("bytes")]).get()
         #expect(response["body"] == .object(["$bytes": .string("AP8=")]))
-        let sent = try #require(StubProtocol.lock.withLock { StubProtocol.seen.last })
+        let sent = try #require(StubProtocol.lock.withLock { StubProtocol.seen.last { $0.url?.host == "anki.example" } })
         #expect(sent.httpMethod == "POST" && sent.value(forHTTPHeaderField: "X-Key") == "1" && sent.httpBody == Data([1, 2]))
     }
 

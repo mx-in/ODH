@@ -33,9 +33,9 @@
     - [x] Run on selection for `autoRun: "allowed"` actions, optionally limited to some apps (b805bfc)
     - [x] Give an action its own hotkey (b805bfc)
 - [ ] Development mode
-    - [ ] **▶ IN PROGRESS** Turn it on in Settings › Advanced and listen on a same-user socket
-    - [ ] Load a registered folder as "Development" and reload it on each rebuild
-    - [ ] Stream logs and errors with TypeScript line numbers; make contexts inspectable
+    - [x] Turn it on in Settings › Advanced and listen on a same-user socket (1221865)
+    - [x] Load a registered folder as "Development" and reload it on each rebuild (1221865)
+    - [ ] **▶ IN PROGRESS** Stream logs and errors with TypeScript line numbers; make contexts inspectable
 - [ ] CLI
     - [ ] `baron create` with the `action`, `lookup` and `settings` templates
     - [ ] `baron dev`

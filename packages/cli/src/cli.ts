@@ -1,5 +1,11 @@
 import { resolve } from "node:path";
 import { buildPlugin } from "./build.ts";
+import { manifestErrors } from "./checks.ts";
+import { createPlugin, templates, type Template } from "./create.ts";
+import { devPlugin } from "./dev.ts";
+import { packPlugin } from "./pack.ts";
+import { existsSync, readFileSync } from "node:fs";
+import { join as joinPath } from "node:path";
 
 export type Engine = "jsc" | "quickjs";
 
@@ -24,14 +30,23 @@ export async function testPlugin(directory: string, engines: Engine[], extra: st
 const usage = `Usage: baron <command> [plugin folder]
 
 Commands:
-  build      Bundle src/main.ts into the manifest's main file
-  test       Build, then run the plugin's tests on each engine
-             --engine jsc|quickjs|all (default all)
+  create <name>  Make a plugin folder: --template action|lookup|settings (default action)
+  build          Bundle src/main.ts into the manifest's main file
+  dev            Build, load into Baron (Developer mode), rebuild and reload on every save
+  test           Build, then run the plugin's tests on each engine: --engine jsc|quickjs|all (default all)
+  validate       Check manifest.json
+  pack           Build and zip the plugin as <id>-<version>.baronplugin, printing its SHA-256
 `;
 
 /** Runs one command; returns the exit code. */
 export async function run(args: string[], log = console.log, error = console.error): Promise<number> {
     const [command, ...rest] = args;
+    const templateFlag = rest.findIndex((a) => a === "--template" || a.startsWith("--template="));
+    let template = "action";
+    if (templateFlag >= 0) {
+        template = rest[templateFlag]!.includes("=") ? rest[templateFlag]!.split("=")[1]! : rest[templateFlag + 1] ?? "";
+        rest.splice(templateFlag, rest[templateFlag]!.includes("=") ? 1 : 2);
+    }
     const engineFlag = rest.findIndex((a) => a === "--engine" || a.startsWith("--engine="));
     let engine = "all";
     if (engineFlag >= 0) {
@@ -54,6 +69,39 @@ export async function run(args: string[], log = console.log, error = console.err
                 return 2;
             }
             return await testPlugin(directory, engines, rest, log);
+        }
+        case "create": {
+            if (!templates.includes(template as Template)) {
+                error(`--template is ${templates.join(", ")}, not ${template}`);
+                return 2;
+            }
+            try {
+                const folder = createPlugin(directory, template as Template);
+                log(`Created ${folder}\nNext: cd ${directory} && npm install && npx baron dev`);
+                return 0;
+            } catch (e) {
+                error(`error: ${(e as Error).message}`);
+                return 1;
+            }
+        }
+        case "dev":
+            return await devPlugin(directory, { log });
+        case "validate": {
+            const path = joinPath(directory, "manifest.json");
+            if (!existsSync(path)) {
+                error(`error: no manifest.json in ${directory}`);
+                return 1;
+            }
+            const problems = manifestErrors(JSON.parse(readFileSync(path, "utf8")));
+            for (const problem of problems) error(`error: manifest.json ${problem}`);
+            if (!problems.length) log("manifest.json is valid");
+            return problems.length ? 1 : 0;
+        }
+        case "pack": {
+            const packed = await packPlugin(directory);
+            for (const message of packed.errors) error(`error: ${message}`);
+            if (packed.ok) log(`packed ${packed.file}\nsha256 ${packed.sha256}`);
+            return packed.ok ? 0 : 1;
         }
         default:
             (command ? error : log)(command ? `Unknown command ${command}\n\n${usage}` : usage);

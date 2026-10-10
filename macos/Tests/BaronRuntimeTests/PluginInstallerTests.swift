@@ -31,6 +31,16 @@ struct PluginInstallerTests {
         #expect(await PluginInstaller(root: installer.root, data: data).installed().count == 1)
     }
 
+    @Test func copiesOnlyWhatThePackageShips() async throws {
+        let installer = self.installer
+        let folder = try Packages.folder()
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("src"), withIntermediateDirectories: true)
+        try Data("export {}".utf8).write(to: folder.appendingPathComponent("src/main.ts"))
+        try await installer.install(await installer.plan(PackageReader.read(folder: folder, source: .folder(folder.path))), consented: true)
+        let copied = try FileManager.default.contentsOfDirectory(atPath: installer.folder("org.example.pkg", version: "1.0.0").path).sorted()
+        #expect(copied == ["dist", "manifest.json"])
+    }
+
     @Test func updatesSilentlyWithoutNewPermissionsAndKeepsThePreviousUntilLoaded() async throws {
         let installer = self.installer
         try await installer.install(await installer.plan(try package(version: "1.0.0", permissions: ["secrets"])), consented: true)

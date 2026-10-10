@@ -66,6 +66,24 @@ struct PackageReaderTests {
         }
     }
 
+    @Test func ignoresASourceFoldersOtherFiles() throws {
+        let folder = try Packages.folder()
+        let bin = folder.appendingPathComponent("node_modules/.bin")
+        try FileManager.default.createDirectory(at: bin, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(atPath: bin.appendingPathComponent("tsc").path, withDestinationPath: "../typescript/bin/tsc")
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("src"), withIntermediateDirectories: true)
+        let package = try PackageReader.read(folder: folder, source: .development(folder.path))
+        #expect(package.shippedEntries == ["manifest.json", "dist"])
+    }
+
+    @Test func refusesSymlinksInShippedFolders() throws {
+        let folder = try Packages.folder()
+        try FileManager.default.createSymbolicLink(atPath: folder.appendingPathComponent("dist/link.js").path, withDestinationPath: "/etc/hosts")
+        #expect(throws: InstallError("The package contains a symbolic link (dist/link.js), which plugins can't ship.")) {
+            try PackageReader.read(folder: folder, source: .folder(folder.path))
+        }
+    }
+
     @Test func refusesInvalidManifestsAndNewerAPIs() throws {
         let newer = try Packages.folder(apiVersion: 2)
         #expect((try? PackageReader.read(folder: newer, source: .folder(newer.path))) == nil)

@@ -94,8 +94,10 @@ public actor PluginInstaller {
         let manifest = plan.package.manifest
         let destination = folder(manifest.id, version: manifest.version)
         if FileManager.default.fileExists(atPath: destination.path) { try FileManager.default.removeItem(at: destination) }
-        try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try FileManager.default.copyItem(at: plan.package.folder, to: destination)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        for entry in plan.package.shippedEntries {
+            try FileManager.default.copyItem(at: plan.package.folder.appendingPathComponent(entry), to: destination.appendingPathComponent(entry))
+        }
 
         var record = records[manifest.id]
         switch plan.kind {

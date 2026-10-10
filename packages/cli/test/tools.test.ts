@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { buildPlugin } from "../src/build.ts";
 import { run } from "../src/cli.ts";
 import { createPlugin } from "../src/create.ts";
 import { devPlugin } from "../src/dev.ts";
+import { shippedEntries } from "../src/pack.ts";
 import { SourceMap } from "../src/sourcemap.ts";
 import { copyFixture } from "./build.test.ts";
 
@@ -63,6 +64,16 @@ describe("baron validate and pack", () => {
         expect(lines.join("\n")).toMatch(/sha256 [0-9a-f]{64}/);
         const listing = Bun.spawnSync(["unzip", "-Z1", file]).stdout.toString().split("\n").filter(Boolean).sort();
         expect(listing).toEqual(["dist/", "dist/main.js", "manifest.json"]);
+    });
+
+    test("ships the folders the manifest names, and nothing else", async () => {
+        const folder = copyFixture("upper");
+        expect((await buildPlugin(folder)).ok).toBe(true);
+        mkdirSync(join(folder, "icons"));
+        writeFileSync(join(folder, "icons", "a.svg"), "<svg/>");
+        mkdirSync(join(folder, "src"), { recursive: true });
+        const manifest = { main: "dist/main.js", icon: "./icons/a.svg", actions: [{ icon: "../outside.svg" }] };
+        expect(shippedEntries(folder, manifest)).toEqual(["manifest.json", "dist", "icons"]);
     });
 });
 

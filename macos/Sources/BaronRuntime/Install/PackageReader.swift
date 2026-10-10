@@ -27,6 +27,17 @@ public struct PluginPackage: Sendable {
     /// The folder holding manifest.json.
     public var folder: URL
     public var source: PluginSource
+
+    /// The top-level files and folders the package ships, the ones `baron pack` zips: the standard ones and any the
+    /// manifest names. A plugin's source folder also holds `src`, `node_modules` and the like, which Baron ignores.
+    public var shippedEntries: [String] {
+        let named = [manifest.main, manifest.icon, manifest.settingsPage].compactMap { $0 } + manifest.actions.compactMap(\.icon)
+        let tops = named.compactMap { $0.split(separator: "/").first { $0 != "." }.map(String.init) }.filter { $0 != ".." }
+        var seen = Set<String>()
+        return (PackageReader.standardEntries + tops).filter {
+            seen.insert($0).inserted && FileManager.default.fileExists(atPath: folder.appendingPathComponent($0).path)
+        }
+    }
 }
 
 /// Why a package can't be installed, in words for the user.
@@ -48,16 +59,21 @@ public struct InstallError: Error, Equatable, Sendable, CustomStringConvertible 
 /// absolute or `..` paths, no symlinks, and at most 50 MB unpacked. Design: 10-install-and-lifecycle.md#installing
 public enum PackageReader {
     public static let sizeLimit = 50 * 1024 * 1024
+    /// Shipped when present; packages/cli/src/pack.ts lists the same.
+    public static let standardEntries = ["manifest.json", "dist", "views", "assets", "locales", "README.md", "LICENSE"]
 
     public static func read(folder: URL, source: PluginSource, validator: ManifestValidator = ManifestValidator()) throws -> PluginPackage {
         let result = validator.validate(package: folder)
         guard let manifest = result.manifest else {
             throw InstallError(refusal(result.issues), issues: result.issues)
         }
-        if let symlink = firstSymlink(in: folder) {
-            throw InstallError("The package contains a symbolic link (\(symlink)), which plugins can't ship.")
+        let package = PluginPackage(manifest: manifest, folder: folder, source: source)
+        for entry in package.shippedEntries {
+            if let symlink = firstSymlink(in: folder.appendingPathComponent(entry), named: entry) {
+                throw InstallError("The package contains a symbolic link (\(symlink)), which plugins can't ship.")
+            }
         }
-        return PluginPackage(manifest: manifest, folder: folder, source: source)
+        return package
     }
 
     /// Unpacks an archive into `destination` (a fresh folder) and reads it.
@@ -96,11 +112,12 @@ public enum PackageReader {
         return "Its manifest has problems."
     }
 
-    static func firstSymlink(in folder: URL) -> String? {
-        let keys: [URLResourceKey] = [.isSymbolicLinkKey]
-        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: keys) else { return nil }
-        for case let url as URL in walker where (try? url.resourceValues(forKeys: Set(keys)))?.isSymbolicLink == true {
-            return url.path.replacingOccurrences(of: folder.path + "/", with: "")
+    /// The first symbolic link at or under `folder`, as a path starting with `name`.
+    static func firstSymlink(in folder: URL, named name: String? = nil) -> String? {
+        if let name, (try? FileManager.default.attributesOfItem(atPath: folder.path))?[.type] as? FileAttributeType == .typeSymbolicLink { return name }
+        guard let walker = FileManager.default.enumerator(atPath: folder.path) else { return nil }
+        while let relative = walker.nextObject() as? String {
+            if walker.fileAttributes?[.type] as? FileAttributeType == .typeSymbolicLink { return name.map { "\($0)/\(relative)" } ?? relative }
         }
         return nil
     }

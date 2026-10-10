@@ -5,13 +5,13 @@
 **Task:** task-006-host-services: every host call, checked (gate: every host method rejects calls without its permission, and those needing a user action reject without one; the network matcher passes its corpus; run-time prompts work end to end in a UI test; contract tests pass on both engines)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [03](docs/design/plugin-platform/03-host-api-and-ipc.md), [04](docs/design/plugin-platform/04-permissions-and-security.md)
 
-- [ ] Permission model (BaronCore)
+- [x] Permission model (BaronCore)
     - [x] Parse permission names and network patterns (715bfab)
     - [x] Match network patterns: hosts, subdomain wildcards, ports, schemes; private, link-local and loopback addresses only by an exact entry (715bfab)
     - [x] Share a network matcher corpus between `@baron/api` and Swift, and pass it in both (3ad0b12)
-    - [ ] **▶ IN PROGRESS** Describe what each host method needs: a permission, a user action, or nothing
+    - [x] Describe what each host method needs: a permission, a user action, or nothing (2d4bd5f)
 - [ ] Grants
-    - [ ] Hold each plugin's granted set: install permissions plus saved run-time grants (Always Allow saved, Deny remembered 24 h, Allow Once in memory)
+    - [ ] **▶ IN PROGRESS** Hold each plugin's granted set: install permissions plus saved run-time grants (Always Allow saved, Deny remembered 24 h, Allow Once in memory)
 - [ ] User-action tracker
     - [ ] Record bar clicks per plugin, and reject side-effecting calls without one in the last 5 s
 - [ ] Permission gate

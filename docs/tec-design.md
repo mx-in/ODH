@@ -130,7 +130,7 @@ Context must be read before the user clicks anything. The bar is non-activating,
     - **Bounds:** `AXBoundsForTextMarkerRange`, or in Chromium, which returns none, the frame of the text element under the selection.
 - **Sentence and paragraph in native text:** read `AXSelectedTextRange`, then fetch only about 1,000 characters on each side with `AXStringForRange`. Never read `AXValue` whole, because documents can be megabytes. The paragraph is that slice cut at the nearest line breaks; a selection's trailing line breaks (a triple-click) are ignored when expanding, or the next paragraph would be pulled in. The sentence comes from `NLTokenizer(unit: .sentence)` over the paragraph, which also handles Chinese and Japanese punctuation.
 - **Waking apps that build their tree on demand:** Chrome builds a basic tree once `AXRole` is read on the app element. Electron apps need `AXManualAccessibility = true`. iWork apps (Pages, Numbers, Keynote) expose their document text only after `AXEnhancedUserInterface = true`, even though the call reports an error; Baron sets it for those apps only (see Risks).
-- **Apps without readable text:** VS Code exposes no editor text unless its "screen reader optimized" mode (`editor.accessibilitySupport`) is on, so Baron gets VS Code text through the copy steps, without context. PDFs in Preview expose one `AXStaticText` per text block; Baron doesn't read context from those blocks yet (planned for task-004).
+- **Apps without readable text:** VS Code exposes no editor text unless its "screen reader optimized" mode (`editor.accessibilitySupport`) is on, so Baron gets VS Code text through the copy steps, without context. PDFs in Preview expose one `AXStaticText` per text block; Baron doesn't read context from those blocks yet (planned for task-009).
 - **Copy fallback:** text only. All context fields stay `undefined`, and `source` says `"menu-copy"` or `"key-copy"`.
 
 The paragraph is capped at 4,000 characters and the sentence at 1,000; a `truncated` flag says when a cap was hit. Offsets are UTF-16 code units. That is what `CFRange` uses and what JavaScript string indices use, so plugins can slice without converting.
@@ -178,6 +178,8 @@ Plugins must treat every optional field as absent-able and still work with `text
 ## Plugin system
 
 A plugin is a folder with a JSON manifest and one JavaScript bundle. Its code runs in a small embedded JavaScript engine inside a sandboxed helper process, and only ever talks to one versioned `host` object, the cross-platform contract. Plugins keep data through host-backed storage and secrets, and show UI in three tiers: settings generated from the manifest, native views built with React, and web views. The choices below come from the [plugin runtime research](research/plugin-runtime.md), which compares Raycast, PopClip, VS Code, Obsidian, Figma and Zed.
+
+> **Detailed design:** [Baron Plugin Platform](design/plugin-platform/README.md) designs each part (manifest, runtime, host API, permissions, storage, settings, web views, native views, tooling, install) on its own, with ODH as the success test. This section is the summary written before it. Where they differ, the platform design is current: the runtime starts in-process and moves into the sandboxed helper in task-011, storage uses SQLite, pages load from `baron-plugin://`, Bun replaces esbuild, `definePlugin` replaces `defineActions`, and `host.text.segment` is asynchronous.
 
 **Package layout**
 
@@ -236,15 +238,15 @@ The `when` rules (length, regex, content type, apps, editable) are checked in Sw
 **The API plugins write against**
 
 ```ts
-import { defineActions } from "@baron/api";
+import { definePlugin } from "@baron/api";
 
-export default defineActions({
-  async lookup(ctx: SelectionContext, host: Host) {
-    await host.ui.openWebView("views/popup.html", {
-      word: ctx.text,
-      sentence: ctx.sentence?.text,
-      url: ctx.page?.url,
-    });
+export default definePlugin({
+  actions: {
+    async lookup(ctx: SelectionContext, host: Host) {
+      await host.ui.openWebView("views/popup.html", {
+        data: { word: ctx.text, sentence: ctx.sentence?.text, url: ctx.page?.url },
+      });
+    },
   },
 });
 
@@ -347,10 +349,12 @@ Views appear in two places: the plugin's tab in Baron's Settings window (generat
 
 **Open questions for the plugin system**
 
-- [ ] Accept no Node built-ins (`fs`, `child_process`, `net`) in v1? This keeps the sandbox but rules out some npm packages.
-- [ ] Build native views (tier 2) inside task-003, or as their own task after it? Tiers 1 and 3 are enough for the ODH plugin.
-- [ ] Are the 5 MB storage and 10 MB cache quotas right?
-- [ ] Should secrets sync through iCloud Keychain or stay on this Mac? PopClip lets each secret choose; the proposal is local by default.
+Proposed answers are in the platform design's [Decisions](design/plugin-platform/README.md#decisions) table. They become final when the user approves that design.
+
+- [ ] Accept no Node built-ins (`fs`, `child_process`, `net`) in v1? This keeps the sandbox but rules out some npm packages. Proposed: no Node built-ins; Bun is the developer toolchain only.
+- [ ] Build native views (tier 2) inside task-003, or as their own task after it? Tiers 1 and 3 are enough for the ODH plugin. Proposed: their own task after ODH (task-013).
+- [ ] Are the 5 MB storage and 10 MB cache quotas right? Proposed: yes, with 1 MB and 2 MB per value.
+- [ ] Should secrets sync through iCloud Keychain or stay on this Mac? PopClip lets each secret choose; the proposal is local by default. Proposed: this Mac only in v1.
 
 ## Cross-platform plan
 
@@ -429,6 +433,8 @@ flowchart TB
 ```
 
 Each milestone ends at a gate, not a date; no schedule has been set yet. M0 matters most: its coverage table decides which context fields v1 promises to plugins.
+
+M2 to M4 are built as tasks 004 to 012, one per platform sub-project, in the order set by the [platform design](design/plugin-platform/README.md#build-order). Native views follow as task-013 and the release as task-014 ([task backlog](tasks.md)).
 
 ## Risks and open questions
 

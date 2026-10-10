@@ -8,13 +8,13 @@
 - [x] Workspace
     - [x] Add `packages/*` as an npm workspace with an empty `@baron/api`, tested with Bun (c7fe921)
     - [x] Add the workspace's tests and type check to the checks in `AGENTS.md`
-- [ ] **▶ IN PROGRESS** `@baron/api` types
-    - [ ] Write the manifest types, including every preference type
-    - [ ] Write `SelectionContext`, `TextSpan` and `ActionResult`
-    - [ ] Write `Host` and `ViewHandle` for apiVersion 1
-    - [ ] Write `BaronError` and the error codes
-    - [ ] Write `definePlugin`
-- [ ] Manifest JSON Schema
+- [x] `@baron/api` types
+    - [x] Write the manifest types, including every preference type (80d7035)
+    - [x] Write `SelectionContext`, `TextSpan` and `ActionResult` (34428f8)
+    - [x] Write `Host` and `ViewHandle` for apiVersion 1 (ee93ef9)
+    - [x] Write `BaronError` and the error codes (59f425e)
+    - [x] Write `definePlugin` (319f885)
+- [ ] **▶ IN PROGRESS** Manifest JSON Schema
     - [ ] Write the schema for the package fields and actions
     - [ ] Add the preference types to the schema
     - [ ] Test that the schema and the TypeScript types list the same fields

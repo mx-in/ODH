@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://baron.dev/schema/manifest-1.json",
+  "title": "Baron plugin manifest, apiVersion 1",
+  "description": "manifest.json at the root of a Baron plugin package. Baron's Swift validator mirrors this schema and adds checks a schema can't express.",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "description",
+    "version",
+    "apiVersion",
+    "main",
+    "actions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:\\.[a-z0-9]+(?:-[a-z0-9]+)*)+$",
+      "description": "Reverse-DNS, lowercase, unique; never changes between versions."
+    },
+    "name": {
+      "$ref": "#/$defs/label",
+      "maxLength": 100,
+      "type": "string"
+    },
+    "description": {
+      "$ref": "#/$defs/label",
+      "maxLength": 500,
+      "type": "string"
+    },
+    "version": {
+      "$ref": "#/$defs/version"
+    },
+    "apiVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "homepage": {
+      "type": "string",
+      "pattern": "^https?://\\S+$",
+      "maxLength": 2000
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "defaultLocale": {
+      "$ref": "#/$defs/locale"
+    },
+    "main": {
+      "$ref": "#/$defs/path",
+      "pattern": "\\.js$",
+      "type": "string"
+    },
+    "icon": {
+      "$ref": "#/$defs/svgPath"
+    },
+    "platforms": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "macos",
+          "windows",
+          "linux"
+        ]
+      }
+    },
+    "minBaronVersion": {
+      "$ref": "#/$defs/version"
+    },
+    "permissions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/permission"
+      }
+    },
+    "optionalPermissions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/permission"
+          },
+          {
+            "const": "network:*"
+          }
+        ]
+      }
+    },
+    "preferences": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "settingsPage": {
+      "$ref": "#/$defs/path",
+      "pattern": "\\.html$",
+      "type": "string"
+    },
+    "settingsView": {
+      "$ref": "#/$defs/identifier"
+    },
+    "actions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$",
+      "description": "A JavaScript identifier: action, preference and handler names."
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Text shown to users, or %key% looked up in locales/."
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Text shown to users, or %key% looked up in locales/; may be empty."
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "locale": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$",
+      "description": "A BCP 47 language tag, such as zh-Hans."
+    },
+    "path": {
+      "type": "string",
+      "maxLength": 255,
+      "pattern": "^(?!(?:.*/)?\\.{1,2}(?:/|$))(?:[A-Za-z0-9_@.-]+/)*[A-Za-z0-9_@.-]+$",
+      "description": "A path inside the package: relative, no . or .. segments."
+    },
+    "svgPath": {
+      "$ref": "#/$defs/path",
+      "pattern": "\\.svg$",
+      "type": "string"
+    },
+    "permission": {
+      "anyOf": [
+        {
+          "enum": [
+            "context.sentence",
+            "context.paragraph",
+            "context.page",
+            "context.window",
+            "clipboard.read",
+            "selection.replace",
+            "secrets",
+            "code.dynamic"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^network:(?:https?://)?(?:\\*\\.)?(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*|\\[[0-9a-f:.]+\\])(?::[0-9]{1,5})?$"
+        }
+      ]
+    },
+    "appMatch": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "macos": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "windows": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "linux": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 255
+            }
+          }
+        }
+      ]
+    },
+    "when": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "minLength": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "regex": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "contentTypes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "word",
+              "url",
+              "email",
+              "number",
+              "text"
+            ]
+          }
+        },
+        "apps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/appMatch"
+          }
+        },
+        "excludeApps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/appMatch"
+          }
+        },
+        "editable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "id",
+        "title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "run": {
+          "$ref": "#/$defs/identifier"
+        },
+        "title": {
+          "$ref": "#/$defs/label",
+          "maxLength": 100,
+          "type": "string"
+        },
+        "icon": {
+          "$ref": "#/$defs/svgPath"
+        },
+        "when": {
+          "$ref": "#/$defs/when"
+        },
+        "needs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "sentence",
+              "paragraph",
+              "page",
+              "window"
+            ]
+          }
+        },
+        "autoRun": {
+          "enum": [
+            "allowed",
+            "never"
+          ]
+        }
+      }
+    }
+  }
+}

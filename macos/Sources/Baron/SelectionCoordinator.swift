@@ -28,6 +28,7 @@ final class SelectionCoordinator {
         pipeline.gate = Gate(excludedApps: settings.effectiveExcludedApps)
         pipeline.retrievalRules = settings.retrievalRules
         pipeline.actions = BuiltInActions(searchTemplate: settings.searchTemplate)
+        pipeline.arrangement = settings.bar
         if settings.isPaused { bar.hide() }
     }
 
@@ -50,7 +51,30 @@ final class SelectionCoordinator {
             onRun?(trigger, outcome, source)
             if case .show(let run) = outcome {
                 current = run
-                bar.show(run.items, selection: run.bounds, pointer: run.trigger.location)
+                let allowed = Set(pipeline.plugins.entries.filter(\.mayAutoRun).map(\.itemID))
+                if trigger.kind != .hotkey,
+                   let automatic = pipeline.arrangement.automaticAction(among: run.items, allowed: allowed, app: run.app.bundleIdentifier),
+                   let entry = pipeline.plugins.entry(forItemID: automatic) {
+                    onPluginAction?(entry, run)
+                } else {
+                    bar.show(run.items, selection: run.bounds, pointer: run.trigger.location)
+                }
+            }
+        }
+    }
+
+    /// An action's own hotkey: reads the selection and runs that action, whatever its when rules say.
+    func runAction(_ itemID: String) {
+        bar.hide()
+        guard let source = FocusedSelectionSource.current() else { return }
+        let trigger = Trigger(kind: .hotkey, location: ScreenGeometry.topLeft(fromAppKit: NSEvent.mouseLocation), windowDragged: false)
+        Task {
+            guard case .show(let run) = await pipeline.run(trigger, source: source) else { return }
+            current = run
+            if let entry = pipeline.plugins.entry(forItemID: itemID) {
+                onPluginAction?(entry, run)
+            } else if let effect = pipeline.actions.effect(of: itemID, for: run.text) {
+                ActionEffectPerformer.perform(effect)
             }
         }
     }

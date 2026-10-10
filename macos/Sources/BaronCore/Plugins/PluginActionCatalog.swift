@@ -7,13 +7,16 @@ public struct PluginActionCatalog: Sendable {
         public var actionID: String
         public var title: String
         public var when: WhenRules?
+        /// The manifest allows running it straight after a selection.
+        public var mayAutoRun: Bool
 
-        public init(pluginID: String, pluginName: String, actionID: String, title: String, when: WhenRules?) {
+        public init(pluginID: String, pluginName: String, actionID: String, title: String, when: WhenRules?, mayAutoRun: Bool = false) {
             self.pluginID = pluginID
             self.pluginName = pluginName
             self.actionID = actionID
             self.title = title
             self.when = when
+            self.mayAutoRun = mayAutoRun
         }
 
         public var itemID: String { PluginActionCatalog.itemID(pluginID: pluginID, actionID: actionID) }
@@ -30,7 +33,7 @@ public struct PluginActionCatalog: Sendable {
         entries = plugins.flatMap { manifest, localizer in
             manifest.actions.map { action in
                 Entry(pluginID: manifest.id, pluginName: localizer.resolve(manifest.name), actionID: action.id,
-                      title: localizer.resolve(action.title), when: action.when)
+                      title: localizer.resolve(action.title), when: action.when, mayAutoRun: action.autoRun == .allowed)
             }
         }
     }

@@ -58,8 +58,9 @@ public final class SelectionPipeline {
     public var gate: Gate
     public var retrievalRules: AppRetrievalRules
     public var actions: BuiltInActions
-    /// Plugin actions, shown after the built-in ones.
+    /// Plugin actions, shown after the built-in ones unless the user ordered them.
     public var plugins = PluginActionCatalog()
+    public var arrangement = BarArrangement()
     public var isPaused = false
 
     private var generation = 0
@@ -88,7 +89,7 @@ public final class SelectionPipeline {
         let app = source.selectionApp
         let editable = source.isEditable
         let input = WhenInput(text: result.text, bundleIdentifier: app.bundleIdentifier, editable: editable)
-        let items = actions.items(for: result.text) + plugins.items(for: input)
+        let items = arrangement.arrange(actions.items(for: result.text) + plugins.items(for: input))
         return .show(SelectionRun(
             trigger: trigger,
             text: result.text,

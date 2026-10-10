@@ -14,6 +14,8 @@ struct SettingsRoot: View {
     var body: some View {
         TabView(selection: $navigation.tab) {
             SettingsView(store: store).tabItem { Label("General", systemImage: "gearshape") }.tag(SettingsNavigation.Tab.general)
+            BarSettingsView(store: store, navigation: navigation, catalog: { plugins.catalog })
+                .tabItem { Label("Bar", systemImage: "rectangle.3.group") }.tag(SettingsNavigation.Tab.bar)
             PluginsPane(controller: plugins, install: install, store: store, navigation: navigation)
                 .tabItem { Label("Plugins", systemImage: "puzzlepiece.extension") }.tag(SettingsNavigation.Tab.plugins)
         }

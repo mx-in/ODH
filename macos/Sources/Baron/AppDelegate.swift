@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let coordinator = SelectionCoordinator(pipeline: SelectionPipeline(gate: Gate(excludedApps: ExcludedAppRule.defaults)))
     private lazy var settingsWindow = SettingsWindowController(store: store, plugins: plugins, install: install)
     private lazy var install = InstallFlow(controller: plugins)
+    private let hotkeys = ActionHotkeys()
     private let debugPanel = DebugPanelController()
     private let debugItem = NSMenuItem()
     private var subscriptions: Set<AnyCancellable> = []
@@ -39,7 +40,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         plugins.onCatalogChange = { [weak self] in
             self?.coordinator.pipeline.plugins = $0
             self?.settingsWindow.navigation.revision += 1
+            self?.hotkeys.register(BarActionInfo.all($0))
         }
+        hotkeys.run = { [weak self] id in self?.coordinator.runAction(id) }
+        hotkeys.register(BarActionInfo.builtIns)
         plugins.presentError = { [weak self] message in self?.toasts.show(message, kind: .error) }
         plugins.openSettings = { [weak self] id, highlight in self?.settingsWindow.showPlugin(id, highlight: highlight) }
         coordinator.onPluginAction = { [weak self] entry, run in

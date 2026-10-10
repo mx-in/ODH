@@ -8,27 +8,27 @@
 - [x] Package reading
     - [x] Read a plugin folder (ba394ce)
     - [x] Unzip a `.baronplugin`: files only, no symlinks, at most 50 MB (ba394ce)
-- [ ] Install
+- [x] Install
     - [x] Refuse an invalid manifest, an unsupported `apiVersion`, a newer `minBaronVersion` or an excluded platform, with the reason (ba394ce)
-    - [ ] **▶ IN PROGRESS** Show the install sheet, warning when the same `id` comes from another source
+    - [x] Show the install sheet, warning when the same `id` comes from another source (7024c33)
     - [x] Copy the package to `Plugins/<id>/<version>/` (329c3a2)
-    - [ ] Run `onInstall` with a 10 s limit and show a failure
-- [ ] States
-    - [ ] Track Enabled, Disabled, Needs consent, Broken and Suspended
-    - [ ] Disable, enable, and re-enable a suspended plugin
-- [ ] Updates
+    - [x] Run `onInstall` with a 10 s limit and show a failure (7024c33)
+- [x] States
+    - [x] Track Enabled, Disabled, Needs consent, Broken and Suspended (7024c33)
+    - [x] Disable, enable, and re-enable a suspended plugin (7024c33)
+- [x] Updates
     - [x] Treat a higher version as an update; ask before installing a lower or equal one (329c3a2)
     - [x] Install silently with the same or fewer permissions; with new ones, wait in Needs consent while the old version keeps working (329c3a2)
-    - [ ] Run `onUpdate` before the first dispatch, and delete the previous version after the first successful load
-- [ ] Uninstall
-    - [ ] Confirm, then remove the package and all of its data
-- [ ] Sources
-    - [ ] Add from Folder… in Settings
-    - [ ] Open `.baronplugin` files
-    - [ ] Handle `baron://install?url=https://…`
-    - [ ] Offer bundled plugins at first launch
+    - [x] Run `onUpdate` before the first dispatch, and delete the previous version after the first successful load (7024c33)
+- [x] Uninstall
+    - [x] Confirm, then remove the package and all of its data (7024c33)
+- [x] Sources
+    - [x] Add from Folder… in Settings (7024c33)
+    - [x] Open `.baronplugin` files (7024c33)
+    - [x] Handle `baron://install?url=https://…` (7024c33)
+    - [x] Offer bundled plugins at first launch (7024c33)
 - [ ] Bar settings (UI)
-    - [ ] Reorder actions by drag, with new ones at the end
+    - [ ] **▶ IN PROGRESS** Reorder actions by drag, with new ones at the end
     - [ ] Show or hide each action
     - [ ] Run on selection for `autoRun: "allowed"` actions, optionally limited to some apps
     - [ ] Give an action its own hotkey

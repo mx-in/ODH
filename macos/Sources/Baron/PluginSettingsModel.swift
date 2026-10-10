@@ -6,7 +6,7 @@ import SwiftUI
 /// Where the Settings window is: its tab, the selected plugin and the fields to highlight.
 @MainActor
 final class SettingsNavigation: ObservableObject {
-    enum Tab: Hashable { case general, plugins }
+    enum Tab: Hashable { case general, bar, plugins }
     @Published var tab: Tab = .general
     @Published var selectedPlugin: String?
     @Published var highlighted: Set<String> = []

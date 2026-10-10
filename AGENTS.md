@@ -2,7 +2,53 @@
 
 ## Current task
 
-_No active task._
+**Task:** task-007-storage-and-settings: plugins keep data, users set options (gate: each store passes its unit tests; a test plugin shaped like ODH renders every preference type and fills its dropdowns from a mock AnkiConnect; list, checklist, button, secret and revoke work in a UI test.)
+**Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [05 Storage](docs/design/plugin-platform/05-storage.md), [06 Settings](docs/design/plugin-platform/06-settings.md).
+
+- [ ] **▶ IN PROGRESS** Data folders
+    - [ ] Create each plugin's data and cache folders
+- [ ] Preferences store
+    - [ ] Save and load `preferences.json`, with defaults from the manifest
+- [ ] Storage
+    - [ ] Store JSON values in SQLite, one actor per plugin
+    - [ ] Enforce the 5 MB quota and 1 MB per value
+    - [ ] Serve `host.storage`
+- [ ] Cache
+    - [ ] Store strings in SQLite in the Caches folder, evicting the least recently read past 10 MB
+    - [ ] Serve `host.cache`
+- [ ] Secrets
+    - [ ] Keep secrets in the Keychain per plugin, not synchronisable
+    - [ ] Serve `host.secrets` behind the `secrets` permission
+- [ ] Data management
+    - [ ] Report usage; Clear cache; Reset plugin data
+    - [ ] Remove every store and grant of a plugin (used by uninstall)
+- [ ] Settings: Plugins section (UI)
+    - [ ] List installed plugins with Enabled switches
+    - [ ] Show a plugin's page: header, preferences, permissions, data, about
+- [ ] Settings: preference controls (UI)
+    - [ ] `text`, `number` and `checkbox`
+    - [ ] `dropdown` and `checklist` with static options
+    - [ ] `list` with add, remove and reorder
+    - [ ] `secret`
+    - [ ] `file`, `directory` and `app`
+    - [ ] `button` with its result line, and `heading`
+- [ ] Settings: options from the plugin
+    - [ ] Call options providers with a spinner; show errors with Retry
+    - [ ] Keep a saved value missing from new options, marked "not found"
+    - [ ] Reload a field's options when a field in its `dependsOn` changes
+- [ ] Settings: saving
+    - [ ] Validate and save 0.5 s after the last edit; show inline errors
+    - [ ] Refresh `host.preferences` before each dispatch, and reload a loaded plugin when they change
+    - [ ] Open the settings page with empty required fields highlighted when an action needs them
+- [ ] Settings: Permissions section
+    - [ ] List run-time grants with Remove buttons
+- [ ] Verification
+    - [ ] Unit test each store: persistence across reload, quotas, per-value limits, eviction order; 1,000 writes and reads in under a second
+    - [ ] UI test with the ODH-shaped plugin and a mock AnkiConnect, including revoking a grant
+- [ ] Design UML
+    - [ ] Add as-built UML to the design docs this task built or changed
+
+**Notes for the next agent:** User request 2026-10-11: complete tasks 007 to 013 in order (not 014). Stores use the system SQLite (import SQLite3) and the Keychain; the settings UI is SwiftUI in the app target.
 
 <!--
 Template while a task is active (replace the line above):

@@ -49,6 +49,7 @@ public struct ManifestValidator: Sendable {
             + ManifestValueChecks.check(manifest)
             + PackagePathChecks.check(manifest, package: package)
             + RegexDialectChecks.check(manifest)
+            + CompatibilityChecks.check(manifest, environment: environment)
         return ManifestValidation(manifest: issues.isEmpty ? manifest : nil, issues: issues)
     }
 }

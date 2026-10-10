@@ -41,8 +41,8 @@
     - [x] `baron build`: bundle `src/` into one classic script with an inline source map (36f8f4f)
     - [x] `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic` (ab14943)
     - [x] `@baron/test`: a mock host with in-memory services (97504fd)
-    - [ ] **▶ IN PROGRESS** Run plugin tests on JavaScriptCore through `node:vm`
-    - [ ] Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output
+    - [x] Run plugin tests on JavaScriptCore through `node:vm` (640803a)
+    - [ ] **▶ IN PROGRESS** Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output
     - [ ] `baron test --engine jsc|quickjs|all`
 - [ ] Examples
     - [ ] Write the uppercase action example with tests
@@ -90,7 +90,7 @@ npm run test:contracts
 npm run test:unit
 ```
 
-When `packages/` changed, also run these (they need [Bun](https://bun.sh) 1.4 or later, for example `npm install -g bun`):
+When `packages/` or `plugins/` changed, also run these (they need [Bun](https://bun.sh) 1.4 or later, for example `npm install -g bun`, and QuickJS-NG from `npm run tools:qjs`):
 
 ```sh
 npm run test:baron

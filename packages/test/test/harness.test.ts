@@ -4,7 +4,7 @@ import { createHarness, DispatchError } from "../src/index.ts";
 
 const plugin = join(import.meta.dir, "fixtures", "lookup");
 
-describe.each(["jsc"] as const)("harness on %s", (engine) => {
+describe.each(["jsc", "quickjs"] as const)("harness on %s", (engine) => {
     test("runs an action through fetch, storage and preferences", async () => {
         const h = await createHarness({ plugin, engine });
         h.http.mock("https://dict.example/word/fox", { body: "<p>a small wild dog</p>" });
@@ -29,6 +29,30 @@ describe.each(["jsc"] as const)("harness on %s", (engine) => {
         const error = await h.runAction("broken", { text: "x" }).catch((e: unknown) => e);
         expect(error).toBeInstanceOf(DispatchError);
         expect((error as DispatchError).code).toBe("plugin_error");
+        h.close();
+    });
+});
+
+describe.each(["jsc", "quickjs"] as const)("prelude crypto on %s", (engine) => {
+    test("digests match the platform", async () => {
+        const { mkdtempSync, cpSync, mkdirSync, writeFileSync } = await import("node:fs");
+        const scratch = join(import.meta.dir, "..", ".tmp");
+        mkdirSync(scratch, { recursive: true });
+        const folder = mkdtempSync(join(scratch, "digest-"));
+        cpSync(plugin, folder, { recursive: true });
+        writeFileSync(join(folder, "src/main.ts"), `export default { actions: { lookup: async (ctx: { text: string }) => {
+            const out: string[] = [];
+            for (const a of ["SHA-1", "SHA-256", "SHA-384", "SHA-512"]) {
+                const b = new Uint8Array(await crypto.subtle.digest(a, new TextEncoder().encode(ctx.text)));
+                out.push(Array.from(b, (x) => x.toString(16).padStart(2, "0")).join(""));
+            }
+            return { type: "copy", text: out.join(" ") + " " + crypto.randomUUID().length };
+        } } };`);
+        const h = await createHarness({ plugin: folder, engine });
+        const text = "狐 fox ".repeat(40);
+        const expected = await Promise.all(["SHA-1", "SHA-256", "SHA-384", "SHA-512"].map(async (a) =>
+            Array.from(new Uint8Array(await crypto.subtle.digest(a, new TextEncoder().encode(text))), (x) => x.toString(16).padStart(2, "0")).join("")));
+        expect(await h.runAction("lookup", { text })).toEqual({ type: "copy", text: `${expected.join(" ")} 36` });
         h.close();
     });
 });

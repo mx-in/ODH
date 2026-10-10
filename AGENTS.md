@@ -13,8 +13,8 @@
     - [x] Build the `host` object over `__baronNative` (930e4b9)
     - [x] Serve dispatches: find the export, call it, await it, reply with a result or a classified error (5c7cce2)
     - [x] Provide `console`, the timer functions and `queueMicrotask` (a4fa8db)
-    - [ ] **▶ IN PROGRESS** Polyfill `URL` and `URLSearchParams`
-    - [ ] Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone`
+    - [x] Polyfill `URL` and `URLSearchParams` (011a9b3)
+    - [ ] **▶ IN PROGRESS** Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone`
     - [ ] Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal
     - [ ] Provide `fetch`, `Request`, `Response` and `Headers` over `host.http`
     - [ ] Compile the prelude to one script, copied into the Swift runtime's resources with a sync test

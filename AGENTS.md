@@ -2,7 +2,20 @@
 
 ## Current task
 
-_No active task._
+**Task:** task-003-plugin-runtime: run TypeScript and JavaScript actions (gate: sample plugins pass on JavaScriptCore and QuickJS-NG)
+**Started:** 2026-10-10 · **Agent:** Claude (Claude Code)
+
+- [ ] **▶ IN PROGRESS** Research (user request 2026-10-10: runtime, storage, settings UI; look at Raycast and beyond)
+    - [ ] How Raycast runs extensions: runtime, process model, React-to-native UI, preferences, storage
+    - [ ] Other plugin systems: PopClip, VS Code, Obsidian, Figma, Zed, Alfred
+    - [ ] JS engines for plugins: JavaScriptCore, QuickJS-NG, Hermes, Node/Bun/Deno, WebAssembly
+    - [ ] Native UI from JS: React reconcilers rendering to SwiftUI/AppKit, declarative schemas, web views
+    - [ ] Storage and secrets: key-value, cache, Keychain
+    - [ ] Write the decision and update the design (Claude Docs and `docs/tec-design.md`)
+    - [ ] Re-plan the rest of task-003 from the updated design
+
+**Notes for the next agent:** the implementation checklist for task-003 is written after the research, from the updated design.
+
 
 <!--
 Template while a task is active (replace the line above):

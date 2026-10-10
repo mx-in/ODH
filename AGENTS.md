@@ -15,7 +15,7 @@
     - [x] Write `BaronError` and the error codes (59f425e)
     - [x] Write `definePlugin` (319f885)
 - [ ] **▶ IN PROGRESS** Manifest JSON Schema
-    - [ ] Write the schema for the package fields and actions
+    - [x] Write the schema for the package fields and actions (0d3e736)
     - [ ] Add the preference types to the schema
     - [ ] Test that the schema and the TypeScript types list the same fields
 - [ ] Manifest corpus

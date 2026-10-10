@@ -48,3 +48,41 @@ describe("manifest schema: package fields and actions", () => {
         expect(schemaErrorPointers({ ...minimal, actions: [{ id: "upper", title: "UPPER", when: { regex: "" } }] })).toEqual(["/actions/0/when/regex"]);
     });
 });
+
+describe("manifest schema: preferences", () => {
+    const withPreferences = (...preferences: unknown[]) => ({ ...minimal, preferences });
+
+    test("accepts all twelve preference types", () => {
+        expect(schemaErrorPointers(withPreferences(
+            { id: "anki", type: "heading", title: "Anki" },
+            { id: "url", type: "text", title: "URL", default: "http://127.0.0.1:8765", pattern: "^https?://", placeholder: "http://…", multiline: false, maxLength: 200, required: true },
+            { id: "max", type: "number", title: "Max", min: 1, max: 10, step: 1, default: 3 },
+            { id: "on", type: "checkbox", title: "On", label: "Enabled", default: true, description: "Turns it on" },
+            { id: "deck", type: "dropdown", title: "Deck", optionsFrom: "decks", dependsOn: ["url"] },
+            { id: "audio", type: "dropdown", title: "Audio", options: [{ value: "uk", title: "UK", subtitle: "British" }], default: "uk" },
+            { id: "dicts", type: "checklist", title: "Dictionaries", optionsFrom: "dictionaries", default: ["a"] },
+            { id: "scripts", type: "list", title: "Scripts", itemPattern: "^https://", itemPlaceholder: "https://…", maxItems: 20, default: [] },
+            { id: "key", type: "secret", title: "API key", placeholder: "sk-…" },
+            { id: "deckFile", type: "file", title: "File", extensions: ["json"] },
+            { id: "folder", type: "directory", title: "Folder" },
+            { id: "target", type: "app", title: "App", default: "com.apple.Safari" },
+            { id: "test", type: "button", title: "", label: "Test connection", run: "testAnki" },
+        ))).toEqual([]);
+    });
+
+    test("allows a type's fields only on that type", () => {
+        expect(schemaErrorPointers(withPreferences({ id: "x", type: "checkbox", title: "X", placeholder: "no" }))).toEqual(["/preferences/0/placeholder"]);
+        expect(schemaErrorPointers(withPreferences({ id: "b", type: "button", title: "", label: "Go", run: "go", required: true }))).toEqual(["/preferences/0/required"]);
+    });
+
+    test("points at the field that is wrong or missing", () => {
+        expect(schemaErrorPointers(withPreferences({ id: "b", type: "button", title: "", label: "Go" }))).toContain("/preferences/0/run");
+        expect(schemaErrorPointers(withPreferences({ id: "n", type: "number", title: "N", default: "3" }))).toContain("/preferences/0/default");
+        expect(schemaErrorPointers(withPreferences({ id: "x", type: "colour", title: "X" }))).toContain("/preferences/0/type");
+    });
+
+    test("needs exactly one of options and optionsFrom", () => {
+        expect(schemaErrorPointers(withPreferences({ id: "d", type: "dropdown", title: "D" }))).toContain("/preferences/0");
+        expect(schemaErrorPointers(withPreferences({ id: "d", type: "dropdown", title: "D", options: [], optionsFrom: "x" }))).toContain("/preferences/0");
+    });
+});

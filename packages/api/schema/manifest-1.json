@@ -106,7 +106,7 @@
     "preferences": {
       "type": "array",
       "items": {
-        "type": "object"
+        "$ref": "#/$defs/preference"
       }
     },
     "settingsPage": {
@@ -309,6 +309,444 @@
           ]
         }
       }
+    },
+    "preferenceOption": {
+      "type": "object",
+      "required": [
+        "value",
+        "title"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "$ref": "#/$defs/label",
+          "type": "string",
+          "maxLength": 100
+        },
+        "subtitle": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "preference": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "type": {
+          "enum": [
+            "text",
+            "number",
+            "checkbox",
+            "dropdown",
+            "checklist",
+            "list",
+            "secret",
+            "file",
+            "directory",
+            "app",
+            "button",
+            "heading"
+          ]
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "string"
+              },
+              "placeholder": {
+                "$ref": "#/$defs/text"
+              },
+              "multiline": {
+                "type": "boolean"
+              },
+              "pattern": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "maxLength": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "number"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "number"
+              },
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "checkbox"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "boolean"
+              },
+              "label": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "dropdown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "string"
+              },
+              "dependsOn": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/identifier"
+                }
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "options"
+                ],
+                "properties": {
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/preferenceOption"
+                    }
+                  }
+                }
+              },
+              {
+                "required": [
+                  "optionsFrom"
+                ],
+                "properties": {
+                  "optionsFrom": {
+                    "$ref": "#/$defs/identifier"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "checklist"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "dependsOn": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/identifier"
+                }
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "options"
+                ],
+                "properties": {
+                  "options": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/preferenceOption"
+                    }
+                  }
+                }
+              },
+              {
+                "required": [
+                  "optionsFrom"
+                ],
+                "properties": {
+                  "optionsFrom": {
+                    "$ref": "#/$defs/identifier"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "list"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "itemPlaceholder": {
+                "$ref": "#/$defs/text"
+              },
+              "itemPattern": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "maxItems": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "secret"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "placeholder": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "file"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "extensions": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9]+$"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "directory"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "app"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "default": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "button"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "run",
+              "label"
+            ],
+            "properties": {
+              "run": {
+                "$ref": "#/$defs/identifier"
+              },
+              "label": {
+                "$ref": "#/$defs/label",
+                "type": "string",
+                "maxLength": 100
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "heading"
+              }
+            }
+          },
+          "then": {
+            "properties": {}
+          }
+        }
+      ],
+      "unevaluatedProperties": false
     }
   }
 }

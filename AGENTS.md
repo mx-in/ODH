@@ -2,20 +2,25 @@
 
 ## Current task
 
-**Task:** task-003-plugin-runtime: run TypeScript and JavaScript actions (gate: sample plugins pass on JavaScriptCore and QuickJS-NG)
+**Task:** task-003-plugin-design: research and design the plugin platform (gate: the user approves the design). Renamed from task-003-plugin-runtime when the runtime work was split into tasks 004–014.
 **Started:** 2026-10-10 · **Agent:** Claude (Claude Code)
 
-- [ ] Research (user request 2026-10-10: runtime, storage, settings UI; look at Raycast and beyond)
+- [x] Research (user request 2026-10-10: runtime, storage, settings UI; look at Raycast and beyond)
     - [x] How Raycast runs extensions: runtime, process model, React-to-native UI, preferences, storage
     - [x] Other plugin systems: PopClip, VS Code, Obsidian, Figma, Zed, Alfred
     - [x] JS engines for plugins: JavaScriptCore, QuickJS-NG, Hermes, Node/Bun/Deno, WebAssembly
     - [x] Native UI from JS: React reconcilers rendering to SwiftUI/AppKit, declarative schemas, web views
     - [x] Storage and secrets: key-value, cache, Keychain
-    - [x] Write the decision and update the design: `docs/research/plugin-runtime.md`, `docs/tec-design.md`, and the Claude Doc (synced in full, research added as a second tab)
-    - [ ] **▶ IN PROGRESS** User reads the research and answers the plugin-system open questions
-    - [ ] Re-plan the rest of task-003 from the updated design
+    - [x] Write the decision and update the design: `docs/research/plugin-runtime.md`, `docs/tec-design.md`, and the Claude Doc (f9b36ca, 23d6fbe)
+- [x] Platform design (user request 2026-10-10: design runtime, UI, settings and the rest as separate sub-projects; success = ODH rewritten on Baron)
+    - [x] Write the Claude Doc "Baron Plugin Platform — Design": overview, ten sub-projects, ODH on Baron (https://claude.ai/code/artifact/c7b7a984-f745-4ca3-b858-81419c79e35e)
+    - [x] Mirror it in `docs/design/plugin-platform/` (fdeb2c6)
+    - [x] Point the app design at it and give the proposed answers to its open questions (8a24023)
+    - [x] Re-plan `docs/tasks.md` as tasks 004–014, one per sub-project, with gates from the design
+- [ ] **▶ IN PROGRESS** User reviews the platform design and approves it, or asks for changes
 
-**Notes for the next agent:** no code for task-003 until the user has read the research and the updated Plugin system section (user request 2026-10-10). The implementation checklist is written after that, from the updated design.
+**Notes for the next agent:** no code until the user approves the platform design (user request 2026-10-10: "don't start to writing code directly, after research I need to read it first"). After approval: tick the review item, archive task-003, then start task-004-plugin-contract from `docs/tasks.md`. If the user changes a decision, update the Claude Doc, the mirror in `docs/design/plugin-platform/` and the affected tasks together.
+`npm run lint` fails in this checkout because `node_modules` isn't installed (a global ESLint 8.53 runs and can't read `eslint.config.mjs`); run `npm install` before relying on it.
 
 
 <!--
@@ -38,6 +43,7 @@ ODH is a Chrome (Manifest V3) extension for looking up words and adding them to 
 ## Design docs
 
 - [Selection Popup App — Technical Design](docs/tec-design.md): the planned macOS selection bar (Swift host, TypeScript/JavaScript plugins), with ODH as its first plugin. Read it before working on that app or on code shared with it.
+- [Baron Plugin Platform — Design](docs/design/plugin-platform/README.md): the plugin platform split into ten sub-projects (manifest, runtime, host API, permissions, storage, settings, web views, native views, tooling, install), each in its own file, with [ODH on Baron](docs/design/plugin-platform/odh-on-baron.md) as the success test. Read the sub-project's file before working on its task.
 - [Task backlog](docs/tasks.md): the design split into tasks, features and sub-tasks. Start the next task from here.
 - Extension background and development notes: [doc/](doc/).
 

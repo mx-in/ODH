@@ -20,7 +20,7 @@ public struct WhenInput: Sendable {
 extension WhenRules {
     /// True when every rule holds; a missing rule doesn't constrain. Checked in Swift before any plugin code runs.
     public func matches(_ input: WhenInput) -> Bool {
-        lengthMatches(input.text) && regexMatches(input.text)
+        lengthMatches(input.text) && regexMatches(input.text) && contentMatches(input.text)
     }
 
     /// Lengths count UTF-16 code units, like JavaScript's `string.length`.

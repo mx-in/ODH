@@ -1,0 +1,21 @@
+{
+    "name": "@baron/api",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Types, definePlugin and the manifest JSON Schema for Baron plugins",
+    "license": "MIT",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts",
+        "./schema/manifest-1.json": "./schema/manifest-1.json"
+    },
+    "scripts": {
+        "test": "bun test",
+        "typecheck": "tsc --noEmit -p ."
+    },
+    "devDependencies": {
+        "@types/bun": "1.4.2",
+        "ajv": "8.20.0",
+        "typescript": "7.0.2"
+    }
+}

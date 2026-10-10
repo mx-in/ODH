@@ -55,8 +55,12 @@ struct DispatchTests {
         let result = await runtime.dispatch(id, .action, name: "slow", payload: DispatchPayload(context: context))
         #expect(result.failure?.code == "timeout")
         #expect(clock.now - start < .seconds(1))
-        try await Task.sleep(for: .milliseconds(20))
-        #expect(try await runtime.dispatch(id, .action, name: "quick", payload: DispatchPayload(context: context)).get()["text"] == .string("aborted"))
+        var seen: JSONValue?
+        for _ in 0..<100 where seen == nil {
+            seen = try await runtime.dispatch(id, .action, name: "quick", payload: DispatchPayload(context: context)).get()["text"]
+            if seen == nil { try await Task.sleep(for: .milliseconds(20)) }
+        }
+        #expect(seen == .string("aborted"))
     }
 
     @Test func servesOptionsButtonsAndLifecycle() async throws {

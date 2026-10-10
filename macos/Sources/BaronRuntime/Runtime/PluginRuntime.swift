@@ -12,6 +12,9 @@ public actor PluginRuntime {
     private var strikes: [String: [ContinuousClock.Instant]] = [:]
     private var watchdog: Task<Void, Never>?
     private var lastUsed: [String: ContinuousClock.Instant] = [:]
+    /// Dispatches in flight per plugin; changed only on the actor, together with `lastUsed`, so the idle
+    /// check can't see a plugin between a dispatch ending and its time being recorded.
+    private var active: [String: Int] = [:]
 
     public init(handler: HostCallHandler, limits: RuntimeLimits = RuntimeLimits()) {
         self.handler = handler
@@ -43,8 +46,9 @@ public actor PluginRuntime {
         case .failure(let error): return .failure(error)
         }
         let json = payload.json(pluginVersion: instance.plugin.manifest.version)
-        lastUsed[pluginID] = .now
+        active[pluginID, default: 0] += 1
         let result = await instance.dispatch(target, name: name, payload: json, limit: limits.timeLimit(for: target))
+        active[pluginID, default: 1] -= 1
         lastUsed[pluginID] = .now
         if result.failure?.code == "timeout", instances[pluginID] === instance { strike(pluginID) }
         return result
@@ -94,7 +98,7 @@ public actor PluginRuntime {
         for (pluginID, instance) in instances {
             if let busy = instance.engine.busyFor, busy > limits.stuck {
                 suspend(pluginID, "It stopped responding (stuck for more than \(limits.stuck)); re-enable it to try again")
-            } else if instance.pendingDispatches == 0, instance.engine.busyFor == nil, now - (lastUsed[pluginID] ?? now) > limits.idle {
+            } else if active[pluginID, default: 0] == 0, instance.engine.busyFor == nil, now - (lastUsed[pluginID] ?? now) > limits.idle {
                 reload(pluginID)
             }
         }

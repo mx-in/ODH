@@ -15,6 +15,22 @@ struct PluginActionCatalogTests {
         #expect(catalog.items(for: WhenInput(text: "two words", bundleIdentifier: nil, editable: true)).map(\.title) == ["UPPER", "Any"])
     }
 
+    @Test func anActionGetsTheContextItNeedsAndIsGranted() throws {
+        let manifest = try JSONDecoder().decode(PluginManifest.self, from: Data("""
+        {"id": "org.example.ctx", "name": "C", "description": "D", "version": "1.0.0", "apiVersion": 1, "main": "dist/main.js",
+         "permissions": ["context.sentence", "context.page"],
+         "actions": [{"id": "a", "title": "A", "needs": ["sentence", "page", "paragraph"]}, {"id": "b", "title": "B"}]}
+        """.utf8))
+        let catalog = PluginActionCatalog([(manifest, PluginLocalizer(package: URL(fileURLWithPath: "/nonexistent"), defaultLocale: nil, preferredLanguages: ["en"]))])
+        // paragraph is needed but not granted (the validator refuses such a manifest; this guards anyway).
+        #expect(catalog.entries.map(\.context) == [[.sentence, .page], []])
+        #expect(catalog.usesContext)
+        let items = catalog.items(for: WhenInput(text: "fox", bundleIdentifier: nil, editable: false))
+        #expect(catalog.contextFields(for: items) == [.sentence, .page])
+        #expect(catalog.contextFields(for: items.filter { $0.id.hasSuffix("/b") }) == [])
+        #expect(!self.catalog.usesContext)
+    }
+
     @Test func itemIDsLeadBackToTheirEntry() {
         let item = catalog.items(for: WhenInput(text: "fox", bundleIdentifier: nil, editable: false))[0]
         #expect(item.id == "plugin:org.odh.dictionary/lookup")

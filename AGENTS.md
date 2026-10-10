@@ -48,6 +48,31 @@
 
 **Notes for the next agent:** Author timing (2026-10-11): `macos/scripts/uitest-author.sh` measured `baron create` 0.2 s, `npm install` 1.8 s and `baron dev` loading in Baron at 2.8 s; the last step, the action on the bar in Safari, stopped because the screen locked. Rerun the script with the screen unlocked and tick the item if the total is under two minutes. The install gate passes: `macos/scripts/uitest-install.sh`, 11 of 11 checks. Installed plugins live in Application Support/Baron/Plugins/<id>/<version>/ with a registry (installed.json); development-folder plugins keep working alongside. Archives are unpacked with the system unzip after listing their entries. @baron/* packages aren't on npm yet, so baron create links them with file: paths to this repository's packages/.
 
+
+---
+
+**Task:** task-009-context-builder: give actions the context they may read (gate: a test plugin receives sentence, paragraph, page and window in Safari, Chrome, Mail, Notes, Pages and TextEdit, and receives none of them without the permission.)
+**Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [Context capture](docs/tec-design.md#context-capture) in the app design, context permissions in [04](docs/design/plugin-platform/04-permissions-and-security.md#permission-catalogue), `needs` in [01](docs/design/plugin-platform/01-package-and-manifest.md#actions). The readers from tasks 001 and 002 already exist; this task turns them into each action's `SelectionContext`.
+
+- [ ] **▶ IN PROGRESS** Assembly
+    - [ ] Build a `SelectionContext` from the existing readers
+    - [ ] Read only the fields that some matching action `needs` and its plugin is granted
+    - [ ] Give each action only its own `needs` and granted fields
+- [ ] Timing
+    - [ ] Read context in the background right after the text, within 200 ms; an action waits at most 300 ms more
+    - [ ] Wake Chrome and Electron accessibility only for the frontmost app, and only when a field needs it
+- [ ] Fields
+    - [ ] Apply the caps and the `truncated` flag on the web paths, as the native path already does
+    - [ ] Check that every offset is in UTF-16 units
+    - [ ] Fall back to AppleScript for the page URL, behind a user setting
+    - [ ] Read the sentence and paragraph from Preview's PDF text blocks (gap from task-001)
+- [ ] Verification
+    - [ ] Run the test plugin in the six apps in `baron-uitest`, with and without the permissions
+- [ ] Design UML
+    - [ ] Add as-built UML to the design docs this task built or changed
+
+**Notes for the next agent:** Started while task-008 waits on one blocked item (author timing needs an unlocked screen); finish that item first when the screen is available, then archive task-008.
+
 <!--
 Template while a task is active (replace the line above):
 
@@ -55,7 +80,7 @@ Template while a task is active (replace the line above):
 **Started:** YYYY-MM-DD · **Agent:** who is working on it
 
 - [x] Feature 1: done (commit abc1234)
-- [ ] **▶ IN PROGRESS** Feature 2: what is being built
+- [ ] Feature 2: what is being built
     - [x] Sub-task 2.1
     - [ ] Sub-task 2.2 (next step: …)
 - [ ] Feature 3: not started

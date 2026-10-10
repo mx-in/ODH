@@ -74,7 +74,7 @@ public enum PluginPlatform: String, Decodable, CaseIterable, Sendable {
     case macos, windows, linux
 }
 
-public enum ContextField: String, Decodable, CaseIterable, Sendable {
+public enum ContextField: String, Codable, CaseIterable, Sendable {
     case sentence, paragraph, page, window
 
     /// The permission that grants this field.

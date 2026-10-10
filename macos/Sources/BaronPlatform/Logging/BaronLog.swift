@@ -5,6 +5,7 @@ import os
 /// `log stream --predicate 'subsystem == "org.odh.baron"'`
 public enum BaronLog {
     public static let selection = Logger(subsystem: Baron.bundleIdentifier, category: "selection")
+    public static let plugins = Logger(subsystem: Baron.bundleIdentifier, category: "plugins")
 
     public static func record(_ outcome: PipelineOutcome, trigger: Trigger, app: String?) {
         let line = SelectionLogMessage.describe(outcome, trigger: trigger, app: app)

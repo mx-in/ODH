@@ -115,7 +115,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let mayReplace = plugins.plugins[entry.pluginID]?.manifest.permissions.contains("selection.replace") ?? false
         switch await plugins.run(entry, for: run) {
         case .success(let value):
-            switch PluginActionResult.parse(value, editable: run.editable, mayReplace: mayReplace) {
+            let parsed = PluginActionResult.parse(value, editable: run.editable, mayReplace: mayReplace)
+            BaronLog.plugins.info("\(entry.pluginID, privacy: .public) result: \(String(describing: parsed).prefix(40), privacy: .private) editable=\(run.editable, privacy: .public)")
+            switch parsed {
             case .success(.nothing): break
             case .success(.copy(let text)): ActionEffectPerformer.perform(.copy(text))
             case .success(.replace(let text)): ActionEffectPerformer.perform(.replace(text))

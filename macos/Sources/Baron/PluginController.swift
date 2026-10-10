@@ -41,7 +41,12 @@ final class PluginController {
                                       preferences: PreferenceDefaults.values(for: plugin.manifest),
                                       context: SelectionContextJSON.make(from: selection))
         let result = await runtime.dispatch(plugin.id, .action, name: action?.handlerName ?? entry.actionID, payload: payload)
-        logger.info("\(plugin.id, privacy: .public) \(entry.actionID, privacy: .public): \(result.isSuccess ? "done" : "failed", privacy: .public)")
+        switch result {
+        case .success:
+            logger.info("\(plugin.id, privacy: .public) \(entry.actionID, privacy: .public): done")
+        case .failure(let error):
+            logger.error("\(plugin.id, privacy: .public) \(entry.actionID, privacy: .public): failed with \(error.code, privacy: .public): \(error.message, privacy: .private)")
+        }
         return result
     }
 

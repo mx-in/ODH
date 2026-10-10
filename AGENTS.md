@@ -5,13 +5,13 @@
 **Task:** task-008-install: install, update and remove plugins (gate: install from a folder and a `.baronplugin` file, including refused cases; an update that adds a permission waits for consent; disable, enable and uninstall work, leaving nothing on disk or in the Keychain; a bundled sample is offered at first launch; bar settings pass a UI test; a first-time author gets from `baron create` to their action on the bar in under 2 minutes.)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [10 Install and lifecycle](docs/design/plugin-platform/10-install-and-lifecycle.md), install consent in [04](docs/design/plugin-platform/04-permissions-and-security.md#install-and-update-consent), the CLI and development mode in [09](docs/design/plugin-platform/09-developer-tooling.md).
 
-- [ ] **▶ IN PROGRESS** Package reading
-    - [ ] Read a plugin folder
-    - [ ] Unzip a `.baronplugin`: files only, no symlinks, at most 50 MB
+- [x] Package reading
+    - [x] Read a plugin folder (ba394ce)
+    - [x] Unzip a `.baronplugin`: files only, no symlinks, at most 50 MB (ba394ce)
 - [ ] Install
-    - [ ] Refuse an invalid manifest, an unsupported `apiVersion`, a newer `minBaronVersion` or an excluded platform, with the reason
+    - [x] Refuse an invalid manifest, an unsupported `apiVersion`, a newer `minBaronVersion` or an excluded platform, with the reason (ba394ce)
     - [ ] Show the install sheet, warning when the same `id` comes from another source
-    - [ ] Copy the package to `Plugins/<id>/<version>/`
+    - [ ] **▶ IN PROGRESS** Copy the package to `Plugins/<id>/<version>/`
     - [ ] Run `onInstall` with a 10 s limit and show a failure
 - [ ] States
     - [ ] Track Enabled, Disabled, Needs consent, Broken and Suspended

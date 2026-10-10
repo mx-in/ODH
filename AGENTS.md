@@ -18,7 +18,7 @@
     - [x] Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal (46fb9d4)
     - [x] Provide `fetch`, `Request`, `Response` and `Headers` over `host.http` (ca9369d)
     - [x] Compile the prelude to one script, copied into the Swift runtime's resources with a sync test (2d7de23)
-- [ ] Engine contexts (Swift, new `BaronRuntime` target)
+- [x] Engine contexts (Swift, new `BaronRuntime` target)
     - [x] Create one `JSVirtualMachine` and context per plugin, on its own serial queue (4afe0ed)
     - [x] Expose `__baronNative.send` and deliver envelopes back to the context (4447b2f)
     - [x] Back the timer functions with native timers on the plugin's queue (14c7632)
@@ -26,9 +26,9 @@
     - [x] Load the prelude and the bundle within 2 s, and mark a plugin that fails to load as broken (0304cdd)
     - [x] Enforce each dispatch's time limit and abort its signal (54cee8c)
     - [x] Disable a plugin stuck in a synchronous loop for 10 s, and one with 3 strikes in 10 minutes (53d9611)
-    - [ ] **▶ IN PROGRESS** Unload a context after 60 s idle and load it again on the next need
+    - [x] Unload a context after 60 s idle and load it again on the next need (192655a)
 - [ ] Host router (Swift)
-    - [ ] Decode envelopes and route `ns.method` to a service, returning the design's error codes
+    - [ ] **▶ IN PROGRESS** Decode envelopes and route `ns.method` to a service, returning the design's error codes
     - [ ] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch
     - [ ] Serve `http.fetch` with its time and size limits (permission checks come in task-006)
 - [ ] Bar integration

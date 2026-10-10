@@ -28,7 +28,7 @@ describe("source maps", () => {
 });
 
 describe("baron create", () => {
-    for (const template of ["action", "lookup", "settings"] as const) {
+    for (const template of ["action", "lookup", "webview", "settings"] as const) {
         test(`the ${template} template builds and passes its tests`, async () => {
             const parent = scratch();
             const folder = createPlugin("my-plugin", template, parent);

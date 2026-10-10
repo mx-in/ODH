@@ -30,7 +30,7 @@ export async function testPlugin(directory: string, engines: Engine[], extra: st
 const usage = `Usage: baron <command> [plugin folder]
 
 Commands:
-  create <name>  Make a plugin folder: --template action|lookup|settings (default action)
+  create <name>  Make a plugin folder: --template action|lookup|webview|settings (default action)
   build          Bundle src/main.ts into the manifest's main file
   dev            Build, load into Baron (Developer mode), rebuild and reload on every save
   test           Build, then run the plugin's tests on each engine: --engine jsc|quickjs|all (default all)

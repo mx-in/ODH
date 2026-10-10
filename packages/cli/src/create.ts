@@ -1,8 +1,8 @@
-/** `baron create <name> --template action|lookup|settings`: a new plugin folder ready for `baron dev`. */
+/** `baron create <name> --template action|lookup|webview|settings`: a new plugin folder ready for `baron dev`. */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-export const templates = ["action", "lookup", "settings"] as const;
+export const templates = ["action", "lookup", "webview", "settings"] as const;
 export type Template = (typeof templates)[number];
 
 /** The workspace's packages, linked with file: paths until they're published on npm. */
@@ -54,6 +54,15 @@ function templateFiles(template: Template, { id, title }: { id: string; title: s
                 "manifest.json": manifest({ permissions: ["network:dict.example"], actions: [{ id: "lookup", title, when: { contentTypes: ["word"] } }] }),
                 "src/main.ts": `import { definePlugin } from "@baron/api";\n\nexport default definePlugin({\n    actions: {\n        async lookup(context) {\n            const response = await fetch(\`https://dict.example/word/\${encodeURIComponent(context.text)}\`);\n            return { type: "toast", message: response.ok ? await response.text() : "No definition found." };\n        },\n    },\n});\n`,
                 "test/main.test.ts": `${harness}\ntest("shows the definition", async () => {\n    h = await createHarness({ plugin: join(import.meta.dir, "..") });\n    h.http.mock("https://dict.example/word/fox", { body: "a small wild dog" });\n    expect(await h.runAction("lookup", { text: "fox" })).toEqual({ type: "toast", message: "a small wild dog" });\n});\n`,
+            };
+        case "webview":
+            return {
+                "manifest.json": manifest({ actions: [{ id: "show", title }] }),
+                "src/main.ts": `import { definePlugin } from "@baron/api";\n\nexport default definePlugin({\n    actions: {\n        async show(context, host) {\n            // The page gets data as baron.view.data; messages go both ways while the panel is open.\n            const view = await host.ui.openWebView("views/panel.html", { data: { text: context.text }, height: 120 });\n            view.onMessage((message) => {\n                if ((message as { shout?: boolean }).shout) void view.postMessage({ text: context.text.toUpperCase() });\n            });\n        },\n    },\n});\n`,
+                "views/panel.html": `<!doctype html>\n<html>\n<head>\n    <meta charset="utf-8">\n    <link rel="stylesheet" href="panel.css">\n    <!-- Scripts load only from the package; inline scripts and event attributes don't run. -->\n    <script src="panel.js" defer></script>\n</head>\n<body>\n    <p id="text"></p>\n    <button id="shout">Shout</button>\n</body>\n</html>\n`,
+                "views/panel.css": `/* Baron's colours: --baron-background, --baron-text, --baron-accent and more, for light and dark. */\nbody { margin: 12px; }\n#text { font-size: 18px; }\nbutton { color: var(--baron-accent); }\n`,
+                "views/panel.js": `// window.baron: the host API (baron.http, baron.storage, …) and baron.view for this panel.\nconst text = document.getElementById("text");\ntext.textContent = baron.view.data.text;\nbaron.view.onMessage((message) => { text.textContent = message.text; });\ndocument.getElementById("shout").addEventListener("click", () => baron.view.postMessage({ shout: true }));\nbaron.view.resize(document.body.scrollHeight + 24);\n`,
+                "test/main.test.ts": `${harness}\ntest("opens the panel and answers the page", async () => {\n    h = await createHarness({ plugin: join(import.meta.dir, "..") });\n    await h.runAction("show", { text: "fox" });\n    const [view] = h.views.opened;\n    expect(view).toMatchObject({ path: "views/panel.html", data: { text: "fox" } });\n    h.views.send(view!.id, { shout: true });\n    await Bun.sleep(20);\n    expect(view!.messages).toEqual([{ text: "FOX" }]);\n});\n`,
             };
         case "settings":
             return {

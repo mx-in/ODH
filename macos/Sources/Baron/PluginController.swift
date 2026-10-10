@@ -63,7 +63,14 @@ final class PluginController {
             },
         ]
         let router = HostRouter(services: services, gate: gate)
-        runtime = PluginRuntime(handler: router)
+        // Plugin code runs in the sandboxed helper when Baron.app carries it (scripts/build-app.sh), and in
+        // Baron's process otherwise, as under `swift run`.
+        let helper = Bundle.main.bundleURL.appendingPathComponent("Contents/XPCServices/BaronPluginHost.xpc")
+        if FileManager.default.fileExists(atPath: helper.path) {
+            runtime = PluginRuntime(handler: router, engines: PluginHost().engineFactory)
+        } else {
+            runtime = PluginRuntime(handler: router)
+        }
         system.openSettingsWindow = { [weak self] id in self?.openSettings(id, []) }
 
         // Pages call the same router, so the same permissions and user-action checks apply.

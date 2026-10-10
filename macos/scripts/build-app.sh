@@ -26,6 +26,7 @@ fi
 
 swift build -c "$configuration" --product Baron
 swift build -c "$configuration" --product baron-probe
+swift build -c "$configuration" --product BaronPluginHost
 bin=$(swift build -c "$configuration" --show-bin-path)
 
 rm -rf "$app"
@@ -38,6 +39,12 @@ for bundle in "$bin"/*.bundle; do
 done
 cp "$bin/baron-probe" "$out/baron-probe"
 
+# The sandboxed helper plugin code runs in: Contents/XPCServices/BaronPluginHost.xpc.
+helper="$app/Contents/XPCServices/BaronPluginHost.xpc"
+mkdir -p "$helper/Contents/MacOS"
+cp Resources/BaronPluginHost-Info.plist "$helper/Contents/Info.plist"
+cp "$bin/BaronPluginHost" "$helper/Contents/MacOS/BaronPluginHost"
+
 # Bundled plugins, offered at first launch: the lookup example, built with Bun when it's available.
 if command -v bun >/dev/null 2>&1 && (cd .. && npm run build -w examples/lookup >/dev/null 2>&1); then
     mkdir -p "$app/Contents/Resources/Plugins/lookup/dist"
@@ -48,6 +55,7 @@ else
 fi
 
 codesign --force --options runtime --timestamp=none --sign "$identity" --identifier org.odh.baron.probe "$out/baron-probe"
+codesign --force --options runtime --timestamp=none --entitlements Resources/BaronPluginHost.entitlements --sign "$identity" "$helper"
 codesign --force --options runtime --timestamp=none --entitlements Resources/Baron.entitlements --sign "$identity" "$app"
 codesign --verify --strict "$app"
 

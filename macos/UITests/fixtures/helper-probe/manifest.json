@@ -1,0 +1,9 @@
+{
+    "id": "org.baron.uitest.helper-probe",
+    "name": "Helper probe",
+    "description": "Runs code at install, for baron-uitest --helper.",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "main": "dist/main.js",
+    "actions": [{ "id": "probe", "title": "Helper probe", "when": { "regex": "^never-matches-anything$" } }]
+}

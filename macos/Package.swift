@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "BaronWeb", targets: ["BaronWeb"]),
         .executable(name: "Baron", targets: ["Baron"]),
         .executable(name: "baron-probe", targets: ["baron-probe"]),
+        .executable(name: "BaronPluginHost", targets: ["BaronPluginHost"]),
         .executable(name: "baron-uitest", targets: ["baron-uitest"]),
     ],
     dependencies: [
@@ -46,6 +47,8 @@ let package = Package(
             dependencies: ["BaronCore", "BaronPlatform", "BaronRuntime", "BaronWeb", "KeyboardShortcuts"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
+        // The sandboxed XPC helper plugins run in (scripts/build-app.sh makes BaronPluginHost.xpc of it).
+        .executableTarget(name: "BaronPluginHost", dependencies: ["BaronRuntime"]),
         .executableTarget(
             name: "baron-probe",
             dependencies: ["BaronCore", "BaronPlatform"],

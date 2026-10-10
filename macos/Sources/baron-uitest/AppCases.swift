@@ -110,6 +110,20 @@ enum Shell {
         return process.terminationStatus
     }
 
+    /// Runs a tool and returns what it printed (standard output and error).
+    static func output(_ path: String, _ arguments: [String]) throws -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: path)
+        process.arguments = arguments
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        try process.run()
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return String(decoding: data, as: UTF8.self)
+    }
+
     static func open(_ arguments: [String]) throws {
         try run("/usr/bin/open", arguments)
     }

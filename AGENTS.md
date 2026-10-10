@@ -115,12 +115,12 @@
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [02 Runtime, stage 2](docs/design/plugin-platform/02-runtime.md#stage-2-the-sandboxed-helper).
 
 - [ ] Helper
-    - [ ] **▶ IN PROGRESS** Create `BaronPluginHost.xpc` with App Sandbox and no file or network entitlements
-    - [ ] Move engine contexts into the helper, sending it the prelude and bundles over the connection
-    - [ ] Carry the envelopes over `NSXPCConnection`
+    - [x] Create `BaronPluginHost.xpc` with App Sandbox and no file or network entitlements
+    - [x] Move engine contexts into the helper, sending it the prelude and bundles over the connection (258936b)
+    - [x] Carry the envelopes over `NSXPCConnection` (258936b)
 - [ ] Recovery
-    - [ ] Fail pending calls with `unavailable`, relaunch the helper on the next need, and count a strike
-    - [ ] Restart the helper on a stuck loop or above 512 MB
+    - [x] Fail pending calls with `unavailable`, relaunch the helper on the next need, and count a strike (258936b)
+    - [x] Restart the helper on a stuck loop or above 512 MB (258936b)
 - [ ] Verification
     - [ ] Run the runtime, host API and UI tests against the helper
     - [ ] Kill the helper mid-action and check recovery

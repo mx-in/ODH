@@ -14,15 +14,15 @@
     - [x] Write `Host` and `ViewHandle` for apiVersion 1 (ee93ef9)
     - [x] Write `BaronError` and the error codes (59f425e)
     - [x] Write `definePlugin` (319f885)
-- [ ] **▶ IN PROGRESS** Manifest JSON Schema
+- [x] Manifest JSON Schema
     - [x] Write the schema for the package fields and actions (0d3e736)
     - [x] Add the preference types to the schema (e9e7e7f)
-    - [ ] Test that the schema and the TypeScript types list the same fields
-- [ ] Manifest corpus
-    - [ ] Write the valid cases and the cases the schema rejects, each with its expected JSON Pointer
-    - [ ] Write the cases only the semantic checks reject, with their package files
-    - [ ] Run the corpus against the JSON Schema
-- [ ] Swift manifest model (BaronCore)
+    - [x] Test that the schema and the TypeScript types list the same fields (aecc8fb)
+- [x] Manifest corpus
+    - [x] Write the valid cases and the cases the schema rejects, each with its expected JSON Pointer (90f2d2d)
+    - [x] Write the cases only the semantic checks reject, with their package files (7b3ddae)
+    - [x] Run the corpus against the JSON Schema (90f2d2d)
+- [ ] **▶ IN PROGRESS** Swift manifest model (BaronCore)
     - [ ] Check a manifest's structure as the schema does, reporting JSON Pointers
     - [ ] Decode a valid manifest into Swift types
     - [ ] Check unique IDs, `dependsOn` targets, and that `needs` are granted

@@ -15,7 +15,8 @@ public struct AXTextRetriever: TextRetriever {
 }
 
 /// Step 2: the web page's selected text-marker range. Chrome builds its tree lazily,
-/// so this retries up to 6 times over 300 ms.
+/// so inside a web page this retries up to 6 times over 300 ms. Outside one (a terminal,
+/// a PDF view) a single try is enough, so the chain moves on without waiting.
 public struct AXWebRetriever: TextRetriever {
     public static let attempts = 6
     public static let window = Duration.milliseconds(300)
@@ -28,11 +29,13 @@ public struct AXWebRetriever: TextRetriever {
     }
 
     public func retrieve() async -> String? {
-        await retry(attempts: Self.attempts, within: Self.window) {
+        let read = {
             WebSelectionReader.selectedRange(near: element).flatMap {
                 WebSelectionReader.string(for: $0.range, in: $0.owner)
             }
         }
+        guard WebAreaReader.webArea(containing: element) != nil else { return read() }
+        return await retry(attempts: Self.attempts, within: Self.window, read)
     }
 }
 

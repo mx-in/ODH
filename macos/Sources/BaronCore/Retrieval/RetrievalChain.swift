@@ -60,16 +60,21 @@ public struct AppRetrievalRules: Codable, Equatable, Sendable {
 }
 
 /// Calls `body` up to `attempts` times, spreading the attempts over `window`, until it returns a value.
+///
+/// `body` is synchronous and the sleep is escaping on purpose: an earlier version took both as
+/// non-escaping async closures, and calling it from the main actor corrupted Swift's task
+/// allocator ("freed pointer was not the last allocation") once the real sleep ran.
+@MainActor
 public func retry<T>(
     attempts: Int,
     within window: Duration,
-    sleep: (Duration) async -> Void = { try? await Task.sleep(for: $0) },
-    _ body: () async -> T?
+    sleep: @escaping @Sendable (Duration) async -> Void = { try? await Task.sleep(for: $0) },
+    _ body: () -> T?
 ) async -> T? {
     guard attempts > 0 else { return nil }
     let pause = attempts > 1 ? window / (attempts - 1) : .zero
     for attempt in 0..<attempts {
-        if let value = await body() { return value }
+        if let value = body() { return value }
         if attempt < attempts - 1 { await sleep(pause) }
     }
     return nil

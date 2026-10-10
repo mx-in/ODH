@@ -1,0 +1,11 @@
+/* Baron's colours (--baron-*) follow light and dark mode. */
+body { margin: 10px 12px; }
+header { display: flex; align-items: center; gap: 8px; }
+h1 { font-size: 20px; margin: 0; }
+#say { border: none; background: none; cursor: pointer; font-size: 16px; }
+ul { list-style: none; padding: 0; margin: 8px 0 0; }
+li { display: flex; gap: 8px; align-items: baseline; padding: 4px 0; border-top: 1px solid var(--baron-separator); }
+li .entry { font-weight: 600; }
+li .explain { flex: 1; color: var(--baron-secondary-text); }
+li button { border: none; background: none; color: var(--baron-accent); cursor: pointer; }
+#status { color: var(--baron-secondary-text); font-size: 12px; margin: 6px 0 0; min-height: 1em; }

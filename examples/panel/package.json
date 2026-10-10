@@ -1,0 +1,20 @@
+{
+    "name": "@baron/example-panel",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Example Baron plugin: a definition in the result panel",
+    "license": "MIT",
+    "type": "module",
+    "scripts": {
+        "build": "baron build",
+        "test": "baron test",
+        "typecheck": "tsc --noEmit -p ."
+    },
+    "devDependencies": {
+        "@baron/api": "0.1.0",
+        "@baron/cli": "0.1.0",
+        "@baron/test": "0.1.0",
+        "@types/bun": "1.4.2",
+        "typescript": "7.0.2"
+    }
+}

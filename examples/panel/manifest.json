@@ -1,0 +1,27 @@
+{
+    "$schema": "../../packages/api/schema/manifest-1.json",
+    "id": "org.baron.example.panel",
+    "name": "Define in Panel",
+    "description": "Shows the selected word's English–Chinese definitions from Youdao in a panel, with its pronunciation.",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "author": "Baron",
+    "license": "MIT",
+    "homepage": "https://dict.youdao.com",
+    "main": "dist/main.js",
+    "permissions": [
+        "network:dict.youdao.com"
+    ],
+    "actions": [
+        {
+            "id": "define",
+            "title": "Define in Panel",
+            "when": {
+                "contentTypes": [
+                    "word"
+                ],
+                "maxLength": 40
+            }
+        }
+    ]
+}

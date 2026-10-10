@@ -98,6 +98,11 @@ export default [
         languageOptions: { globals: globals.node, sourceType: 'commonjs' }
     },
     {
+        // Baron plugin pages: classic scripts in a web view, with window.baron from the page bridge.
+        files: ['examples/*/views/**/*.js', 'plugins/*/views/**/*.js'],
+        languageOptions: { globals: { ...globals.browser, baron: 'readonly' }, sourceType: 'script' }
+    },
+    {
         files: ['src/**/*.js'],
         languageOptions: { ecmaVersion: 2022, sourceType: 'script' }
     },

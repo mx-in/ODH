@@ -42,8 +42,8 @@
     - [x] `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic` (ab14943)
     - [x] `@baron/test`: a mock host with in-memory services (97504fd)
     - [x] Run plugin tests on JavaScriptCore through `node:vm` (640803a)
-    - [ ] **▶ IN PROGRESS** Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output
-    - [ ] `baron test --engine jsc|quickjs|all`
+    - [x] Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output (29c4a95)
+    - [ ] **▶ IN PROGRESS** `baron test --engine jsc|quickjs|all`
 - [ ] Examples
     - [ ] Write the uppercase action example with tests
     - [ ] Write the `fetch`-based lookup example with tests

@@ -2,7 +2,42 @@
 
 ## Current task
 
-_No active task._
+**Task:** task-006-host-services: every host call, checked (gate: every host method rejects calls without its permission, and those needing a user action reject without one; the network matcher passes its corpus; run-time prompts work end to end in a UI test; contract tests pass on both engines)
+**Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [03](docs/design/plugin-platform/03-host-api-and-ipc.md), [04](docs/design/plugin-platform/04-permissions-and-security.md)
+
+- [ ] **▶ IN PROGRESS** Permission model (BaronCore)
+    - [ ] Parse permission names and network patterns
+    - [ ] Match network patterns: hosts, subdomain wildcards, ports, schemes; private, link-local and loopback addresses only by an exact entry
+    - [ ] Share a network matcher corpus between `@baron/api` and Swift, and pass it in both
+    - [ ] Describe what each host method needs: a permission, a user action, or nothing
+- [ ] Grants
+    - [ ] Hold each plugin's granted set: install permissions plus saved run-time grants (Always Allow saved, Deny remembered 24 h, Allow Once in memory)
+- [ ] User-action tracker
+    - [ ] Record bar clicks per plugin, and reject side-effecting calls without one in the last 5 s
+- [ ] Permission gate
+    - [ ] Check every routed call before its service runs
+- [ ] Network policy in `http.fetch`
+    - [ ] Check the first URL and every redirect hop against the granted set, answering permission_denied with requestable
+    - [ ] Resolve hosts before connecting, so a public name can't reach a private address
+- [ ] Services
+    - [ ] `clipboard.readText` and `clipboard.writeText`
+    - [ ] `selection.replace` (only on an editable selection)
+    - [ ] `text.segment` with `NLTokenizer`
+    - [ ] `ui.openUrl` for `https`, `http` and `mailto`, and `ui.openSettings`
+    - [ ] `permissions.query` and `permissions.request`
+- [ ] Run-time prompt (UI)
+    - [ ] Show the native prompt naming the plugin and host: Deny, Allow Once, Always Allow; one at a time
+- [ ] Install sheet (UI, used by task-008)
+    - [ ] Describe permissions in plain words, grouped as Reads, Connects to, Can and Stores, with the disclosures
+    - [ ] Show them in a SwiftUI install sheet
+- [ ] Contract tests
+    - [ ] Call every method from JavaScript against Baron's router and against the mock host on both engines, from one shared corpus
+- [ ] Verification
+    - [ ] UI test of the prompt: Deny, Allow Once, Always Allow (revoking is tested in task-007)
+- [ ] Design UML
+    - [ ] Add as-built UML to 03 and 04
+
+**Notes for the next agent:** Done in task-005 already: `http.fetch` basics (methods, headers, bodies, ephemeral session, 5 redirects) and private plugin log lines. Services that need AppKit or Accessibility (clipboard, replace, open URL, settings, prompts) go through protocols in BaronRuntime that the app implements, so BaronRuntime stays free of AppKit. Allow Once lasts 10 minutes in memory (the design leaves its scope open).
 
 <!--
 Template while a task is active (replace the line above):

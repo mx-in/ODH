@@ -17,9 +17,12 @@
     - [x] Mirror it in `docs/design/plugin-platform/` (fdeb2c6)
     - [x] Point the app design at it and give the proposed answers to its open questions (8a24023)
     - [x] Re-plan `docs/tasks.md` as tasks 004–014, one per sub-project, with gates from the design
-- [ ] **▶ IN PROGRESS** User reviews the platform design and approves it, or asks for changes
+- [x] User reviews the platform design: approved 2026-10-10
+- [ ] **▶ IN PROGRESS** Design UML (new rule, user request 2026-10-10)
+    - [ ] Add design-level UML to each plugin platform doc (nothing is built yet, so the diagrams show the design)
+    - [ ] Add UML of the selection bar as built in tasks 001–002 to `docs/tec-design.md`
 
-**Notes for the next agent:** no code until the user approves the platform design (user request 2026-10-10: "don't start to writing code directly, after research I need to read it first"). After approval: tick the review item, archive task-003, then start task-004-plugin-contract from `docs/tasks.md`. If the user changes a decision, update the Claude Doc, the mirror in `docs/design/plugin-platform/` and the affected tasks together.
+**Notes for the next agent:** the platform design is approved. After the UML items: archive task-003, then start task-004-plugin-contract from `docs/tasks.md`. If the user changes a decision, update the Claude Doc, the mirror in `docs/design/plugin-platform/` and the affected tasks together.
 `npm run lint` fails in this checkout because `node_modules` isn't installed (a global ESLint 8.53 runs and can't read `eslint.config.mjs`); run `npm install` before relying on it.
 
 
@@ -81,11 +84,12 @@ Split work by the single-responsibility principle: every item has exactly one re
 
 Every task keeps its checklist in **Current task** at the top of this file, so another agent can take over after an interruption.
 
-1. **Start:** before writing code, replace `_No active task._` with the task name, the start date, and a checklist that splits the task into features, with sub-tasks under each. Number tasks in order: `task-001-…`, `task-002-…`. Use the next number after the highest one in `docs/archive/`.
+1. **Start:** before writing code, replace `_No active task._` with the task name, the start date, and a checklist that splits the task into features, with sub-tasks under each. End the checklist with a **Design UML** item (step 5). Number tasks in order: `task-001-…`, `task-002-…`. Use the next number after the highest one in `docs/archive/`.
 2. **Mark what is being worked on:** exactly one item carries `**▶ IN PROGRESS**`. Move the marker before starting the next item, not after.
 3. **Keep it current:** tick an item as soon as it is done, and add its commit hash to finished features. Add sub-tasks you discover along the way. Write anything the next agent needs to know under **Notes for the next agent**.
 4. **Resume first:** an agent that finds an active task continues from the in-progress item and reads the notes before doing anything else. It does not start a new task until the current one is finished or the user drops it.
-5. **Finish:** when every item is ticked, copy the whole section (checklist, commit hashes, notes) into `docs/archive/task-NNN-short-name-archive.md`. Add a finished date and a short summary of the outcome. Then reset **Current task** to `_No active task._` and commit both files in one `docs(archive): …` commit. The archive is the working history; never edit an archived file afterwards.
+5. **Design UML** (user request 2026-10-10): when a task's work is done, add UML diagrams to every design doc the task built or changed, drawn from the result as built, not as planned. Use Mermaid: a `classDiagram` for the main types and how they relate, plus a `sequenceDiagram` or `stateDiagram-v2` for the main flow or lifecycle. Put them in a **UML** section at the end of the doc, before the gate. Update an existing diagram instead of adding a second one for the same thing, and fix the design text where the code differs from it. Commit as `docs(design): …`.
+6. **Finish:** when every item is ticked, copy the whole section (checklist, commit hashes, notes) into `docs/archive/task-NNN-short-name-archive.md`. Add a finished date and a short summary of the outcome. Then reset **Current task** to `_No active task._` and commit both files in one `docs(archive): …` commit. The archive is the working history; never edit an archived file afterwards.
 
 ## Commit rules
 

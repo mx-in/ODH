@@ -10,7 +10,7 @@ struct NetworkPolicyTests {
     func service() -> HTTPService {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubProtocol.self]
-        return HTTPService(configuration: configuration, policy: NetworkPolicy(grants: grants))
+        return HTTPService(configuration: configuration, policy: NetworkPolicy(grants: grants, resolve: { _ in ["93.184.216.34"] }))
     }
 
     func fetch(_ url: String, _ plugin: RuntimePlugin) async -> Result<JSONValue, HostError> {
@@ -51,5 +51,22 @@ struct NetworkPolicyTests {
         let refused = await fetch("https://hop.example/leave", plugin).failure
         #expect(refused?.code == "permission_denied")
         #expect(refused?.data?["permission"] == .string("network:elsewhere.example"))
+    }
+
+    @Test func refusesPublicNamesThatLeadToPrivateAddresses() async throws {
+        let plugin = try pluginWith(permissions: ["network:rebind.example", "network:fine.example", "network:localhost:8765", "network:192.168.1.10"])
+        let policy = NetworkPolicy(grants: grants) { host in
+            ["rebind.example": ["192.168.1.1"], "fine.example": ["93.184.216.34"], "localhost": ["127.0.0.1"]][host] ?? []
+        }
+        let refused = await policy.check(URL(string: "https://rebind.example/")!, for: plugin)
+        #expect(refused?.code == "permission_denied" && refused?.data?["reason"] == .string("private_address"))
+        #expect(await policy.check(URL(string: "https://fine.example/")!, for: plugin) == nil)
+        #expect(await policy.check(URL(string: "http://localhost:8765/")!, for: plugin) == nil)
+        #expect(await policy.check(URL(string: "https://192.168.1.10/")!, for: plugin) == nil)
+    }
+
+    @Test func theSystemResolverAnswers() async {
+        let addresses = await NetworkPolicy.systemResolve("localhost")
+        #expect(addresses.contains("127.0.0.1") || addresses.contains("[::1]"))
     }
 }

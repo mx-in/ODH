@@ -38,8 +38,8 @@
     - [x] Carry out action results: copy, replace, toast, open URL (148a42e)
     - [x] Show a plugin's error as a toast naming the plugin (eb2fa5a)
 - [ ] Tooling
-    - [ ] **▶ IN PROGRESS** `baron build`: bundle `src/` into one classic script with an inline source map
-    - [ ] `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic`
+    - [x] `baron build`: bundle `src/` into one classic script with an inline source map (36f8f4f)
+    - [ ] **▶ IN PROGRESS** `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic`
     - [ ] `@baron/test`: a mock host with in-memory services
     - [ ] Run plugin tests on JavaScriptCore through `node:vm`
     - [ ] Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output

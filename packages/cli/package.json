@@ -13,7 +13,8 @@
         "typecheck": "tsc --noEmit -p ."
     },
     "dependencies": {
-        "@baron/api": "0.1.0"
+        "@baron/api": "0.1.0",
+        "ajv": "8.20.0"
     },
     "devDependencies": {
         "@types/bun": "1.4.2",

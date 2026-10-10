@@ -1,6 +1,6 @@
 # Baron: Selection Popup App — Technical Design
 
-2026-10-09 · mx_in · Mirror of the [Claude Docs version](https://claude.ai/code/artifact/a302bd64-f80d-4be1-875e-414221f4b8d6)
+2026-10-09 · mx_in · First written as a [Claude Doc](https://claude.ai/code/artifact/a302bd64-f80d-4be1-875e-414221f4b8d6); this file is the maintained copy, and only it has the UML diagrams
 
 Baron is a standalone macOS app, written in Swift. It shows a small action bar whenever text is selected in any app. Every action beyond the built-ins is a plugin written in TypeScript or JavaScript, so the same plugins can run on a later Windows or Linux host. ODH dictionary lookup with Anki export is the first plugin, not part of the core app.
 
@@ -461,6 +461,255 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 - [ ] Should the bar appear automatically by default, or only while a modifier key is held?
 - [x] Minimum macOS version: 14. Decided 2026-10-10.
 - [x] Licence: MIT, like ODH. No GPL or AGPL code is copied from Easydict, OpenClip or Selected. Decided 2026-10-10.
+
+## UML: the selection bar as built
+
+Drawn from the code at the end of tasks 001 and 002 (`macos/Sources`). Pure logic lives in `BaronCore`, which has unit tests; anything that touches Accessibility, events or windows lives in `BaronPlatform`; the app target wires them together.
+
+```mermaid
+classDiagram
+  namespace Baron_app {
+    class SelectionCoordinator {
+      +onRun: (Trigger, PipelineOutcome, source)
+      +apply(BaronSettings)
+      +start()
+      +stop()
+      -handle(Trigger)
+      -perform(BarItem)
+    }
+  }
+  namespace BaronPlatform {
+    class SelectionEventMonitor {
+      +onTrigger: (Trigger)
+      +start()
+      +stop()
+    }
+    class HotkeyMonitor {
+      +onTrigger: (Trigger)
+      +setEnabled(Bool)
+    }
+    class FocusedSelectionSource {
+      +app: NSRunningApplication
+      +focused: AXElement?
+      +current()$ FocusedSelectionSource?
+    }
+    class ActionBarController {
+      +onSelect: (BarItem)
+      +show(items, selection, pointer)
+      +hide()
+    }
+    class ActionEffectPerformer {
+      +perform(ActionEffect)$
+    }
+    class AXTextRetriever
+    class AXWebRetriever
+    class CopyRetriever
+  }
+  namespace BaronCore {
+    class PointerTriggerDetector
+    class KeyboardTriggerDetector
+    class Trigger {
+      +kind: TriggerKind
+      +location: CGPoint
+      +windowDragged: Bool
+      +skipsGate: Bool
+    }
+    class SelectionPipeline {
+      +gate: Gate
+      +retrievalRules: AppRetrievalRules
+      +actions: BuiltInActions
+      +isPaused: Bool
+      +run(Trigger, SelectionSource) async PipelineOutcome
+      +cancel()
+    }
+    class SelectionSource {
+      <<interface>>
+      +bundleIdentifier: String?
+      +gateInput(for: Trigger) GateInput
+      +retrievalChain() RetrievalChain
+      +selectionBounds(after: RetrievalStep) CGRect?
+    }
+    class Gate {
+      +rules: [GateRule]
+      +evaluate(GateInput) GateDecision
+    }
+    class GateRule {
+      <<interface>>
+      +reject(GateInput) GateReason?
+    }
+    class RetrievalChain {
+      +retrievers: [TextRetriever]
+      +retrieve(startingAt: RetrievalStep) async RetrievalResult?
+    }
+    class TextRetriever {
+      <<interface>>
+      +step: RetrievalStep
+      +retrieve() async String?
+    }
+    class AppRetrievalRules {
+      +startSteps: [bundle ID: RetrievalStep]
+      +startStep(for: bundle ID) RetrievalStep
+    }
+    class BuiltInActions {
+      +actions: [BuiltInAction]
+      +items(for: text) [BarItem]
+      +effect(of: itemID, for: text) ActionEffect?
+    }
+    class BuiltInAction {
+      <<interface>>
+      +item: BarItem
+      +applies(to: text) Bool
+      +effect(for: text) ActionEffect?
+    }
+    class BarPlacement {
+      +frame(barSize, selection, pointer, visibleFrame)$ CGRect
+    }
+    class ExcludedAppRule
+    class SecureInputRule
+    class TextRoleRule
+    class WindowDragRule
+    class CopyAction
+    class SearchAction
+    class OpenLinkAction
+  }
+  SelectionCoordinator --> SelectionEventMonitor
+  SelectionCoordinator --> HotkeyMonitor
+  SelectionCoordinator --> SelectionPipeline
+  SelectionCoordinator --> ActionBarController
+  SelectionCoordinator ..> FocusedSelectionSource : current() per trigger
+  SelectionCoordinator ..> ActionEffectPerformer
+  SelectionEventMonitor --> PointerTriggerDetector
+  SelectionEventMonitor --> KeyboardTriggerDetector
+  SelectionEventMonitor ..> Trigger : emits
+  HotkeyMonitor ..> Trigger : emits, skips the gate
+  SelectionPipeline --> Gate
+  SelectionPipeline --> AppRetrievalRules
+  SelectionPipeline --> BuiltInActions
+  SelectionPipeline ..> SelectionSource
+  SelectionSource <|.. FocusedSelectionSource
+  FocusedSelectionSource ..> RetrievalChain : builds
+  Gate o-- GateRule
+  GateRule <|.. ExcludedAppRule
+  GateRule <|.. SecureInputRule
+  GateRule <|.. TextRoleRule
+  GateRule <|.. WindowDragRule
+  RetrievalChain o-- TextRetriever
+  TextRetriever <|.. AXTextRetriever : ax-text
+  TextRetriever <|.. AXWebRetriever : ax-web
+  TextRetriever <|.. CopyRetriever : menu-copy, key-copy
+  BuiltInActions o-- BuiltInAction
+  BuiltInAction <|.. CopyAction
+  BuiltInAction <|.. SearchAction
+  BuiltInAction <|.. OpenLinkAction
+  ActionBarController ..> BarPlacement
+```
+
+From a selection to a performed action:
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Mon as SelectionEventMonitor
+  participant Coord as SelectionCoordinator
+  participant Src as FocusedSelectionSource
+  participant Pipe as SelectionPipeline
+  participant Gate
+  participant Chain as RetrievalChain
+  participant Bar as ActionBarController
+  participant Perf as ActionEffectPerformer
+  User->>Mon: drag, double-click, triple-click, shift-click or shift-arrow
+  Mon->>Mon: PointerTriggerDetector or KeyboardTriggerDetector (300 ms quiet)
+  Mon->>Coord: Trigger
+  Coord->>Bar: hide the previous bar
+  Coord->>Src: current(): frontmost app and focused element
+  Coord->>Pipe: run(trigger, source)
+  alt paused, and not the hotkey
+    Pipe-->>Coord: paused
+  else
+    Pipe->>Src: gateInput(for: trigger)
+    Pipe->>Gate: evaluate (excluded app, secure input, non-text role, window drag)
+    alt rejected
+      Gate-->>Pipe: reject(reason)
+      Pipe-->>Coord: rejected(reason)
+    else passes
+      Pipe->>Chain: retrieve(startingAt: per-app start step)
+      Chain->>Chain: ax-text, then ax-web (retried in web areas), then menu-copy, then key-copy
+      Chain-->>Pipe: text and the step that found it
+      Pipe->>Pipe: a newer trigger meanwhile? then superseded
+      Pipe->>Src: selectionBounds(after: step)
+      Pipe-->>Coord: show(SelectionRun with BuiltInActions items)
+      Coord->>Bar: show(items, selection bounds, pointer)
+      Bar->>Bar: BarPlacement: above the selection, else below, kept on screen
+    end
+  end
+  Note over Coord: after every run, onRun lets the debug panel probe the context
+  User->>Bar: clicks Copy, Search or Open Link
+  Bar->>Coord: onSelect(item)
+  Coord->>Pipe: actions.effect(of: item, for: text)
+  Coord->>Perf: perform(copy or openURL)
+```
+
+The context readers. Today only `SelectionProbe` uses them, for `baron-probe`, `baron-uitest` and the debug panel; task-009 builds each action's `SelectionContext` from them.
+
+```mermaid
+classDiagram
+  class SelectionProbe {
+    <<BaronPlatform>>
+    +run(on: app, includeCopy) async ProbeReport$
+  }
+  class AccessibilityWaker {
+    +wake(app)$ Electron, Chrome, iWork
+  }
+  class WindowReader {
+    +focusedWindow(of: app)$
+    +title(window)$
+    +documentURL(window)$
+  }
+  class WebAreaReader {
+    +webArea(containing: element)$
+    +url(area)$
+    +title(area)$
+  }
+  class WebSelectionReader {
+    +selectedRange(near: element)$ marker range and owner
+  }
+  class WebContextReader {
+    +contextSpan(sentence or paragraph, around: range, in: owner)$ TextSpan?
+  }
+  class WebTreeContextReader {
+    Chromium: paragraph rebuilt from the tree
+  }
+  class NativeTextWindowReader {
+    +window(around: element)$ about 1,000 units each side
+  }
+  class NativeTextContext {
+    <<BaronCore>>
+    +paragraph(in: text, selection)$ TextSpan?
+    +sentence(paragraph)$ TextSpan?
+  }
+  class SelectionBoundsReader {
+    +bounds(ofNativeSelectionIn: element)$
+    +bounds(ofWebSelection: range, in: owner)$
+  }
+  class TextSpan {
+    <<BaronCore>>
+    +text: String
+    +selectionStart: Int
+    +selectionEnd: Int
+    +truncated: Bool
+  }
+  SelectionProbe ..> AccessibilityWaker
+  SelectionProbe ..> WindowReader
+  SelectionProbe ..> WebAreaReader
+  SelectionProbe ..> WebSelectionReader
+  SelectionProbe ..> WebContextReader
+  SelectionProbe ..> NativeTextWindowReader
+  SelectionProbe ..> NativeTextContext
+  SelectionProbe ..> SelectionBoundsReader
+  WebContextReader ..> WebTreeContextReader : Chromium (ChromeAXNodeId)
+  WebContextReader ..> TextSpan
+  NativeTextContext ..> TextSpan
+```
 
 ## Sources
 

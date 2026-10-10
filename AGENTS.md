@@ -108,6 +108,27 @@
 
 **Notes for the next agent:** Started while tasks 008 and 009 each wait on one UI run that needs an unlocked screen. The web view gate's UI test is written (`macos/scripts/uitest-webviews.sh`, baron-uitest `--webviews`, using examples/panel from the development folder; it needs the network for Youdao) but couldn't run without a screen. Checked headless instead, in BaronWebTests with a real WKWebView: pages served with the CSP (inline scripts, undeclared images and fetch blocked), window.baron calls carrying the plugin from the origin, navigation kept on the origin, colours for dark mode, warm reload, and load-to-first-script of about 250 ms cold and 55 ms warm (a stand-in for first paint, which needs the UI test). Dark mode in the panel follows the system through prefers-color-scheme; the UI test doesn't switch the system appearance.
 
+
+---
+
+**Task:** task-011-sandboxed-helper: move plugins out of Baron's process (gate: the runtime, host API and UI tests pass with plugins in the helper; killing the helper mid-action gives `unavailable` and the next action works.)
+**Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [02 Runtime, stage 2](docs/design/plugin-platform/02-runtime.md#stage-2-the-sandboxed-helper).
+
+- [ ] Helper
+    - [ ] **▶ IN PROGRESS** Create `BaronPluginHost.xpc` with App Sandbox and no file or network entitlements
+    - [ ] Move engine contexts into the helper, sending it the prelude and bundles over the connection
+    - [ ] Carry the envelopes over `NSXPCConnection`
+- [ ] Recovery
+    - [ ] Fail pending calls with `unavailable`, relaunch the helper on the next need, and count a strike
+    - [ ] Restart the helper on a stuck loop or above 512 MB
+- [ ] Verification
+    - [ ] Run the runtime, host API and UI tests against the helper
+    - [ ] Kill the helper mid-action and check recovery
+- [ ] Design UML
+    - [ ] Add as-built UML to the design docs this task built or changed
+
+**Notes for the next agent:** Started while tasks 008, 009 and 010 each wait on one UI run that needs an unlocked screen.
+
 <!--
 Template while a task is active (replace the line above):
 

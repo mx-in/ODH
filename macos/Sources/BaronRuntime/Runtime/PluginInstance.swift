@@ -4,7 +4,7 @@ import Foundation
 /// One plugin's live context: loads it, relays its calls to the host, and matches dispatch results.
 final class PluginInstance: @unchecked Sendable {
     let plugin: RuntimePlugin
-    let engine: JSCEngineContext
+    let engine: PluginEngine
     private let handler: HostCallHandler
     private let lock = NSLock()
     private var nextDispatchID = 1
@@ -13,10 +13,10 @@ final class PluginInstance: @unchecked Sendable {
     /// other calls run concurrently.
     private var lastLog: Task<Void, Never>?
 
-    init(plugin: RuntimePlugin, handler: HostCallHandler) {
+    init(plugin: RuntimePlugin, handler: HostCallHandler, engine: PluginEngine) {
         self.plugin = plugin
         self.handler = handler
-        engine = JSCEngineContext(pluginID: plugin.id, inspectable: plugin.development)
+        self.engine = engine
     }
 
     /// Evaluates the prelude and the plugin's bundle, and checks that the bundle defined actions.
@@ -28,7 +28,7 @@ final class PluginInstance: @unchecked Sendable {
         } catch let error as JSCEngineContext.EngineError {
             throw HostError("plugin_error", "Its code threw while loading: \(error)")
         }
-        let defined = try await engine.evaluate("typeof globalThis.__baronPlugin === 'object' && globalThis.__baronPlugin !== null && typeof globalThis.__baronPlugin.actions === 'object'")
+        let defined = try await engine.evaluate("typeof globalThis.__baronPlugin === 'object' && globalThis.__baronPlugin !== null && typeof globalThis.__baronPlugin.actions === 'object'", sourceURL: "baron-check.js")
         guard defined == "true" else {
             throw HostError("plugin_error", "Its bundle defines no actions; export default definePlugin({ actions: … })")
         }

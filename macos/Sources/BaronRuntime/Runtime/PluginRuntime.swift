@@ -4,8 +4,12 @@ import Foundation
 /// Runs plugins in-process (stage 1): one JavaScriptCore context per plugin, loaded on first need.
 /// Design: docs/design/plugin-platform/02-runtime.md
 public actor PluginRuntime {
+    /// Makes the engine a plugin's code runs in.
+    public typealias EngineFactory = @Sendable (RuntimePlugin) -> PluginEngine
+
     public let limits: RuntimeLimits
     private let handler: HostCallHandler
+    private let makeEngine: EngineFactory
     private var plugins: [String: RuntimePlugin] = [:]
     private var instances: [String: PluginInstance] = [:]
     private var states: [String: PluginRuntimeState] = [:]
@@ -18,9 +22,12 @@ public actor PluginRuntime {
     /// Views each plugin has open; a plugin with one stays loaded, so its `ViewHandle` keeps listening.
     private var openViews: [String: Set<String>] = [:]
 
-    public init(handler: HostCallHandler, limits: RuntimeLimits = RuntimeLimits()) {
+    /// - Parameter engines: where plugin code runs; JavaScriptCore in Baron's process unless told otherwise.
+    public init(handler: HostCallHandler, limits: RuntimeLimits = RuntimeLimits(),
+                engines: @escaping EngineFactory = { JSCEngineContext(pluginID: $0.id, inspectable: $0.development) }) {
         self.handler = handler
         self.limits = limits
+        makeEngine = engines
     }
 
     public func register(_ plugin: RuntimePlugin) {
@@ -103,20 +110,33 @@ public actor PluginRuntime {
         }
     }
 
-    private func suspend(_ pluginID: String, _ reason: String) {
+    private func suspend(_ pluginID: String, _ reason: String, abandoning: Bool = false) {
         states[pluginID] = .suspended(reason)
         guard let instance = instances.removeValue(forKey: pluginID) else { return }
         instance.failAll(.unavailable(reason))
-        instance.engine.unload()
+        if abandoning { instance.engine.abandon() } else { instance.engine.unload() }
     }
 
-    /// Suspends plugins stuck in synchronous code. Their thread can't be stopped (stage 1), so the context is abandoned.
-    private func checkForStuckPlugins() {
+    /// The engine's process went away (the helper crashed or was restarted): its dispatches fail with
+    /// `unavailable`, a plugin that was running counts a strike, and the next need loads it again.
+    func engineLost(_ pluginID: String, _ instance: PluginInstance) {
+        guard instances[pluginID] === instance else { return }
+        instances[pluginID] = nil
+        instance.failAll(.unavailable("The plugin host stopped; try again"))
+        if state(of: pluginID) == .ready { states[pluginID] = .unloaded }
+        if active[pluginID, default: 0] > 0 { strike(pluginID) }
+    }
+
+    /// Suspends plugins stuck in synchronous code: in Baron's process the thread is abandoned (it can't be
+    /// stopped); in the helper, the helper is restarted. Unloads plugins idle for longer than the limit.
+    private func checkForStuckPlugins() async {
         let now = ContinuousClock.now
         for (pluginID, instance) in instances {
-            if let busy = instance.engine.busyFor, busy > limits.stuck {
-                suspend(pluginID, "It stopped responding (stuck for more than \(limits.stuck)); re-enable it to try again")
-            } else if active[pluginID, default: 0] == 0, openViews[pluginID] == nil, instance.engine.busyFor == nil,
+            let busy = await instance.engine.busyDuration()
+            guard instances[pluginID] === instance else { continue }
+            if let busy, busy > limits.stuck {
+                suspend(pluginID, "It stopped responding (stuck for more than \(limits.stuck)); re-enable it to try again", abandoning: true)
+            } else if active[pluginID, default: 0] == 0, openViews[pluginID] == nil, busy == nil,
                       now - (lastUsed[pluginID] ?? now) > limits.idle {
                 reload(pluginID)
             }
@@ -145,7 +165,12 @@ public actor PluginRuntime {
         case .ready: if let instance = instances[pluginID] { return .success(instance) }
         case .unloaded: break
         }
-        let instance = PluginInstance(plugin: plugin, handler: handler)
+        let engine = makeEngine(plugin)
+        let instance = PluginInstance(plugin: plugin, handler: handler, engine: engine)
+        engine.onLost = { [weak self, weak instance] in
+            guard let self, let instance else { return }
+            Task { await self.engineLost(pluginID, instance) }
+        }
         do {
             let bundle = try plugin.bundleSource()
             try await withLimit(limits.load, "Its code took longer than \(limits.load) to load") {

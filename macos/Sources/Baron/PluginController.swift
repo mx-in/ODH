@@ -12,8 +12,12 @@ final class PluginController {
     private let logger = Logger(subsystem: "org.odh.baron", category: "plugins")
     var onCatalogChange: ((PluginActionCatalog) -> Void)?
 
+    let actions = UserActionTracker()
+    let grants = GrantStore(folder: GrantStore.defaultFolder)
+
     init(presenter: PluginPresenter) {
-        let router = HostRouter(services: [LogService(), UIService(presenter: presenter), HTTPService()])
+        let gate = PermissionGate(grants: grants, actions: actions)
+        let router = HostRouter(services: [LogService(), UIService(presenter: presenter), HTTPService()], gate: gate)
         runtime = PluginRuntime(handler: router)
     }
 
@@ -40,6 +44,7 @@ final class PluginController {
         let payload = DispatchPayload(environment: PluginEnvironment(appearance: appearance),
                                       preferences: PreferenceDefaults.values(for: plugin.manifest),
                                       context: SelectionContextJSON.make(from: selection))
+        actions.record(plugin.id)
         let result = await runtime.dispatch(plugin.id, .action, name: action?.handlerName ?? entry.actionID, payload: payload)
         switch result {
         case .success:

@@ -12,10 +12,10 @@
     - [x] Describe what each host method needs: a permission, a user action, or nothing (2d4bd5f)
 - [x] Grants
     - [x] Hold each plugin's granted set: install permissions plus saved run-time grants (Always Allow saved, Deny remembered 24 h, Allow Once in memory) (27a0bdf)
-- [ ] User-action tracker
-    - [ ] **▶ IN PROGRESS** Record bar clicks per plugin, and reject side-effecting calls without one in the last 5 s
+- [x] User-action tracker
+    - [x] Record bar clicks per plugin, and reject side-effecting calls without one in the last 5 s (f1a9750)
 - [ ] Permission gate
-    - [ ] Check every routed call before its service runs
+    - [ ] **▶ IN PROGRESS** Check every routed call before its service runs
 - [ ] Network policy in `http.fetch`
     - [ ] Check the first URL and every redirect hop against the granted set, answering permission_denied with requestable
     - [ ] Resolve hosts before connecting, so a public name can't reach a private address

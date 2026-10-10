@@ -9,6 +9,16 @@ public final class FocusedSelectionSource: SelectionSource {
 
     public var bundleIdentifier: String? { app.bundleIdentifier }
 
+    public var selectionApp: SelectionApp {
+        SelectionApp(bundleIdentifier: app.bundleIdentifier, name: app.localizedName ?? app.bundleIdentifier ?? "", processID: app.processIdentifier)
+    }
+
+    /// The focused element takes new selected text, and isn't a password field.
+    public var isEditable: Bool {
+        guard let focused, focused.subrole != SecureInputRule.secureSubrole else { return false }
+        return focused.isSettable(kAXSelectedTextAttribute)
+    }
+
     /// Nil when there is no frontmost app.
     public static func current() -> FocusedSelectionSource? {
         guard let app = FocusedElementReader.frontmostApplication else { return nil }

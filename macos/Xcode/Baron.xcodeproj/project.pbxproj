@@ -8,19 +8,24 @@
 
 /* Begin PBXBuildFile section */
 		059DFA27AB6AB948416A5AD3 /* DebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5702184C82A004E7964DAD30 /* DebugPanel.swift */; };
-		3DC2A65FCBB8763A4FC1B548 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 12C577B8C6F579A542E8DA1F /* KeyboardShortcuts */; };
+		3DC2A65FCBB8763A4FC1B548 /* BaronRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 4489929408D12077D0D8E325 /* BaronRuntime */; };
 		4195CCCBE15D82E4381565D4 /* BaronCore in Frameworks */ = {isa = PBXBuildFile; productRef = FEFB15955935063E4562CDA0 /* BaronCore */; };
 		5011C889EAEFD30795A54500 /* BaronPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 8B2BF3EDF94221E81C377655 /* BaronPlatform */; };
+		5040303511BFE9488BF94075 /* PluginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FBE1125281BAC0C5AF31DF8 /* PluginController.swift */; };
 		703E82513BD766B016A24308 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8674525AF909935092237511 /* AppDelegate.swift */; };
 		9F20739737F625552011A462 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0707021CAC10997333A99D /* SettingsView.swift */; };
+		B02361AD1BA6ED611D437899 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 12C577B8C6F579A542E8DA1F /* KeyboardShortcuts */; };
+		B0530ED72B0AD73042408288 /* ToastPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54793A19E7FD423395878D68 /* ToastPresenter.swift */; };
 		B347703A02A2EEF74BBD031A /* SelectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1085BA13234DBBA825D4570 /* SelectionCoordinator.swift */; };
 		EB6FE8301B1303FA17555BA9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCA79BD6C0848BEDCB9FF93 /* main.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0A0707021CAC10997333A99D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		54793A19E7FD423395878D68 /* ToastPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastPresenter.swift; sourceTree = "<group>"; };
 		54B04B291FC579487AD80A1F /* macos */ = {isa = PBXFileReference; lastKnownFileType = folder; name = macos; path = ..; sourceTree = SOURCE_ROOT; };
 		5702184C82A004E7964DAD30 /* DebugPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPanel.swift; sourceTree = "<group>"; };
+		5FBE1125281BAC0C5AF31DF8 /* PluginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginController.swift; sourceTree = "<group>"; };
 		6E2A39B17445EA6D1DE0E248 /* Baron.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Baron.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8674525AF909935092237511 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8FCA79BD6C0848BEDCB9FF93 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -34,7 +39,8 @@
 			files = (
 				4195CCCBE15D82E4381565D4 /* BaronCore in Frameworks */,
 				5011C889EAEFD30795A54500 /* BaronPlatform in Frameworks */,
-				3DC2A65FCBB8763A4FC1B548 /* KeyboardShortcuts in Frameworks */,
+				3DC2A65FCBB8763A4FC1B548 /* BaronRuntime in Frameworks */,
+				B02361AD1BA6ED611D437899 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,8 +78,10 @@
 				8674525AF909935092237511 /* AppDelegate.swift */,
 				5702184C82A004E7964DAD30 /* DebugPanel.swift */,
 				8FCA79BD6C0848BEDCB9FF93 /* main.swift */,
+				5FBE1125281BAC0C5AF31DF8 /* PluginController.swift */,
 				C1085BA13234DBBA825D4570 /* SelectionCoordinator.swift */,
 				0A0707021CAC10997333A99D /* SettingsView.swift */,
+				54793A19E7FD423395878D68 /* ToastPresenter.swift */,
 			);
 			path = Baron;
 			sourceTree = "<group>";
@@ -113,6 +121,7 @@
 			packageProductDependencies = (
 				FEFB15955935063E4562CDA0 /* BaronCore */,
 				8B2BF3EDF94221E81C377655 /* BaronPlatform */,
+				4489929408D12077D0D8E325 /* BaronRuntime */,
 				12C577B8C6F579A542E8DA1F /* KeyboardShortcuts */,
 			);
 			productName = Baron;
@@ -164,8 +173,10 @@
 			files = (
 				703E82513BD766B016A24308 /* AppDelegate.swift in Sources */,
 				059DFA27AB6AB948416A5AD3 /* DebugPanel.swift in Sources */,
+				5040303511BFE9488BF94075 /* PluginController.swift in Sources */,
 				B347703A02A2EEF74BBD031A /* SelectionCoordinator.swift in Sources */,
 				9F20739737F625552011A462 /* SettingsView.swift in Sources */,
+				B0530ED72B0AD73042408288 /* ToastPresenter.swift in Sources */,
 				EB6FE8301B1303FA17555BA9 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -380,6 +391,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4CEBFDAB24C9AD6BC3B1B10C /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
 			productName = KeyboardShortcuts;
+		};
+		4489929408D12077D0D8E325 /* BaronRuntime */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BaronRuntime;
 		};
 		8B2BF3EDF94221E81C377655 /* BaronPlatform */ = {
 			isa = XCSwiftPackageProductDependency;

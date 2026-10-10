@@ -1,13 +1,35 @@
 import CoreGraphics
 
+/// The app a selection is in.
+public struct SelectionApp: Equatable, Sendable {
+    public var bundleIdentifier: String?
+    public var name: String
+    public var processID: Int32
+
+    public init(bundleIdentifier: String?, name: String, processID: Int32) {
+        self.bundleIdentifier = bundleIdentifier
+        self.name = name
+        self.processID = processID
+    }
+}
+
 /// The app and focused element at the moment of a trigger, read once and shared by every stage.
 @MainActor
 public protocol SelectionSource {
     var bundleIdentifier: String? { get }
+    /// The source app; defaults to just its bundle ID.
+    var selectionApp: SelectionApp { get }
+    /// Whether a result could replace the selection.
+    var isEditable: Bool { get }
     func gateInput(for trigger: Trigger) -> GateInput
     func retrievalChain() -> RetrievalChain
     /// Where the selection sits on screen (top-left origin), when the app can say.
     func selectionBounds(after step: RetrievalStep) -> CGRect?
+}
+
+extension SelectionSource {
+    public var selectionApp: SelectionApp { SelectionApp(bundleIdentifier: bundleIdentifier, name: bundleIdentifier ?? "", processID: 0) }
+    public var isEditable: Bool { false }
 }
 
 /// A selection that made it through: what to show and where.
@@ -17,6 +39,8 @@ public struct SelectionRun: Equatable, Sendable {
     public var step: RetrievalStep
     public var bounds: CGRect?
     public var items: [BarItem]
+    public var app = SelectionApp(bundleIdentifier: nil, name: "", processID: 0)
+    public var editable = false
 }
 
 public enum PipelineOutcome: Equatable, Sendable {
@@ -34,6 +58,8 @@ public final class SelectionPipeline {
     public var gate: Gate
     public var retrievalRules: AppRetrievalRules
     public var actions: BuiltInActions
+    /// Plugin actions, shown after the built-in ones.
+    public var plugins = PluginActionCatalog()
     public var isPaused = false
 
     private var generation = 0
@@ -59,13 +85,18 @@ public final class SelectionPipeline {
         }
         guard mine == generation else { return .superseded }
 
-        let items = actions.items(for: result.text)
+        let app = source.selectionApp
+        let editable = source.isEditable
+        let input = WhenInput(text: result.text, bundleIdentifier: app.bundleIdentifier, editable: editable)
+        let items = actions.items(for: result.text) + plugins.items(for: input)
         return .show(SelectionRun(
             trigger: trigger,
             text: result.text,
             step: result.step,
             bounds: source.selectionBounds(after: result.step),
-            items: items
+            items: items,
+            app: app,
+            editable: editable
         ))
     }
 

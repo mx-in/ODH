@@ -32,8 +32,8 @@
     - [x] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch (e21fc40)
     - [x] Serve `http.fetch` with its time and size limits (permission checks come in task-006) (87ccbca)
 - [ ] Bar integration
-    - [ ] **▶ IN PROGRESS** Load plugins from the development folder (installing comes in task-008)
-    - [ ] Show plugin actions whose `when` rules match, after the built-in ones
+    - [x] Load plugins from the development folder (installing comes in task-008) (739a2bc)
+    - [ ] **▶ IN PROGRESS** Show plugin actions whose `when` rules match, after the built-in ones
     - [ ] Dispatch a click with `text`, `source`, `editable`, `app` and `platform`
     - [ ] Carry out action results: copy, replace, toast, open URL
     - [ ] Show a plugin's error as a toast naming the plugin

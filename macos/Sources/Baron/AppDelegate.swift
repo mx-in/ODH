@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let debugPanel = DebugPanelController()
     private let debugItem = NSMenuItem()
     private var subscriptions: Set<AnyCancellable> = []
+    private lazy var plugins = PluginController(presenter: ToastPresenter())
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -32,6 +33,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self, self.debugPanel.isVisible else { return }
             Task { await self.debugPanel.store.record(trigger: trigger, outcome: outcome, source: source) }
         }
+        plugins.onCatalogChange = { [weak self] in self?.coordinator.pipeline.plugins = $0 }
+        Task { await plugins.reload() }
         coordinator.start()
         // `open build/Baron.app --args --debug-panel` starts with the panel showing.
         if CommandLine.arguments.contains("--debug-panel") { debugPanel.toggle() }
@@ -57,6 +60,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(pauseItem)
         let settings = menu.addItem(withTitle: "Settings…", action: #selector(openSettings), keyEquivalent: ",")
         settings.target = self
+        let reloadPlugins = menu.addItem(withTitle: "Reload Plugins", action: #selector(reloadPlugins), keyEquivalent: "")
+        reloadPlugins.target = self
+        let pluginFolder = menu.addItem(withTitle: "Open Plugin Folder", action: #selector(openPluginFolder), keyEquivalent: "")
+        pluginFolder.target = self
         debugItem.title = "Show Debug Panel"
         debugItem.target = self
         debugItem.action = #selector(toggleDebugPanel)
@@ -94,6 +101,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleDebugPanel() {
         debugPanel.toggle()
+    }
+
+    @objc private func reloadPlugins() {
+        Task { await plugins.reload() }
+    }
+
+    @objc private func openPluginFolder() {
+        plugins.openFolder()
     }
 
     @objc private func openSettings() {

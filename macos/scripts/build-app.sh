@@ -32,6 +32,10 @@ rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp Resources/Info.plist "$app/Contents/Info.plist"
 cp "$bin/Baron" "$app/Contents/MacOS/Baron"
+# SwiftPM resource bundles, such as BaronRuntime's plugin prelude.
+for bundle in "$bin"/*.bundle; do
+    [ -d "$bundle" ] && cp -R "$bundle" "$app/Contents/Resources/"
+done
 cp "$bin/baron-probe" "$out/baron-probe"
 
 codesign --force --options runtime --timestamp=none --sign "$identity" --identifier org.odh.baron.probe "$out/baron-probe"

@@ -7,7 +7,7 @@ import Foundation
 // baron-uitest: drives real apps to measure Accessibility coverage and check Baron's bar.
 //
 //   baron-uitest [--only TextEdit,Safari] [--modes word,sentence,paragraph] [--no-copy] [--out dir]
-//   baron-uitest --plugins | --permissions | --settings | --context | --install <packages> | --bar-shows <action>   (scripts/uitest-*.sh)
+//   baron-uitest --plugins | --permissions | --settings | --context | --webviews | --install <packages> | --bar-shows <action>   (scripts/uitest-*.sh)
 //
 // For each app: open a fixture, then for each mode select a word (double-click),
 // the first sentence (drag) and the paragraph (triple-click) with real mouse events,
@@ -22,6 +22,7 @@ struct Options {
     var install: URL?
     var barShows: String?
     var context = false
+    var webviews = false
     var only: Set<String>?
     var copy = true
     var modes = CoverageFixture.Mode.allCases
@@ -37,6 +38,7 @@ struct Options {
             case "--install": install = URL(fileURLWithPath: rest.popFirst() ?? "")
             case "--bar-shows": barShows = rest.popFirst()
             case "--context": context = true
+            case "--webviews": webviews = true
             case "--only": only = Set((rest.popFirst() ?? "").split(separator: ",").map { $0.lowercased() })
             case "--no-copy": copy = false
             case "--modes": modes = (rest.popFirst() ?? "").split(separator: ",").compactMap { CoverageFixture.Mode(rawValue: String($0)) }
@@ -227,16 +229,16 @@ func main() async {
         exit(1)
     }
 
-    if options.plugins || options.permissions || options.settings || options.install != nil || options.barShows != nil || options.context {
+    if options.plugins || options.permissions || options.settings || options.install != nil || options.barShows != nil || options.context || options.webviews {
         let previousApp = NSWorkspace.shared.frontmostApplication
         let clipboard = PasteboardBackup()
-        let checks = options.context ? await runContextChecks() : options.barShows != nil ? await runBarShowsChecks(action: options.barShows!) : options.install != nil ? await runInstallChecks(packages: options.install!) : options.settings ? await runSettingsChecks() : options.permissions ? await runPermissionChecks() : await runPluginChecks()
+        let checks = options.webviews ? await runWebViewChecks() : options.context ? await runContextChecks() : options.barShows != nil ? await runBarShowsChecks(action: options.barShows!) : options.install != nil ? await runInstallChecks(packages: options.install!) : options.settings ? await runSettingsChecks() : options.permissions ? await runPermissionChecks() : await runPluginChecks()
         clipboard.restore()
         previousApp?.activate()
-        var markdown = "# baron-uitest \(options.context ? "context" : options.barShows != nil ? "author" : options.install != nil ? "install" : options.settings ? "settings" : options.permissions ? "permission" : "plugin") checks\n\n| Check | Result | Detail |\n| --- | --- | --- |\n"
+        var markdown = "# baron-uitest \(options.webviews ? "web view" : options.context ? "context" : options.barShows != nil ? "author" : options.install != nil ? "install" : options.settings ? "settings" : options.permissions ? "permission" : "plugin") checks\n\n| Check | Result | Detail |\n| --- | --- | --- |\n"
         markdown += checks.map { "| \($0.name) | \($0.passed ? "pass" : "FAIL") | \($0.detail.replacingOccurrences(of: "|", with: "\\|")) |" }.joined(separator: "\n") + "\n"
         try? FileManager.default.createDirectory(at: options.out, withIntermediateDirectories: true)
-        try? markdown.write(to: options.out.appendingPathComponent(options.context ? "context.md" : options.barShows != nil ? "author.md" : options.install != nil ? "install.md" : options.settings ? "settings.md" : options.permissions ? "permissions.md" : "plugins.md"), atomically: true, encoding: .utf8)
+        try? markdown.write(to: options.out.appendingPathComponent(options.webviews ? "webviews.md" : options.context ? "context.md" : options.barShows != nil ? "author.md" : options.install != nil ? "install.md" : options.settings ? "settings.md" : options.permissions ? "permissions.md" : "plugins.md"), atomically: true, encoding: .utf8)
         print(markdown)
         exit(checks.allSatisfy(\.passed) && !checks.isEmpty ? 0 : 1)
     }

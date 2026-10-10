@@ -98,15 +98,15 @@
 - [ ] Lifecycle
     - [x] Keep a closed web view loaded for 30 s (75333ef)
 - [ ] Settings page
-    - [x] Show a plugin's `settingsPage` under its generated preferences
+    - [x] Show a plugin's `settingsPage` under its generated preferences (5be1360)
 - [ ] Tooling
-    - [ ] **▶ IN PROGRESS** Add the `webview` template and example
+    - [x] Add the `webview` template and example (ae79ae8)
 - [ ] Verification
-    - [ ] Check the gate in a UI test; measure first paint (under 150 ms warm, 400 ms cold)
+    - [ ] **⏸ BLOCKED (needs: an unlocked screen)** Check the gate in a UI test; measure first paint (under 150 ms warm, 400 ms cold)
 - [ ] Design UML
-    - [ ] Add as-built UML to the design docs this task built or changed
+    - [ ] **▶ IN PROGRESS** Add as-built UML to the design docs this task built or changed
 
-**Notes for the next agent:** Started while tasks 008 and 009 each wait on one UI run that needs an unlocked screen.
+**Notes for the next agent:** Started while tasks 008 and 009 each wait on one UI run that needs an unlocked screen. The web view gate's UI test is written (`macos/scripts/uitest-webviews.sh`, baron-uitest `--webviews`, using examples/panel from the development folder; it needs the network for Youdao) but couldn't run without a screen. Checked headless instead, in BaronWebTests with a real WKWebView: pages served with the CSP (inline scripts, undeclared images and fetch blocked), window.baron calls carrying the plugin from the origin, navigation kept on the origin, colours for dark mode, warm reload, and load-to-first-script of about 250 ms cold and 55 ms warm (a stand-in for first paint, which needs the UI test). Dark mode in the panel follows the system through prefers-color-scheme; the UI test doesn't switch the system appearance.
 
 <!--
 Template while a task is active (replace the line above):

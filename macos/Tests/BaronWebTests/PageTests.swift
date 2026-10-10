@@ -83,6 +83,29 @@ struct PageTests {
         #expect(await waitFor("document.title === 'owl' ? 'owl' : ''", in: view) == "owl")
     }
 
+    /// Time until the page's script runs, a stand-in for first paint (no window here): the design's targets are
+    /// 400 ms cold and 150 ms warm, from click to first paint.
+    @Test func loadsWithinTheFirstPaintTargets() async throws {
+        try write("views/page.html", #"<!doctype html><link rel="stylesheet" href="page.css"><p>fox</p><script src="page.js"></script>"#)
+        try write("views/page.css", "p { color: var(--baron-text); }")
+        try write("views/page.js", #"document.title = "shown " + baron.view.data.n;"#)
+        let recorder = Recorder()
+        let pages = views(recorder)
+        let clock = ContinuousClock()
+        var started = clock.now
+        let view = pages.make(pluginID: "org.example.web", path: "views/page.html",
+                              config: PageConfig(environment: Self.environment, preferences: .object([:]), view: "view-1", data: .object(["n": .number(1)])))
+        _ = await waitFor("document.title === 'shown 1' ? 'y' : ''", in: view)
+        let cold = clock.now - started
+        started = clock.now
+        pages.reload(view, path: "views/page.html", config: PageConfig(environment: Self.environment, preferences: .object([:]), view: "view-2", data: .object(["n": .number(2)])))
+        _ = await waitFor("document.title === 'shown 2' ? 'y' : ''", in: view)
+        let warm = clock.now - started
+        print("page load: cold \(cold), warm \(warm)")
+        #expect(cold < .milliseconds(400), "cold \(cold)")
+        #expect(warm < .milliseconds(150), "warm \(warm)")
+    }
+
     @Test func callsCarryThePluginFromTheOrigin() async throws {
         try write("views/page.html", #"<!doctype html><script src="page.js"></script>"#)
         try write("views/page.js", #"baron.storage.get("k").then((v) => { document.title = "got " + v; });"#)

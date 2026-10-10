@@ -45,6 +45,7 @@ export async function createHarness(options: HarnessOptions = {}) {
     const engine = (options.engine ?? process.env["BARON_ENGINE"] ?? "jsc") as Engine;
     const runner: EngineRunner = engine === "quickjs" ? new (await import("./runners/quickjs.ts")).QuickJSRunner() : new JSCRunner();
     const host = new MockHost(manifest);
+    host.packageFolder = folder;
     const waiting = new Map<number, { resolve(value: unknown): void; reject(error: unknown): void }>();
     let nextID = 1;
 
@@ -97,6 +98,21 @@ export async function createHarness(options: HarnessOptions = {}) {
         runOptions: (name: string, overrides: Preferences = {}) => dispatch("options", name, { preferences: overrides }),
         runButton: (name: string, overrides: Preferences = {}) => dispatch("button", name, { preferences: overrides }),
         runLifecycle: (name: "onInstall" | "onUpdate", args: unknown[] = []) => dispatch("lifecycle", name, { args }),
+        /** Pages the plugin opened with `host.ui.openWebView`; this side stands in for the page and the user. */
+        views: {
+            get opened() { return host.views; },
+            /** A message from the view's page, as `baron.view.postMessage` sends it; the page's click counts as a user action. */
+            send(view: string, message: unknown) {
+                host.userAction = true;
+                runner.deliver(JSON.stringify({ v: 1, kind: "event", view, name: "message", payload: encodeValue(message) }));
+            },
+            /** The user closes the panel. */
+            close(view: string) {
+                const opened = host.views.find((v) => v.id === view);
+                if (opened) opened.open = false;
+                runner.deliver(JSON.stringify({ v: 1, kind: "event", view, name: "closed", payload: null }));
+            },
+        },
         close: () => runner.close(),
     };
 }

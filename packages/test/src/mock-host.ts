@@ -1,6 +1,8 @@
 /**
  * Serves a plugin's host calls in memory, checking permissions as Baron does, and records what the plugin did.
  */
+import { existsSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { bytesToBase64, networkPermissionCovers, networkPermissionFor, type CallEnvelope, type EnvelopeError, type PluginManifest, type ResultEnvelope } from "@baron/api";
 
 export interface MockResponse {
@@ -25,6 +27,8 @@ export class MockHost {
     readonly openedURLs: string[] = [];
     /** Pages the plugin opened with `host.ui.openWebView`, with the messages it sent each one. */
     readonly views: Array<{ id: string; path: string; data: unknown; messages: unknown[]; open: boolean }> = [];
+    /** The plugin's folder, when known: openWebView then checks the page is a file in it, as Baron does. */
+    packageFolder: string | undefined;
     readonly replacements: string[] = [];
     readonly logs: Array<{ level: string; text: string }> = [];
     clipboard = "";
@@ -128,7 +132,8 @@ export class MockHost {
             case "ui.openSettings": return null;
             case "ui.openWebView": {
                 const path = key.replace(/^\.\//, "");
-                if (!path || path.startsWith("/") || path.includes("://") || path.split("/").includes("..")) {
+                const missing = this.packageFolder !== undefined && !(existsSync(join(this.packageFolder, path)) && statSync(join(this.packageFolder, path)).isFile());
+                if (!path || path.startsWith("/") || path.includes("://") || path.split("/").includes("..") || missing) {
                     throw new Refusal("not_found", `${key} isn't a file in the plugin's package`, { path: "/0" });
                 }
                 const id = `view-${this.views.length + 1}`;

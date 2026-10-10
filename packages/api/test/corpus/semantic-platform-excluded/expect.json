@@ -1,0 +1,6 @@
+{
+  "description": "Baron refuses a plugin that excludes its platform",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/platforms"
+}

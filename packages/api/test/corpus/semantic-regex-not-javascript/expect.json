@@ -1,0 +1,6 @@
+{
+  "description": "regex must compile as JavaScript",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/actions/0/when/regex"
+}

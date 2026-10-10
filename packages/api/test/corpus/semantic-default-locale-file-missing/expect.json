@@ -1,0 +1,6 @@
+{
+  "description": "the default locale has a file",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/defaultLocale"
+}

@@ -1,0 +1,6 @@
+{
+  "description": "files the manifest names exist",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/icon"
+}

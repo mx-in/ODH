@@ -1,0 +1,6 @@
+{
+  "description": "the settings page exists",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/settingsPage"
+}

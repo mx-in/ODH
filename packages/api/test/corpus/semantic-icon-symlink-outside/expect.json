@@ -1,0 +1,6 @@
+{
+  "description": "files can't be symlinks out of the package",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/icon"
+}

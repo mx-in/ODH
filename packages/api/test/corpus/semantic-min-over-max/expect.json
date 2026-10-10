@@ -1,0 +1,6 @@
+{
+  "description": "minLength is at most maxLength",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/actions/0/when/minLength"
+}

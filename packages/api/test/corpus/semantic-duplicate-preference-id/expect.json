@@ -1,0 +1,6 @@
+{
+  "description": "preference ids are unique",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/preferences/1/id"
+}

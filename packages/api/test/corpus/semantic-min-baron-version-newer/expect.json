@@ -1,0 +1,6 @@
+{
+  "description": "Baron refuses a plugin needing a newer Baron",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/minBaronVersion"
+}

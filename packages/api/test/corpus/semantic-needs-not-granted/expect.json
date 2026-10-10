@@ -1,0 +1,6 @@
+{
+  "description": "each need is granted as a context permission",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/actions/0/needs/0"
+}

@@ -1,0 +1,6 @@
+{
+  "description": "%key% strings exist in the default locale",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/actions/0/title"
+}

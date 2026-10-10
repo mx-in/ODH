@@ -1,0 +1,6 @@
+{
+  "description": "%key% strings need a defaultLocale",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/defaultLocale"
+}

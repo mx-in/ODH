@@ -1,0 +1,6 @@
+{
+  "description": "a default is one of the fixed options",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/preferences/0/default"
+}

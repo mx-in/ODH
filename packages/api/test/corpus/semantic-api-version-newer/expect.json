@@ -1,0 +1,6 @@
+{
+  "description": "Baron refuses an apiVersion newer than its own",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/apiVersion"
+}

@@ -1,0 +1,6 @@
+{
+  "description": "a number's default is within min and max",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/preferences/0/default"
+}

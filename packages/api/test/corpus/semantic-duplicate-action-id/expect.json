@@ -1,0 +1,6 @@
+{
+  "description": "action ids are unique",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/actions/1/id"
+}

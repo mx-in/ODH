@@ -1,0 +1,6 @@
+{
+  "description": "preference patterns follow the same rule",
+  "valid": false,
+  "rejectedBy": "semantic",
+  "pointer": "/preferences/0/pattern"
+}

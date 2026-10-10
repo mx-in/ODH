@@ -74,7 +74,7 @@ public struct NetworkPattern: Hashable, Sendable, CustomStringConvertible {
     }
 
     /// Loopback entries may use plain http without writing the scheme out.
-    var isLoopback: Bool { NetworkAddress.isLoopback(host) }
+    public var isLoopback: Bool { NetworkAddress.isLoopback(host) }
 
     /// Whether requests to `url` fall under this pattern: https on 443 unless the pattern names a scheme or port;
     /// `*.` covers subdomains only; an IP literal in a private, link-local or loopback range only matches an exact entry.

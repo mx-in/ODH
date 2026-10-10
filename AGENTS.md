@@ -40,8 +40,8 @@
 - [x] Localisation (BaronCore)
     - [x] Resolve `%key%` strings through the preferred languages, then `defaultLocale`, then the key (f12ffb3)
 - [ ] ODH manifest
-    - [ ] **▶ IN PROGRESS** Convert ODH's `_locales` into `plugins/odh/locales/` with a script and a test that keeps them in sync
-    - [ ] Write `plugins/odh/manifest.json` with the action, permissions and every preference
+    - [x] Convert ODH's `_locales` into `plugins/odh/locales/` with a script and a test that keeps them in sync (ae61d3a)
+    - [ ] **▶ IN PROGRESS** Write `plugins/odh/manifest.json` with the action, permissions and every preference
 - [ ] Verification
     - [ ] Check the gate
 - [ ] Design UML

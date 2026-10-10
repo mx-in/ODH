@@ -1,0 +1,369 @@
+{
+    "$schema": "../../packages/api/schema/manifest-1.json",
+    "id": "org.odh.dictionary",
+    "name": "%appName%",
+    "description": "%appDesc%",
+    "version": "1.0.1",
+    "apiVersion": 1,
+    "author": "ODH contributors",
+    "homepage": "https://github.com/ninja33/ODH",
+    "license": "MIT",
+    "defaultLocale": "en",
+    "main": "dist/main.js",
+    "permissions": [
+        "context.sentence",
+        "context.paragraph",
+        "context.page",
+        "context.window",
+        "network:dict.youdao.com",
+        "network:dictionary.cambridge.org",
+        "network:fanyi.baidu.com",
+        "network:*.zdic.net",
+        "network:*.frdic.com",
+        "network:www.godic.net",
+        "network:www.esdict.cn",
+        "network:www.collinsdictionary.com",
+        "network:www.urbandictionary.com",
+        "network:www.spanishdict.com",
+        "network:w.qianyix.com",
+        "network:mall.baicizhan.com",
+        "network:baicizhan.qiniucdn.com",
+        "network:cn.bing.com",
+        "network:127.0.0.1:8765",
+        "code.dynamic"
+    ],
+    "optionalPermissions": [
+        "network:*"
+    ],
+    "preferences": [
+        {
+            "id": "general",
+            "type": "heading",
+            "title": "%grpGeneral%"
+        },
+        {
+            "id": "maxcontext",
+            "type": "number",
+            "title": "%lblMaxContext%",
+            "min": 0,
+            "max": 10,
+            "step": 1,
+            "default": 1
+        },
+        {
+            "id": "dictionary",
+            "type": "heading",
+            "title": "%grpDictionary%"
+        },
+        {
+            "id": "dictSelected",
+            "type": "dropdown",
+            "title": "%lblCurrentDict%",
+            "optionsFrom": "dictionaries",
+            "dependsOn": [
+                "sysscripts",
+                "udfscripts"
+            ]
+        },
+        {
+            "id": "monolingual",
+            "type": "dropdown",
+            "title": "%lblLingualType%",
+            "options": [
+                {
+                    "value": "0",
+                    "title": "%selBilingual%"
+                },
+                {
+                    "value": "1",
+                    "title": "%selMonolingual%"
+                }
+            ],
+            "default": "0"
+        },
+        {
+            "id": "maxexample",
+            "type": "number",
+            "title": "%lblMaxExample%",
+            "min": 0,
+            "max": 20,
+            "step": 1,
+            "default": 2
+        },
+        {
+            "id": "preferredaudio",
+            "type": "dropdown",
+            "title": "%lblAudioPref%",
+            "options": [
+                {
+                    "value": "0",
+                    "title": "%lblAudioPref0%"
+                },
+                {
+                    "value": "1",
+                    "title": "%lblAudioPref1%"
+                }
+            ],
+            "default": "0"
+        },
+        {
+            "id": "sysscripts",
+            "type": "checklist",
+            "title": "%grpSysScripts%",
+            "options": [
+                {
+                    "value": "builtin_encn_Collins",
+                    "title": "%builtin_encn_Collins%"
+                },
+                {
+                    "value": "cncn_Zdic",
+                    "title": "%cncn_Zdic%"
+                },
+                {
+                    "value": "decn_Eudict",
+                    "title": "%decn_Eudict%"
+                },
+                {
+                    "value": "encn_Baicizhan",
+                    "title": "%encn_Baicizhan%"
+                },
+                {
+                    "value": "encn_Cambridge",
+                    "title": "%encn_Cambridge%"
+                },
+                {
+                    "value": "encn_Cambridge_tc",
+                    "title": "%encn_Cambridge_tc%"
+                },
+                {
+                    "value": "encn_Collins",
+                    "title": "%encn_Collins%"
+                },
+                {
+                    "value": "encn_Oxford",
+                    "title": "%encn_Oxford%"
+                },
+                {
+                    "value": "encn_Youdao",
+                    "title": "%encn_Youdao%"
+                },
+                {
+                    "value": "enen_Collins",
+                    "title": "%enen_Collins%"
+                },
+                {
+                    "value": "enen_LDOCE6MDX",
+                    "title": "%enen_LDOCE6MDX%"
+                },
+                {
+                    "value": "enen_UrbanDict",
+                    "title": "%enen_UrbanDict%"
+                },
+                {
+                    "value": "enfr_Cambridge",
+                    "title": "%enfr_Cambridge%"
+                },
+                {
+                    "value": "enfr_Collins",
+                    "title": "%enfr_Collins%"
+                },
+                {
+                    "value": "escn_Eudict",
+                    "title": "%escn_Eudict%"
+                },
+                {
+                    "value": "esen_Spanishdict",
+                    "title": "%esen_Spanishdict%"
+                },
+                {
+                    "value": "frcn_Eudict",
+                    "title": "%frcn_Eudict%"
+                },
+                {
+                    "value": "frcn_Youdao",
+                    "title": "%frcn_Youdao%"
+                },
+                {
+                    "value": "fren_Cambridge",
+                    "title": "%fren_Cambridge%"
+                },
+                {
+                    "value": "fren_Collins",
+                    "title": "%fren_Collins%"
+                },
+                {
+                    "value": "general_Makenotes",
+                    "title": "%general_Makenotes%"
+                },
+                {
+                    "value": "rucn_Qianyi",
+                    "title": "%rucn_Qianyi%"
+                }
+            ],
+            "default": [
+                "builtin_encn_Collins",
+                "encn_Collins",
+                "encn_Cambridge",
+                "encn_Oxford",
+                "fren_Cambridge",
+                "esen_Spanishdict",
+                "decn_Eudict",
+                "escn_Eudict",
+                "frcn_Eudict"
+            ]
+        },
+        {
+            "id": "udfscripts",
+            "type": "list",
+            "title": "%grpUdfScripts%",
+            "itemPattern": "^https://",
+            "itemPlaceholder": "%prefUdfScriptsPlaceholder%",
+            "maxItems": 20
+        },
+        {
+            "id": "anki",
+            "type": "heading",
+            "title": "%grpAnki%"
+        },
+        {
+            "id": "services",
+            "type": "checkbox",
+            "title": "%lblServices%",
+            "default": false
+        },
+        {
+            "id": "ankiconnecturl",
+            "type": "text",
+            "title": "%lblAnkiconnecturl%",
+            "default": "http://127.0.0.1:8765",
+            "pattern": "^https?://"
+        },
+        {
+            "id": "testAnki",
+            "type": "button",
+            "title": "",
+            "label": "%prefTestConnection%",
+            "run": "testAnki"
+        },
+        {
+            "id": "deckname",
+            "type": "dropdown",
+            "title": "%lblDeckname%",
+            "optionsFrom": "decks",
+            "dependsOn": [
+                "ankiconnecturl"
+            ]
+        },
+        {
+            "id": "typename",
+            "type": "dropdown",
+            "title": "%lblTypename%",
+            "optionsFrom": "noteTypes",
+            "dependsOn": [
+                "ankiconnecturl"
+            ]
+        },
+        {
+            "id": "expression",
+            "type": "dropdown",
+            "title": "%lblExpression%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ],
+            "default": "Front"
+        },
+        {
+            "id": "reading",
+            "type": "dropdown",
+            "title": "%lblReading%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ]
+        },
+        {
+            "id": "extrainfo",
+            "type": "dropdown",
+            "title": "%lblExtrainfo%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ]
+        },
+        {
+            "id": "definition",
+            "type": "dropdown",
+            "title": "%lblDefinition%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ],
+            "default": "Back"
+        },
+        {
+            "id": "definitions",
+            "type": "dropdown",
+            "title": "%lblDefinitions%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ]
+        },
+        {
+            "id": "sentence",
+            "type": "dropdown",
+            "title": "%lblSentence%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ]
+        },
+        {
+            "id": "url",
+            "type": "dropdown",
+            "title": "%lblUrl%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ]
+        },
+        {
+            "id": "audio",
+            "type": "dropdown",
+            "title": "%lblAudio%",
+            "optionsFrom": "noteFields",
+            "dependsOn": [
+                "typename"
+            ]
+        },
+        {
+            "id": "tags",
+            "type": "text",
+            "title": "%lblTags%",
+            "default": "ODH"
+        },
+        {
+            "id": "duplicate",
+            "type": "checkbox",
+            "title": "%lblAllowDuplicate%",
+            "default": true
+        }
+    ],
+    "actions": [
+        {
+            "id": "lookup",
+            "title": "%actionLookup%",
+            "when": {
+                "maxLength": 64
+            },
+            "needs": [
+                "sentence",
+                "paragraph",
+                "page",
+                "window"
+            ],
+            "autoRun": "allowed"
+        }
+    ]
+}

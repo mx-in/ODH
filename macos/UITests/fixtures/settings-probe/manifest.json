@@ -1,0 +1,27 @@
+{
+    "id": "org.baron.uitest.settings-probe",
+    "name": "Settings probe",
+    "description": "Shaped like ODH's Anki settings, for baron-uitest --settings.",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "main": "dist/main.js",
+    "permissions": ["network:127.0.0.1:18765", "secrets"],
+    "optionalPermissions": ["network:*"],
+    "preferences": [
+        { "id": "anki", "type": "heading", "title": "Anki" },
+        { "id": "ankiUrl", "type": "text", "title": "AnkiConnect URL", "default": "http://127.0.0.1:18765", "pattern": "^https?://" },
+        { "id": "testAnki", "type": "button", "title": "", "label": "Test connection", "run": "testAnki" },
+        { "id": "deck", "type": "dropdown", "title": "Deck", "optionsFrom": "decks", "dependsOn": ["ankiUrl"], "required": true },
+        { "id": "noteType", "type": "dropdown", "title": "Note type", "optionsFrom": "noteTypes", "dependsOn": ["ankiUrl"], "default": "Basic" },
+        { "id": "fieldExpression", "type": "dropdown", "title": "Expression field", "optionsFrom": "noteFields", "dependsOn": ["noteType"] },
+        { "id": "maxExamples", "type": "number", "title": "Examples", "min": 0, "max": 10, "step": 1, "default": 2 },
+        { "id": "duplicate", "type": "checkbox", "title": "Duplicates", "label": "Allow duplicate cards", "default": false },
+        { "id": "dictionaries", "type": "checklist", "title": "Dictionaries", "options": [{ "value": "collins", "title": "Collins" }, { "value": "cambridge", "title": "Cambridge" }], "default": ["collins"] },
+        { "id": "scripts", "type": "list", "title": "Script URLs", "itemPattern": "^https://", "itemPlaceholder": "https://…", "maxItems": 5 },
+        { "id": "apiKey", "type": "secret", "title": "API key" },
+        { "id": "wordList", "type": "file", "title": "Word list", "extensions": ["txt"] },
+        { "id": "exportFolder", "type": "directory", "title": "Export folder" },
+        { "id": "browser", "type": "app", "title": "Browser" }
+    ],
+    "actions": [{ "id": "probe", "title": "Settings probe" }]
+}

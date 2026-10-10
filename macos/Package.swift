@@ -51,7 +51,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "baron-uitest",
-            dependencies: ["BaronCore", "BaronPlatform", "BaronAutomation"],
+            dependencies: ["BaronCore", "BaronPlatform", "BaronRuntime", "BaronAutomation"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .testTarget(name: "BaronCoreTests", dependencies: ["BaronCore"]),

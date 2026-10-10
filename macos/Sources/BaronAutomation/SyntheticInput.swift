@@ -69,6 +69,20 @@ public enum SyntheticInput {
         pause(0.02)
     }
 
+    /// Types text into the focused field, one character at a time.
+    public static func type(_ text: String) {
+        let source = CGEventSource(stateID: .hidSystemState)
+        for character in text.utf16 {
+            for down in [true, false] {
+                let event = CGEvent(keyboardEventSource: source, virtualKey: 0, keyDown: down)
+                var unit = character
+                event?.keyboardSetUnicodeString(stringLength: 1, unicodeString: &unit)
+                event?.post(tap: .cghidEventTap)
+            }
+            pause(0.01)
+        }
+    }
+
     public static func pause(_ seconds: TimeInterval) {
         Thread.sleep(forTimeInterval: seconds)
     }

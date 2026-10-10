@@ -79,19 +79,19 @@
 **Task:** task-010-web-views: plugin pages in a result panel (gate: a sample plugin opens a result panel next to the selection, sized to its content; images and audio load from declared hosts and nothing loads from undeclared ones; `baron.*` calls from the page obey the plugin's permissions; messages flow both ways; the panel closes and pins as designed and follows dark mode.)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [07 Web views](docs/design/plugin-platform/07-web-views.md).
 
-- [ ] **▶ IN PROGRESS** Result panel (UI)
-    - [ ] Show a panel next to the selection that never takes focus from the source app, with Baron's header: icon, name, pin, close
+- [ ] Result panel (UI)
+    - [ ] **▶ IN PROGRESS** Show a panel next to the selection that never takes focus from the source app, with Baron's header: icon, name, pin, close
     - [ ] Close it on an outside click, Escape, an app switch or a new selection unless pinned; one panel at a time
     - [ ] Size it to its content, up to 640 points
 - [ ] Serving pages
-    - [ ] Serve `baron-plugin://<id>/` from the installed package
-    - [ ] Give each plugin a non-persistent data store
-    - [ ] Block navigation to other origins and `window.open`; open links in the browser
-    - [ ] Apply the Content Security Policy, with declared hosts for images and media, and `'unsafe-eval'` only with `code.dynamic`
+    - [x] Serve `baron-plugin://<id>/` from the installed package
+    - [x] Give each plugin a non-persistent data store
+    - [x] Block navigation to other origins and `window.open`; open links in the browser
+    - [x] Apply the Content Security Policy, with declared hosts for images and media, and `'unsafe-eval'` only with `code.dynamic`
 - [ ] Page bridge
-    - [ ] Inject `window.baron` with the host API, taking the plugin's identity from the page's origin
+    - [x] Inject `window.baron` with the host API, taking the plugin's identity from the page's origin
     - [ ] `baron.view`: data, messages, resize and close
-    - [ ] `host.ui.openWebView` and `ViewHandle` on the engine side
+    - [x] `host.ui.openWebView` and `ViewHandle` on the engine side (9d24fb5)
 - [ ] Look and feel
     - [ ] Colour variables, dark mode and locale
     - [ ] Play audio without an extra click

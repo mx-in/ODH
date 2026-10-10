@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "BaronCore", targets: ["BaronCore"]),
         .library(name: "BaronPlatform", targets: ["BaronPlatform"]),
         .library(name: "BaronRuntime", targets: ["BaronRuntime"]),
+        .library(name: "BaronWeb", targets: ["BaronWeb"]),
         .executable(name: "Baron", targets: ["Baron"]),
         .executable(name: "baron-probe", targets: ["baron-probe"]),
         .executable(name: "baron-uitest", targets: ["baron-uitest"]),
@@ -27,6 +28,13 @@ let package = Package(
             dependencies: ["BaronCore"],
             resources: [.copy("Resources/prelude.js")]
         ),
+        // Plugin pages: the baron-plugin:// server, the page bridge and web views (WebKit).
+        .target(
+            name: "BaronWeb",
+            dependencies: ["BaronCore", "BaronRuntime"],
+            resources: [.copy("Resources/page-bridge.js")],
+            swiftSettings: [.swiftLanguageMode(.v5)]
+        ),
         // macOS glue: Accessibility, event monitors, pasteboard, windows.
         .target(
             name: "BaronPlatform",
@@ -35,7 +43,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "Baron",
-            dependencies: ["BaronCore", "BaronPlatform", "BaronRuntime", "KeyboardShortcuts"],
+            dependencies: ["BaronCore", "BaronPlatform", "BaronRuntime", "BaronWeb", "KeyboardShortcuts"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .executableTarget(
@@ -56,5 +64,6 @@ let package = Package(
         ),
         .testTarget(name: "BaronCoreTests", dependencies: ["BaronCore"]),
         .testTarget(name: "BaronRuntimeTests", dependencies: ["BaronRuntime", "BaronCore"]),
+        .testTarget(name: "BaronWebTests", dependencies: ["BaronWeb", "BaronRuntime", "BaronCore"], swiftSettings: [.swiftLanguageMode(.v5)]),
     ]
 )

@@ -17,7 +17,7 @@ final class PluginController {
 
     init(presenter: PluginPresenter) {
         let gate = PermissionGate(grants: grants, actions: actions)
-        let router = HostRouter(services: [LogService(), UIService(presenter: presenter), HTTPService()], gate: gate)
+        let router = HostRouter(services: [LogService(), UIService(presenter: presenter), HTTPService(policy: NetworkPolicy(grants: grants))], gate: gate)
         runtime = PluginRuntime(handler: router)
     }
 

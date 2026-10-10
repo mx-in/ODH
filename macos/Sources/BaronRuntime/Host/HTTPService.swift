@@ -19,11 +19,14 @@ public final class HTTPService: HostService, @unchecked Sendable {
     private var sessions: [String: URLSession] = [:]
     private var requests: [String: Task<JSONValue, Error>] = [:]
     private let redirects = SessionDelegate()
+    private let policy: NetworkPolicy?
 
     /// `configuration` lets tests stub the network; it is copied and made ephemeral and cookie-free.
-    public init(limits: Limits = Limits(), configuration: URLSessionConfiguration = .ephemeral) {
+    /// Without a `policy` every host is allowed (tests of the service itself).
+    public init(limits: Limits = Limits(), configuration: URLSessionConfiguration = .ephemeral, policy: NetworkPolicy? = nil) {
         self.limits = limits
         self.configuration = configuration
+        self.policy = policy
         redirects.maximum = limits.maximumRedirects
     }
 
@@ -57,6 +60,7 @@ public final class HTTPService: HostService, @unchecked Sendable {
         guard let url = URL(string: text), let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme), url.host != nil else {
             throw HostError("invalid_argument", "fetch needs an http or https URL, not \(text)", data: .object(["path": .string("/0")]))
         }
+        if let refusal = await policy?.check(url, for: plugin) { throw refusal }
         let init_ = try arguments.object(1)
         var request = URLRequest(url: url)
         request.httpMethod = init_["method"]?.stringValue?.uppercased() ?? "GET"
@@ -84,8 +88,10 @@ public final class HTTPService: HostService, @unchecked Sendable {
         let session = session(for: plugin)
         let delegate = redirects
         let maximumBody = limits.maximumBody
+        let policy = self.policy
+        let allow: SessionDelegate.RedirectCheck = { url in await policy?.check(url, for: plugin) }
         let task = Task { () throws -> JSONValue in
-            let (body, http) = try await delegate.load(request, in: session, maximumBody: maximumBody)
+            let (body, http) = try await delegate.load(request, in: session, maximumBody: maximumBody, checkRedirect: allow)
             var headers: [String: JSONValue] = [:]
             for (name, value) in http.allHeaderFields {
                 if let name = name as? String { headers[name.lowercased()] = .string("\(value)") }
@@ -119,23 +125,28 @@ public final class HTTPService: HostService, @unchecked Sendable {
 /// The session's delegate: collects each response in chunks, stopping past the size limit, and follows at
 /// most `maximum` redirects per request.
 final class SessionDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    /// Returns an error to refuse a redirect target.
+    typealias RedirectCheck = @Sendable (URL) async -> HostError?
+
     private struct Load {
         var data = Data()
         var redirects = 0
         var maximumBody: Int
         var continuation: CheckedContinuation<(Data, HTTPURLResponse), Error>
         var tooLarge = false
+        var checkRedirect: RedirectCheck
+        var refusal: HostError?
     }
 
     private let lock = NSLock()
     private var loads: [Int: Load] = [:]
     var maximum = 5
 
-    func load(_ request: URLRequest, in session: URLSession, maximumBody: Int) async throws -> (Data, HTTPURLResponse) {
+    func load(_ request: URLRequest, in session: URLSession, maximumBody: Int, checkRedirect: @escaping RedirectCheck = { _ in nil }) async throws -> (Data, HTTPURLResponse) {
         let task = session.dataTask(with: request)
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                lock.withLock { loads[task.taskIdentifier] = Load(maximumBody: maximumBody, continuation: continuation) }
+                lock.withLock { loads[task.taskIdentifier] = Load(maximumBody: maximumBody, continuation: continuation, checkRedirect: checkRedirect) }
                 task.resume()
             }
         } onCancel: {
@@ -168,11 +179,16 @@ final class SessionDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendab
 
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
                     newRequest request: URLRequest) async -> URLRequest? {
-        let count = lock.withLock { () -> Int in
+        let (count, check) = lock.withLock { () -> (Int, RedirectCheck?) in
             loads[task.taskIdentifier]?.redirects += 1
-            return loads[task.taskIdentifier]?.redirects ?? 0
+            return (loads[task.taskIdentifier]?.redirects ?? 0, loads[task.taskIdentifier]?.checkRedirect)
         }
         if count > maximum {
+            task.cancel()
+            return nil
+        }
+        if let url = request.url, let refusal = await check?(url) {
+            lock.withLock { loads[task.taskIdentifier]?.refusal = refusal }
             task.cancel()
             return nil
         }
@@ -181,7 +197,9 @@ final class SessionDelegate: NSObject, URLSessionDataDelegate, @unchecked Sendab
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         guard let load = lock.withLock({ loads.removeValue(forKey: task.taskIdentifier) }) else { return }
-        if load.tooLarge {
+        if let refusal = load.refusal {
+            load.continuation.resume(throwing: refusal)
+        } else if load.tooLarge {
             load.continuation.resume(throwing: HTTPService.tooLarge(load.maximumBody))
         } else if load.redirects > maximum {
             load.continuation.resume(throwing: URLError(.httpTooManyRedirects))

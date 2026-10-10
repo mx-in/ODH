@@ -2,7 +2,59 @@
 
 ## Current task
 
-_No active task._
+**Task:** task-005-runtime: run plugin code from the bar, in-process (gate: a sample plugin with an uppercase action and a `fetch`-based lookup runs from Baron's bar; its tests pass on JavaScriptCore and QuickJS-NG with the same prelude; timers, errors, time limits, idle unload and reload are tested)
+**Started:** 2026-10-10 · **Agent:** Claude (Claude Code) · design: [02](docs/design/plugin-platform/02-runtime.md), [03](docs/design/plugin-platform/03-host-api-and-ipc.md), [09](docs/design/plugin-platform/09-developer-tooling.md) · user: "continue until the runtime task is completed, I'll check then"
+
+- [ ] **▶ IN PROGRESS** Setup
+    - [ ] Fetch a pinned QuickJS-NG `qjs` into `.tools/` with a checksum-verified script
+    - [ ] Write the envelope types and codec in `@baron/api` (shared by prelude, harness and docs)
+- [ ] Prelude (`@baron/runtime`)
+    - [ ] Build call envelopes and match results to calls by `id`
+    - [ ] Build the `host` object over `__baronNative`
+    - [ ] Serve dispatches: find the export, call it, await it, reply with a result or a classified error
+    - [ ] Provide `console`, the timer functions and `queueMicrotask`
+    - [ ] Polyfill `URL` and `URLSearchParams`
+    - [ ] Polyfill `TextEncoder`, `TextDecoder`, `atob`, `btoa` and `structuredClone`
+    - [ ] Polyfill `AbortController` and `AbortSignal`, and cancel a dispatch through its signal
+    - [ ] Provide `fetch`, `Request`, `Response` and `Headers` over `host.http`
+    - [ ] Compile the prelude to one script, copied into the Swift runtime's resources with a sync test
+- [ ] Engine contexts (Swift, new `BaronRuntime` target)
+    - [ ] Create one `JSVirtualMachine` and context per plugin, on its own serial queue
+    - [ ] Expose `__baronNative.send` and deliver envelopes back to the context
+    - [ ] Back the timer functions with native timers on the plugin's queue
+    - [ ] Provide `crypto.getRandomValues`, `crypto.randomUUID` and `crypto.subtle.digest`
+    - [ ] Load the prelude and the bundle within 2 s, and mark a plugin that fails to load as broken
+    - [ ] Enforce each dispatch's time limit and abort its signal
+    - [ ] Disable a plugin stuck in a synchronous loop for 10 s, and one with 3 strikes in 10 minutes
+    - [ ] Unload a context after 60 s idle and load it again on the next need
+- [ ] Host router (Swift)
+    - [ ] Decode envelopes and route `ns.method` to a service, returning the design's error codes
+    - [ ] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch
+    - [ ] Serve `http.fetch` with its time and size limits (permission checks come in task-006)
+- [ ] Bar integration
+    - [ ] Load plugins from the development folder (installing comes in task-008)
+    - [ ] Show plugin actions whose `when` rules match, after the built-in ones
+    - [ ] Dispatch a click with `text`, `source`, `editable`, `app` and `platform`
+    - [ ] Carry out action results: copy, replace, toast, open URL
+    - [ ] Show a plugin's error as a toast naming the plugin
+- [ ] Tooling
+    - [ ] `baron build`: bundle `src/` into one classic script with an inline source map
+    - [ ] `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic`
+    - [ ] `@baron/test`: a mock host with in-memory services
+    - [ ] Run plugin tests on JavaScriptCore through `node:vm`
+    - [ ] Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output
+    - [ ] `baron test --engine jsc|quickjs|all`
+- [ ] Examples
+    - [ ] Write the uppercase action example with tests
+    - [ ] Write the `fetch`-based lookup example with tests
+- [ ] Verification
+    - [ ] Test timers, errors, time limits, idle unload and reload
+    - [ ] Measure load time, dispatch overhead and idle memory against the targets in the design
+    - [ ] Run both examples from the bar in a UI test
+- [ ] Design UML
+    - [ ] Replace the design-level UML in 02, 03 (core) and 09 with diagrams of the code as built
+
+**Notes for the next agent:** QuickJS-NG `qjs` comes from `scripts/fetch-qjs.sh` (pinned v0.17.0, SHA-256 checked) into `.tools/`; the user hadn't answered whether to vendor it, so this is the default.
 
 <!--
 Template while a task is active (replace the line above):

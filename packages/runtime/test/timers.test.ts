@@ -7,7 +7,7 @@ function setup() {
     const armed: Array<[number, number]> = [];
     const cleared: number[] = [];
     const errors: unknown[] = [];
-    const native = { send() {}, setTimer: (id: number, ms: number) => armed.push([id, ms]), clearTimer: (id: number) => cleared.push(id), randomBytes: () => [] };
+    const native = { send() {}, setTimer: (id: number, ms: number) => armed.push([id, ms]), clearTimer: (id: number) => cleared.push(id), randomBytes: () => [], digest: () => "" };
     const timers = new Timers(native, (e) => errors.push(e));
     const globals: Record<string, any> = {};
     timers.install(globals);
@@ -74,7 +74,7 @@ describe("timers", () => {
 describe("console", () => {
     test("sends each line to log at its level", () => {
         const sent: any[] = [];
-        const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [] });
+        const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [], digest: () => "" });
         const console = createConsole(channel);
         console.log("a", 1);
         console.warn({ b: 2 });

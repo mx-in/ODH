@@ -9,7 +9,7 @@ const context = { text: "fox", source: "ax-text", editable: true, app: { id: "a"
 
 function setup(plugin: PluginDefinition | undefined) {
     const sent: any[] = [];
-    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [] });
+    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [], digest: () => "" });
     const dispatcher = new Dispatcher(channel, new Views(), () => plugin);
     const run = async (target: DispatchEnvelope["target"], name: string, extra: Partial<DispatchEnvelope["payload"]> = {}) => {
         await dispatcher.dispatch({ v: 1, kind: "dispatch", id: 7, target, name, payload: { environment, preferences: { deck: "D" }, ...extra } });

@@ -7,7 +7,7 @@ const environment = { apiVersion: 1, baronVersion: "0.1.0", pluginVersion: "1.0.
 
 function setup() {
     const sent: any[] = [];
-    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [] });
+    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [], digest: () => "" });
     const views = new Views();
     const host = createHost(channel, views, { environment, preferences: { deck: "Default" }, signal: new AbortController().signal });
     const answer = (value?: unknown) => channel.receive(JSON.stringify({ v: 1, kind: "result", id: sent.at(-1).id, ok: true, value }));

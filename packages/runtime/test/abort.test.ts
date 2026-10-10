@@ -56,7 +56,7 @@ test("a cancelled dispatch aborts the handler's signal (with the polyfill)", asy
     try {
         let reason: unknown;
         const plugin = definePlugin({ actions: { wait: (_ctx, host) => new Promise((resolve) => host.signal.addEventListener("abort", () => resolve((reason = host.signal.reason, undefined)))) } });
-        const channel = new Channel({ send() {}, setTimer() {}, clearTimer() {}, randomBytes: () => [] });
+        const channel = new Channel({ send() {}, setTimer() {}, clearTimer() {}, randomBytes: () => [], digest: () => "" });
         const dispatcher = new Dispatcher(channel, new Views(), () => plugin);
         const env = { apiVersion: 1, baronVersion: "0", pluginVersion: "1", platform: "macos", locale: "en", appearance: "light", development: false } as const;
         const running = dispatcher.dispatch({ v: 1, kind: "dispatch", id: 1, target: "action", name: "wait", payload: { environment: env, preferences: {}, context: { text: "x", source: "ax-text", editable: false, app: { id: "a", name: "A", pid: 1 }, platform: "macos" } } });

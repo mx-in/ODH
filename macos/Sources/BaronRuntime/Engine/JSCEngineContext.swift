@@ -1,5 +1,7 @@
+import CryptoKit
 import Foundation
 import JavaScriptCore
+import Security
 
 /// One plugin's JavaScript context: its own virtual machine (so objects can't cross plugins and each has its own heap)
 /// and its own serial queue, which every touch of the context goes through. A slow plugin never blocks another, or Baron.
@@ -70,6 +72,10 @@ public final class JSCEngineContext: @unchecked Sendable {
             let clearTimer: @convention(block) (Int) -> Void = { [weak self] id in self?.timers.removeValue(forKey: id)?.cancel() }
             native.setObject(setTimer, forKeyedSubscript: "setTimer" as NSString)
             native.setObject(clearTimer, forKeyedSubscript: "clearTimer" as NSString)
+            let randomBytes: @convention(block) (Int) -> [Int] = { count in Self.randomBytes(count) }
+            let digest: @convention(block) (String, String) -> String = { algorithm, base64 in Self.digest(algorithm, base64) ?? "" }
+            native.setObject(randomBytes, forKeyedSubscript: "randomBytes" as NSString)
+            native.setObject(digest, forKeyedSubscript: "digest" as NSString)
             context.setObject(native, forKeyedSubscript: "__baronNative" as NSString)
         }
     }
@@ -110,6 +116,26 @@ public final class JSCEngineContext: @unchecked Sendable {
             self.context = nil
             self.virtualMachine = nil
         }
+    }
+
+    static func randomBytes(_ count: Int) -> [Int] {
+        var bytes = [UInt8](repeating: 0, count: max(0, min(count, 65536)))
+        guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else { fatalError("SecRandomCopyBytes failed") }
+        return bytes.map(Int.init)
+    }
+
+    /// SHA digests for `crypto.subtle.digest`; nil for an unknown algorithm or bad base64.
+    static func digest(_ algorithm: String, _ base64: String) -> String? {
+        guard let data = Data(base64Encoded: base64) else { return nil }
+        let digest: any Sequence<UInt8>
+        switch algorithm {
+        case "SHA-1": digest = Insecure.SHA1.hash(data: data)
+        case "SHA-256": digest = SHA256.hash(data: data)
+        case "SHA-384": digest = SHA384.hash(data: data)
+        case "SHA-512": digest = SHA512.hash(data: data)
+        default: return nil
+        }
+        return Data(digest).base64EncodedString()
     }
 
     static func describe(_ exception: JSValue) -> String {

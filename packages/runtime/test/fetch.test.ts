@@ -6,7 +6,7 @@ import { URLSearchParams } from "../src/polyfills/url.ts";
 
 function setup() {
     const sent: any[] = [];
-    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [] });
+    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [], digest: () => "" });
     const reply = (value: unknown) => channel.receive(JSON.stringify({ v: 1, kind: "result", id: sent.at(-1).id, ok: true, value }));
     return { fetch: createFetch(channel), sent, reply };
 }

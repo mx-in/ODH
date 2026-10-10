@@ -4,7 +4,7 @@ import { Channel } from "../src/channel.ts";
 
 function setup() {
     const sent: any[] = [];
-    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [] });
+    const channel = new Channel({ send: (json) => sent.push(JSON.parse(json)), setTimer() {}, clearTimer() {}, randomBytes: () => [], digest: () => "" });
     return { channel, sent };
 }
 

@@ -10,6 +10,7 @@ import { Dispatcher } from "./dispatch.ts";
 import { Views } from "./host.ts";
 import type { BaronNative } from "./native.ts";
 import { installAbort } from "./polyfills/abort.ts";
+import { installCrypto } from "./polyfills/crypto.ts";
 import { installEncoding } from "./polyfills/encoding.ts";
 import { installFetch } from "./polyfills/fetch.ts";
 import { installURL } from "./polyfills/url.ts";
@@ -32,6 +33,7 @@ installURL(global);
 installEncoding(global);
 installAbort(global);
 installFetch(global, channel);
+installCrypto(global, native);
 global["console"] = console;
 
 channel.onEnvelope = (envelope) => {

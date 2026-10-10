@@ -15,6 +15,7 @@ export async function createSandbox() {
         setTimer: (id: number, ms: number) => timers.set(id, setTimeout(() => fire(id), ms)),
         clearTimer: (id: number) => clearTimeout(timers.get(id)),
         randomBytes: (count: number) => Array.from(crypto.getRandomValues(new Uint8Array(count))),
+        digest: (algorithm: string, base64: string) => new Bun.CryptoHasher(algorithm.replace("-", "").toLowerCase() as "sha256").update(Buffer.from(base64, "base64")).digest("base64"),
     };
     vm.runInContext(await prelude, context);
     const receive = vm.runInContext("__baronReceive", context) as (json: string) => void;

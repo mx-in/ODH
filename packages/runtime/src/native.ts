@@ -10,6 +10,8 @@ export interface BaronNative {
     clearTimer(id: number): void;
     /** Cryptographically random bytes, synchronously. */
     randomBytes(count: number): number[];
+    /** SHA-1, SHA-256, SHA-384 or SHA-512 of base64 data, as base64. */
+    digest(algorithm: string, base64: string): string;
 }
 
 /** Entry points the host calls. */

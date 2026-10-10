@@ -16,7 +16,7 @@
     - [x] Write `definePlugin` (319f885)
 - [ ] **▶ IN PROGRESS** Manifest JSON Schema
     - [x] Write the schema for the package fields and actions (0d3e736)
-    - [ ] Add the preference types to the schema
+    - [x] Add the preference types to the schema (e9e7e7f)
     - [ ] Test that the schema and the TypeScript types list the same fields
 - [ ] Manifest corpus
     - [ ] Write the valid cases and the cases the schema rejects, each with its expected JSON Pointer

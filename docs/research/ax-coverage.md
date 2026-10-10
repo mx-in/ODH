@@ -69,7 +69,7 @@ Notes on the rows:
 | Pages | ✓ | ✓ | ✓ | All three gestures work by hand (the automated drag and triple-click didn't) |
 | Slack | not checked | | | |
 
-**Crash found by hand:** Baron crashed every time a word was selected in PDF Expert and Alacritty, and sometimes in Preview. All 10 crash reports showed the same abort in `retry()` under the web step; fixed in `3e762ae`. Needs a re-check by hand.
+**Crash found by hand:** Baron crashed every time a word was selected in PDF Expert and Alacritty, and sometimes in Preview. All 10 crash reports showed the same abort in `retry()` under the web step; fixed in `3e762ae`; the user re-checked Alacritty, PDF Expert and Preview on 2026-10-10 with no crash.
 
 ### How to repeat the hand checks
 

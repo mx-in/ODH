@@ -145,6 +145,7 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
     - [ ] AppleScript fallback for the page URL, behind a user setting
     - [ ] Web sentence and paragraph from text markers, joined across the selection
     - [ ] Native-text sentence and paragraph from a ±1,000-character window
+    - [ ] PDF sentence and paragraph from Preview's static-text blocks (gap found in task-001's hand checks)
     - [ ] Apply the caps and the `truncated` flag
     - [ ] Convert offsets to UTF-16
     - [ ] Run in the background within the 200 ms budget; actions wait at most 300 ms more

@@ -5,12 +5,12 @@
 **Task:** task-007-storage-and-settings: plugins keep data, users set options (gate: each store passes its unit tests; a test plugin shaped like ODH renders every preference type and fills its dropdowns from a mock AnkiConnect; list, checklist, button, secret and revoke work in a UI test.)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [05 Storage](docs/design/plugin-platform/05-storage.md), [06 Settings](docs/design/plugin-platform/06-settings.md).
 
-- [ ] **▶ IN PROGRESS** Data folders
-    - [ ] Create each plugin's data and cache folders
-- [ ] Preferences store
-    - [ ] Save and load `preferences.json`, with defaults from the manifest
+- [x] Data folders
+    - [x] Create each plugin's data and cache folders (6538503)
+- [x] Preferences store
+    - [x] Save and load `preferences.json`, with defaults from the manifest (6538503)
 - [ ] Storage
-    - [ ] Store JSON values in SQLite, one actor per plugin
+    - [ ] **▶ IN PROGRESS** Store JSON values in SQLite, one actor per plugin
     - [ ] Enforce the 5 MB quota and 1 MB per value
     - [ ] Serve `host.storage`
 - [ ] Cache

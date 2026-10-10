@@ -11,7 +11,8 @@
     - [x] JS engines for plugins: JavaScriptCore, QuickJS-NG, Hermes, Node/Bun/Deno, WebAssembly
     - [x] Native UI from JS: React reconcilers rendering to SwiftUI/AppKit, declarative schemas, web views
     - [x] Storage and secrets: key-value, cache, Keychain
-    - [ ] **▶ IN PROGRESS** Write the decision and update the design (`docs/research/plugin-runtime.md` and `docs/tec-design.md` done; Claude Docs next)
+    - [x] Write the decision and update the design: `docs/research/plugin-runtime.md`, `docs/tec-design.md`, and the Claude Doc (synced in full, research added as a second tab)
+    - [ ] **▶ IN PROGRESS** User reads the research and answers the plugin-system open questions
     - [ ] Re-plan the rest of task-003 from the updated design
 
 **Notes for the next agent:** no code for task-003 until the user has read the research and the updated Plugin system section (user request 2026-10-10). The implementation checklist is written after that, from the updated design.

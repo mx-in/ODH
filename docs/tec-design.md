@@ -101,7 +101,7 @@ A selection goes through three stages: a trigger fires, a gate rejects non-text 
 **Retrieval chain (first non-empty result wins)**
 
 1. Accessibility, native text: focused app, then its focused element, then `AXSelectedText`. Every AX call gets a 0.5 s messaging timeout, so a hung app cannot freeze us.
-2. Accessibility, web page: `AXSelectedTextMarkerRange`, then `AXStringForTextMarkerRange`. Retry up to 6 times over 300 ms, because Chrome builds its tree lazily.
+2. Accessibility, web page: `AXSelectedTextMarkerRange`, then `AXStringForTextMarkerRange`. Inside a web page, retry up to 6 times over 300 ms, because Chrome builds its tree lazily; elsewhere, try once and move on.
 3. Menu copy: press the app's Edit › Copy menu item through Accessibility. No keystroke is sent, so there is no beep.
 4. Keyboard copy: post ⌘C, then wait up to 300 ms for the clipboard to change.
 
@@ -130,7 +130,7 @@ Context must be read before the user clicks anything. The bar is non-activating,
     - **Bounds:** `AXBoundsForTextMarkerRange`, or in Chromium, which returns none, the frame of the text element under the selection.
 - **Sentence and paragraph in native text:** read `AXSelectedTextRange`, then fetch only about 1,000 characters on each side with `AXStringForRange`. Never read `AXValue` whole, because documents can be megabytes. The paragraph is that slice cut at the nearest line breaks; a selection's trailing line breaks (a triple-click) are ignored when expanding, or the next paragraph would be pulled in. The sentence comes from `NLTokenizer(unit: .sentence)` over the paragraph, which also handles Chinese and Japanese punctuation.
 - **Waking apps that build their tree on demand:** Chrome builds a basic tree once `AXRole` is read on the app element. Electron apps need `AXManualAccessibility = true`. iWork apps (Pages, Numbers, Keynote) expose their document text only after `AXEnhancedUserInterface = true`, even though the call reports an error; Baron sets it for those apps only (see Risks).
-- **Apps without readable text:** VS Code exposes no editor text unless its "screen reader optimized" mode (`editor.accessibilitySupport`) is on, so Baron gets VS Code text through the copy steps, without context. PDFs in Preview expose one `AXStaticText` per text block, so a PDF "paragraph" is whatever block the PDF defines (to be confirmed by hand).
+- **Apps without readable text:** VS Code exposes no editor text unless its "screen reader optimized" mode (`editor.accessibilitySupport`) is on, so Baron gets VS Code text through the copy steps, without context. PDFs in Preview expose one `AXStaticText` per text block; Baron doesn't read context from those blocks yet (planned for task-004).
 - **Copy fallback:** text only. All context fields stay `undefined`, and `source` says `"menu-copy"` or `"key-copy"`.
 
 The paragraph is capped at 4,000 characters and the sentence at 1,000; a `truncated` flag says when a cap was hit. Offsets are UTF-16 code units. That is what `CFRange` uses and what JavaScript string indices use, so plugins can slice without converting.
@@ -168,7 +168,7 @@ interface TextSpan {
 | `editable` | Always present, best effort | Derived from the focused element's role |
 | `window.title` | Present when the app has a focused window | All 9 measured apps |
 | `bounds` | Usually present; the bar falls back to the pointer | All 8 apps passing every field |
-| `sentence`, `paragraph` | **Optional.** Present when Accessibility exposes the text | All 8 apps passing every field; missing in VS Code (default settings) and copy-only apps |
+| `sentence`, `paragraph` | **Optional.** Present when Accessibility exposes the text | All 8 apps passing every field; missing in VS Code (default settings), Preview and copy-only apps |
 | `page` | **Optional.** Present on web pages | Safari, Chrome, Arc, Mail |
 | `window.documentUrl` | **Optional.** Present for document-based apps | TextEdit, Xcode, Terminal, Chrome |
 | `html` | **Optional.** Only when the app put HTML on the clipboard | Not measured yet |

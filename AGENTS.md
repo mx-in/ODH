@@ -79,32 +79,32 @@
 **Task:** task-010-web-views: plugin pages in a result panel (gate: a sample plugin opens a result panel next to the selection, sized to its content; images and audio load from declared hosts and nothing loads from undeclared ones; `baron.*` calls from the page obey the plugin's permissions; messages flow both ways; the panel closes and pins as designed and follows dark mode.)
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [07 Web views](docs/design/plugin-platform/07-web-views.md).
 
-- [ ] Result panel (UI)
-    - [x] Show a panel next to the selection that never takes focus from the source app, with Baron's header: icon, name, pin, close
-    - [x] Close it on an outside click, Escape, an app switch or a new selection unless pinned; one panel at a time
-    - [x] Size it to its content, up to 640 points
-- [ ] Serving pages
+- [x] Result panel (UI)
+    - [x] Show a panel next to the selection that never takes focus from the source app, with Baron's header: icon, name, pin, close (60f6810)
+    - [x] Close it on an outside click, Escape, an app switch or a new selection unless pinned; one panel at a time (60f6810)
+    - [x] Size it to its content, up to 640 points (60f6810)
+- [x] Serving pages
     - [x] Serve `baron-plugin://<id>/` from the installed package (6deb357)
     - [x] Give each plugin a non-persistent data store (6deb357)
     - [x] Block navigation to other origins and `window.open`; open links in the browser (6deb357)
     - [x] Apply the Content Security Policy, with declared hosts for images and media, and `'unsafe-eval'` only with `code.dynamic` (685d772, 6deb357)
-- [ ] Page bridge
+- [x] Page bridge
     - [x] Inject `window.baron` with the host API, taking the plugin's identity from the page's origin (0e7cd9f, 6deb357)
-    - [x] `baron.view`: data, messages, resize and close
+    - [x] `baron.view`: data, messages, resize and close (0e7cd9f, 60f6810)
     - [x] `host.ui.openWebView` and `ViewHandle` on the engine side (9d24fb5)
-- [ ] Look and feel
+- [x] Look and feel
     - [x] Colour variables, dark mode and locale (65c224b)
     - [x] Play audio without an extra click (6deb357)
-- [ ] Lifecycle
+- [x] Lifecycle
     - [x] Keep a closed web view loaded for 30 s (75333ef)
-- [ ] Settings page
+- [x] Settings page
     - [x] Show a plugin's `settingsPage` under its generated preferences (5be1360)
-- [ ] Tooling
+- [x] Tooling
     - [x] Add the `webview` template and example (ae79ae8)
 - [ ] Verification
     - [ ] **⏸ BLOCKED (needs: an unlocked screen)** Check the gate in a UI test; measure first paint (under 150 ms warm, 400 ms cold)
-- [ ] Design UML
-    - [ ] **▶ IN PROGRESS** Add as-built UML to the design docs this task built or changed
+- [x] Design UML
+    - [x] Add as-built UML to the design docs this task built or changed
 
 **Notes for the next agent:** Started while tasks 008 and 009 each wait on one UI run that needs an unlocked screen. The web view gate's UI test is written (`macos/scripts/uitest-webviews.sh`, baron-uitest `--webviews`, using examples/panel from the development folder; it needs the network for Youdao) but couldn't run without a screen. Checked headless instead, in BaronWebTests with a real WKWebView: pages served with the CSP (inline scripts, undeclared images and fetch blocked), window.baron calls carrying the plugin from the origin, navigation kept on the origin, colours for dark mode, warm reload, and load-to-first-script of about 250 ms cold and 55 ms warm (a stand-in for first paint, which needs the UI test). Dark mode in the panel follows the system through prefers-color-scheme; the UI test doesn't switch the system appearance.
 

@@ -22,7 +22,7 @@ They live in this repository under `packages/`, with the ODH plugin under `plugi
 
 | Command | Does |
 | --- | --- |
-| `baron create <name> [--template action\|lookup\|settings]` | Makes a folder with `manifest.json`, `src/main.ts`, a test, `tsconfig.json` and `package.json`; `webview` comes with task-010. Until the packages are on npm, `package.json` links `@baron/*` to this repository with `file:` paths |
+| `baron create <name> [--template action\|lookup\|webview\|settings]` | Makes a folder with `manifest.json`, `src/main.ts`, a test, `tsconfig.json` and `package.json`, and for `webview` a page in `views/`. Until the packages are on npm, `package.json` links `@baron/*` to this repository with `file:` paths |
 | `baron build` | Bundles `src/main.ts` into the manifest's `main` (one classic script, source map inline) through a virtual entry that assigns the default export to `globalThis.__baronPlugin`; validates the manifest; runs the checks below |
 | `baron dev` | Builds on every save and loads the plugin into the running Baron in development mode, streaming its logs and errors to the terminal |
 | `baron test [--engine jsc\|quickjs\|all]` | Builds, then runs the plugin's own `bun test` once per engine with `BARON_ENGINE` set; `all` (the default) runs both and returns the worst exit code |
@@ -70,10 +70,10 @@ test("looks up a word", async () => {
 
 - `action`: transforms the selection (uppercase) and returns `{ type: "replace" }`.
 - `lookup`: fetches a definition and shows a toast.
-- `webview`: opens a result panel page (task-010).
+- `webview`: opens `views/panel.html` in the result panel and answers its messages; `examples/panel` is the fuller example (a Youdao definition with its pronunciation).
 - `settings`: every preference type, including options loaded from the plugin.
 
-Each template is also a maintained example in `examples/`, built and tested in CI.
+Each template is also a maintained example in `examples/`, built and tested in CI. Tests stand in for a plugin's pages through the harness: `h.views.opened` lists the pages it opened with their data and the messages it sent, `h.views.send(view, message)` sends a page's message, and `h.views.close(view)` closes one.
 
 ## UML
 

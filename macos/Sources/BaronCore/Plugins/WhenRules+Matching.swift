@@ -20,7 +20,7 @@ public struct WhenInput: Sendable {
 extension WhenRules {
     /// True when every rule holds; a missing rule doesn't constrain. Checked in Swift before any plugin code runs.
     public func matches(_ input: WhenInput) -> Bool {
-        lengthMatches(input.text) && regexMatches(input.text) && contentMatches(input.text)
+        lengthMatches(input.text) && regexMatches(input.text) && contentMatches(input.text) && appMatches(input) && editableMatches(input)
     }
 
     /// Lengths count UTF-16 code units, like JavaScript's `string.length`.
@@ -52,5 +52,22 @@ final class RegexCache: @unchecked Sendable {
             cache[pattern] = regex
             return regex
         }
+    }
+}
+
+extension WhenRules {
+    /// `apps` holds when the source app is listed for this platform; `excludeApps` when it isn't.
+    /// An unknown app matches no entry.
+    func appMatches(_ input: WhenInput) -> Bool {
+        let listed = { (matches: [AppMatch]) in
+            input.bundleIdentifier.map { id in matches.contains { $0.ids[input.platform] == id } } ?? false
+        }
+        if let apps, !listed(apps) { return false }
+        if let excludeApps, listed(excludeApps) { return false }
+        return true
+    }
+
+    func editableMatches(_ input: WhenInput) -> Bool {
+        editable.map { $0 == input.editable } ?? true
     }
 }

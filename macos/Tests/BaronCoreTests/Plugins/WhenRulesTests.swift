@@ -30,4 +30,32 @@ struct WhenRulesTests {
     @Test func aBrokenPatternNeverMatches() {
         #expect(!WhenRules(regex: "[]").matches(input("fox")))
     }
+
+    @Test func appsListsTheAppsAnActionAppearsIn() {
+        let rules = WhenRules(apps: [AppMatch(ids: [.macos: "com.apple.Safari"]), AppMatch(ids: [.windows: "chrome.exe"])])
+        #expect(rules.matches(input("fox", app: "com.apple.Safari")))
+        #expect(!rules.matches(input("fox", app: "com.google.Chrome")))
+        #expect(!rules.matches(input("fox", app: nil)))
+        #expect(!WhenRules(apps: [AppMatch(ids: [.windows: "com.apple.Safari"])]).matches(input("fox")))
+    }
+
+    @Test func excludeAppsHidesTheAction() {
+        let rules = WhenRules(excludeApps: [AppMatch(ids: [.macos: "com.apple.Terminal"])])
+        #expect(!rules.matches(input("fox", app: "com.apple.Terminal")))
+        #expect(rules.matches(input("fox", app: "com.apple.Safari")))
+        #expect(rules.matches(input("fox", app: nil)))
+    }
+
+    @Test func editableMustMatchWhenGiven() {
+        #expect(WhenRules(editable: true).matches(input("fox", editable: true)))
+        #expect(!WhenRules(editable: true).matches(input("fox", editable: false)))
+        #expect(WhenRules(editable: false).matches(input("fox", editable: false)))
+    }
+
+    @Test func everyRuleMustHold() {
+        let rules = WhenRules(maxLength: 10, contentTypes: [.word], editable: false)
+        #expect(rules.matches(input("fox")))
+        #expect(!rules.matches(input("fox", editable: true)))
+        #expect(!rules.matches(input("two words")))
+    }
 }

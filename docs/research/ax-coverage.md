@@ -60,7 +60,19 @@ Notes on the rows:
 | All apps | SelectedTextKit's ⌘C step stalled ~30 s on a System Events Automation prompt | Fixed: Baron posts ⌘C itself (`bc89053`) |
 | TextEdit and other native apps | A triple-click includes the line break, which pulled in the next paragraph | Fixed (`5b91f5b`) |
 
-## Hand checks
+## Hand checks (done by the user, 2026-10-10)
+
+| App | Bar | Selected text (double-click, drag, triple-click) | Sentence and paragraph | Notes |
+| --- | --- | --- | --- | --- |
+| VS Code | ✓ | ✓ | ✗ empty | Expected: VS Code exposes no editor text by default, so Baron reads it by copying, which gives no context |
+| Preview | ✓ | ✓ | ✗ "—" | Gap: Preview exposes PDF text as static-text blocks; Baron doesn't read context from them yet |
+| Pages | ✓ | ✓ | ✓ | All three gestures work by hand (the automated drag and triple-click didn't) |
+| Slack | not checked | | | |
+
+**Crash found by hand:** Baron crashed every time a word was selected in PDF Expert and Alacritty, and sometimes in Preview. All 10 crash reports showed the same abort in `retry()` under the web step; fixed in `3e762ae`. Needs a re-check by hand.
+
+### How to repeat the hand checks
+
 
 Use the debug panel: `open macos/build/Baron.app --args --debug-panel`, or choose **Show Debug Panel** from Baron's menu-bar icon. For each app, double-click a word, drag across a sentence, and triple-click a paragraph, then note what the panel shows.
 

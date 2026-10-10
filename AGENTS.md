@@ -33,7 +33,10 @@
     - [x] Run the test apps: 8 apps pass every field in all three modes; Pages passes for words
     - [x] Fix what the runs found (bc89053, b54ac9f, 5b91f5b, e79493c, d082f47)
     - [x] Write the table and conclusions in `docs/research/ax-coverage.md`
-    - [ ] **▶ IN PROGRESS** Hand checks by the user: Pages (sentence, paragraph bar), Preview, VS Code, Slack
+    - [x] Hand checks by the user: Pages ✓; VS Code text ✓ via copy, no context (expected); Preview text ✓, no context (gap); Slack not checked
+    - [x] Fix the crash the hand checks found in Alacritty, PDF Expert and Preview (retry() under the web step)
+    - [ ] **▶ IN PROGRESS** User re-checks Alacritty, PDF Expert and Preview with the fixed build
+    - [ ] Read sentence and paragraph from Preview's PDF text blocks (gap found by hand; may move to task-004)
     - [x] Measure time from trigger to bar per app: warm 41–110 ms, first selection in an app 105–204 ms (commits: perf + test, see log)
     - [x] Grade the app Baron detects itself, not the one the test names: matched in all 23 selections
     - [ ] Check the copy fallback with a clipboard manager running

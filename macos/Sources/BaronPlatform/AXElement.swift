@@ -1,11 +1,12 @@
 import ApplicationServices
 import AppKit
 
-/// A thin, typed wrapper around `AXUIElement`.
+/// A thin, typed wrapper around `AXUIElement`. The Accessibility API may be called from any thread, so context is
+/// read off the main thread.
 ///
 /// Every element made through this type carries a messaging timeout, so a hung
 /// target app can stall a read for at most `AXElement.timeout` seconds.
-public struct AXElement {
+public struct AXElement: @unchecked Sendable {
     public static let timeout: Float = 0.5
 
     public let raw: AXUIElement

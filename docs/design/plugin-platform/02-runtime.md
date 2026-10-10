@@ -239,7 +239,7 @@ stateDiagram-v2
 
 ## Gate (task-005 for stage 1, task-011 for stage 2)
 
-- [ ] A sample plugin with an uppercase action and a `fetch`-based lookup runs from Baron's bar (`examples/uppercase` and `examples/lookup` run end to end in Baron's runtime; the bar run, `macos/scripts/uitest-plugins.sh`, is waiting for the user)
+- [x] A sample plugin with an uppercase action and a `fetch`-based lookup runs from Baron's bar (`examples/uppercase`, `examples/lookup`; `macos/scripts/uitest-plugins.sh`)
 - [x] Its tests pass on JavaScriptCore and QuickJS-NG with the same prelude
 - [x] Timers, errors, time limits, idle unload and reload are covered by tests
 - [ ] Stage 2: the same plugin runs in the helper; killing the helper mid-action yields `unavailable` and the next action works

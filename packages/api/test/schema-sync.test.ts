@@ -45,13 +45,14 @@ describe("the schema and the TypeScript types list the same fields", () => {
     test("preference option", () => expect(propertiesOf(schema.$defs.preferenceOption)).toEqual(keys(optionKeys)));
 
     test("preference types", () => {
-        const branches = schema.$defs.preference.allOf;
-        expect(branches.map((b) => b.if.properties.type.const).sort()).toEqual(keys(preferenceKeys));
+        const branches = schema.$defs.preference.allOf as Array<{ if: { properties: { type: { const: string } } }; then: Properties & { oneOf?: Properties[] } }>;
+        const types = [...new Set(branches.map((b) => b.if.properties.type.const))].sort();
+        expect(types).toEqual(keys(preferenceKeys));
         expect(schema.$defs.preference.properties.type.enum.slice().sort()).toEqual(keys(preferenceKeys));
-        for (const branch of branches) {
-            const type = branch.if.properties.type.const as PreferenceType;
-            const then = branch.then as Properties & { oneOf?: Properties[] };
-            expect({ type, keys: propertiesOf(schema.$defs.preference, then, ...(then.oneOf ?? [])) }).toEqual({ type, keys: keys(preferenceKeys[type]) });
+        for (const type of types as PreferenceType[]) {
+            const thens = branches.filter((b) => b.if.properties.type.const === type).map((b) => b.then);
+            const found = propertiesOf(schema.$defs.preference, ...thens, ...thens.flatMap((t) => t.oneOf ?? []));
+            expect({ type, keys: found }).toEqual({ type, keys: keys(preferenceKeys[type]) });
         }
     });
 });

@@ -380,6 +380,28 @@
           },
           "then": {
             "properties": {
+              "default": true,
+              "maxLength": true,
+              "multiline": true,
+              "pattern": true,
+              "placeholder": true,
+              "required": true
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "text"
+              }
+            }
+          },
+          "then": {
+            "properties": {
               "required": {
                 "type": "boolean"
               },
@@ -401,6 +423,27 @@
                 "type": "integer",
                 "minimum": 1
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "number"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": true,
+              "max": true,
+              "min": true,
+              "required": true,
+              "step": true
             }
           }
         },
@@ -449,6 +492,25 @@
           },
           "then": {
             "properties": {
+              "default": true,
+              "label": true,
+              "required": true
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "checkbox"
+              }
+            }
+          },
+          "then": {
+            "properties": {
               "required": {
                 "type": "boolean"
               },
@@ -458,6 +520,27 @@
               "label": {
                 "$ref": "#/$defs/text"
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "dropdown"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": true,
+              "dependsOn": true,
+              "options": true,
+              "optionsFrom": true,
+              "required": true
             }
           }
         },
@@ -513,6 +596,27 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "checklist"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": true,
+              "dependsOn": true,
+              "options": true,
+              "optionsFrom": true,
+              "required": true
+            }
           }
         },
         {
@@ -586,6 +690,27 @@
           },
           "then": {
             "properties": {
+              "default": true,
+              "itemPattern": true,
+              "itemPlaceholder": true,
+              "maxItems": true,
+              "required": true
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "list"
+              }
+            }
+          },
+          "then": {
+            "properties": {
               "required": {
                 "type": "boolean"
               },
@@ -623,12 +748,48 @@
           },
           "then": {
             "properties": {
+              "placeholder": true,
+              "required": true
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "secret"
+              }
+            }
+          },
+          "then": {
+            "properties": {
               "required": {
                 "type": "boolean"
               },
               "placeholder": {
                 "$ref": "#/$defs/text"
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "file"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "extensions": true,
+              "required": true
             }
           }
         },
@@ -673,9 +834,44 @@
           },
           "then": {
             "properties": {
+              "required": true
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "directory"
+              }
+            }
+          },
+          "then": {
+            "properties": {
               "required": {
                 "type": "boolean"
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "app"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "default": true,
+              "required": true
             }
           }
         },
@@ -699,6 +895,24 @@
                 "type": "string",
                 "minLength": 1
               }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "button"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "label": true,
+              "run": true
             }
           }
         },
@@ -744,9 +958,25 @@
           "then": {
             "properties": {}
           }
+        },
+        {
+          "if": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "heading"
+              }
+            }
+          },
+          "then": {
+            "properties": {}
+          }
         }
       ],
-      "unevaluatedProperties": false
+      "unevaluatedProperties": false,
+      "description": "Each type has two branches: the first lists the fields the type allows (it always passes, so unevaluatedProperties only flags fields no type allows); the second checks them. A failing check then can't make its sibling fields look unknown."
     }
   }
 }

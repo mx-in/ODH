@@ -140,3 +140,23 @@ export interface Host {
         error(...values: unknown[]): void;
     };
 }
+
+/** `baron.view` in a page shown in the result panel. Design: docs/design/plugin-platform/07-web-views.md#the-page-bridge */
+export interface PageView {
+    /** The `data` passed to `openWebView`. */
+    readonly data: unknown;
+    /** Sends a message to the plugin's code, which gets it through its `ViewHandle.onMessage`. */
+    postMessage(message: unknown): Promise<void>;
+    /** Messages the plugin's code sent with `ViewHandle.postMessage`. */
+    onMessage(listener: (message: unknown) => void): void;
+    /** Asks for this content height in points; the panel grows up to 640 points, then the page scrolls. */
+    resize(height: number): Promise<void>;
+    close(): Promise<void>;
+}
+
+/** `window.baron` in a plugin page: the host API without clipboard and selection, with the same permissions. */
+export interface PageHost extends Pick<Host, "environment" | "preferences" | "http" | "storage" | "cache" | "secrets" | "text" | "permissions" | "log"> {
+    readonly ui: Pick<Host["ui"], "toast" | "openUrl">;
+    /** Only in the result panel; settings pages have none. */
+    readonly view?: PageView;
+}

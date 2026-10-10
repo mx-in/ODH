@@ -51,8 +51,9 @@ export default [
     {
         ignores: [
             '.agent/**',
-            // Generated: the Baron plugin prelude and build output.
+            // Generated: the Baron plugin prelude, the page bridge and build output.
             'macos/Sources/BaronRuntime/Resources/prelude.js',
+            'macos/Sources/BaronWeb/Resources/page-bridge.js',
             '**/dist/**',
             'macos/.build/**',
             'macos/build/**',

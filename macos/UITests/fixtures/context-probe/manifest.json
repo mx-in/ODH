@@ -1,0 +1,10 @@
+{
+    "id": "org.baron.uitest.context-probe",
+    "name": "Context probe",
+    "description": "Reports the context it receives, for baron-uitest --context.",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "main": "dist/main.js",
+    "permissions": ["context.sentence", "context.paragraph", "context.page", "context.window"],
+    "actions": [{ "id": "read", "title": "With context", "needs": ["sentence", "paragraph", "page", "window"] }]
+}

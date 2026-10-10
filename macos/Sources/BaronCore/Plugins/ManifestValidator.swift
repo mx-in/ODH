@@ -50,6 +50,7 @@ public struct ManifestValidator: Sendable {
             + PackagePathChecks.check(manifest, package: package)
             + RegexDialectChecks.check(manifest)
             + CompatibilityChecks.check(manifest, environment: environment)
+            + LocaleReferenceChecks.check(manifest, package: package)
         return ManifestValidation(manifest: issues.isEmpty ? manifest : nil, issues: issues)
     }
 }

@@ -6,3 +6,5 @@ export type * from "./context.ts";
 export type * from "./host.ts";
 export { BaronError, errorCodes, isBaronError } from "./errors.ts";
 export type { ErrorCode } from "./errors.ts";
+export { definePlugin } from "./plugin.ts";
+export type * from "./plugin.ts";

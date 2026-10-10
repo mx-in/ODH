@@ -57,6 +57,7 @@ public enum SelectionProbe {
         var native: NativeTextWindowReader.Window?
         report.record(ProbeField.nativeWindow) {
             native = NativeTextWindowReader.window(around: element)
+                ?? PDFTextBlockReader.selectedBlock(under: element).flatMap(NativeTextWindowReader.window(around:))
             return native.map { "\($0.text.utf16.count) units, selection \($0.selection)" }
         }
         var paragraph: TextSpan?

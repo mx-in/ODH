@@ -53,7 +53,9 @@ public enum SelectionContextReader {
             if wantsParagraph { context.paragraph = WebContextReader.contextSpan(.paragraph, around: web.range, in: web.owner) }
             if wantsSentence, inTime { context.sentence = WebContextReader.contextSpan(.sentence, around: web.range, in: web.owner) }
         default:
-            guard let window = NativeTextWindowReader.window(around: focused),
+            // A PDF in Preview: the focused group has no range, but the block holding the selection does.
+            guard let window = NativeTextWindowReader.window(around: focused)
+                    ?? PDFTextBlockReader.selectedBlock(under: focused).flatMap(NativeTextWindowReader.window(around:)),
                   let paragraph = NativeTextContext.paragraph(in: window.text, selection: window.selection,
                                                               windowStartsAtDocumentStart: window.startsAtDocumentStart,
                                                               windowEndsAtDocumentEnd: window.endsAtDocumentEnd) else { break }

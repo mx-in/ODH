@@ -17,8 +17,14 @@ public enum NativeTextWindowReader {
         AXElement.range(from: element.value(kAXSelectedTextRangeAttribute))
     }
 
+    /// The selected range when it is a real one: Preview's PDF blocks without the selection report NSNotFound.
+    public static func realSelectedRange(of element: AXElement) -> CFRange? {
+        guard let range = selectedRange(of: element), range.location >= 0, range.location != NSNotFound, range.length >= 0 else { return nil }
+        return range
+    }
+
     public static func window(around element: AXElement) -> Window? {
-        guard let selected = selectedRange(of: element) else { return nil }
+        guard let selected = realSelectedRange(of: element) else { return nil }
         let count = (element.value(kAXNumberOfCharactersAttribute) as? Int) ?? Int.max
         let start = max(0, selected.location - margin)
         let end = min(count, selected.location + selected.length + margin)

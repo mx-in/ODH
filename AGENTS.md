@@ -2,7 +2,51 @@
 
 ## Current task
 
-_No active task._
+**Task:** task-008-install: install, update and remove plugins (gate: install from a folder and a `.baronplugin` file, including refused cases; an update that adds a permission waits for consent; disable, enable and uninstall work, leaving nothing on disk or in the Keychain; a bundled sample is offered at first launch; bar settings pass a UI test; a first-time author gets from `baron create` to their action on the bar in under 2 minutes.)
+**Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [10 Install and lifecycle](docs/design/plugin-platform/10-install-and-lifecycle.md), install consent in [04](docs/design/plugin-platform/04-permissions-and-security.md#install-and-update-consent), the CLI and development mode in [09](docs/design/plugin-platform/09-developer-tooling.md).
+
+- [ ] **▶ IN PROGRESS** Package reading
+    - [ ] Read a plugin folder
+    - [ ] Unzip a `.baronplugin`: files only, no symlinks, at most 50 MB
+- [ ] Install
+    - [ ] Refuse an invalid manifest, an unsupported `apiVersion`, a newer `minBaronVersion` or an excluded platform, with the reason
+    - [ ] Show the install sheet, warning when the same `id` comes from another source
+    - [ ] Copy the package to `Plugins/<id>/<version>/`
+    - [ ] Run `onInstall` with a 10 s limit and show a failure
+- [ ] States
+    - [ ] Track Enabled, Disabled, Needs consent, Broken and Suspended
+    - [ ] Disable, enable, and re-enable a suspended plugin
+- [ ] Updates
+    - [ ] Treat a higher version as an update; ask before installing a lower or equal one
+    - [ ] Install silently with the same or fewer permissions; with new ones, wait in Needs consent while the old version keeps working
+    - [ ] Run `onUpdate` before the first dispatch, and delete the previous version after the first successful load
+- [ ] Uninstall
+    - [ ] Confirm, then remove the package and all of its data
+- [ ] Sources
+    - [ ] Add from Folder… in Settings
+    - [ ] Open `.baronplugin` files
+    - [ ] Handle `baron://install?url=https://…`
+    - [ ] Offer bundled plugins at first launch
+- [ ] Bar settings (UI)
+    - [ ] Reorder actions by drag, with new ones at the end
+    - [ ] Show or hide each action
+    - [ ] Run on selection for `autoRun: "allowed"` actions, optionally limited to some apps
+    - [ ] Give an action its own hotkey
+- [ ] Development mode
+    - [ ] Turn it on in Settings › Advanced and listen on a same-user socket
+    - [ ] Load a registered folder as "Development" and reload it on each rebuild
+    - [ ] Stream logs and errors with TypeScript line numbers; make contexts inspectable
+- [ ] CLI
+    - [ ] `baron create` with the `action`, `lookup` and `settings` templates
+    - [ ] `baron dev`
+    - [ ] `baron validate`, and `baron pack` printing the SHA-256
+- [ ] Verification
+    - [ ] Check the gate, including disk and Keychain after uninstall
+    - [ ] Time a first-time author from `baron create` to the action on the bar
+- [ ] Design UML
+    - [ ] Add as-built UML to the design docs this task built or changed
+
+**Notes for the next agent:** Installed plugins live in Application Support/Baron/Plugins/<id>/<version>/ with a registry (installed.json); development-folder plugins keep working alongside. Archives are unpacked with the system unzip after listing their entries. @baron/* packages aren't on npm yet, so baron create links them with file: paths to this repository's packages/.
 
 <!--
 Template while a task is active (replace the line above):

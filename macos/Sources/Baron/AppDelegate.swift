@@ -11,7 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let pauseItem = NSMenuItem()
     private let store = SettingsStore()
     private let coordinator = SelectionCoordinator(pipeline: SelectionPipeline(gate: Gate(excludedApps: ExcludedAppRule.defaults)))
-    private lazy var settingsWindow = SettingsWindowController(store: store)
+    private lazy var settingsWindow = SettingsWindowController(store: store, plugins: plugins)
     private let debugPanel = DebugPanelController()
     private let debugItem = NSMenuItem()
     private var subscriptions: Set<AnyCancellable> = []
@@ -36,7 +36,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Task { await self.debugPanel.store.record(trigger: trigger, outcome: outcome, source: source) }
         }
         plugins.onCatalogChange = { [weak self] in self?.coordinator.pipeline.plugins = $0 }
-        plugins.system.openSettingsWindow = { [weak self] _ in self?.settingsWindow.show() }
+        plugins.openSettings = { [weak self] id, highlight in self?.settingsWindow.showPlugin(id, highlight: highlight) }
         coordinator.onPluginAction = { [weak self] entry, run in
             guard let self else { return }
             Task { await self.runPluginAction(entry, run) }
@@ -46,10 +46,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // `open build/Baron.app --args --debug-panel` starts with the panel showing.
         if CommandLine.arguments.contains("--debug-panel") { debugPanel.toggle() }
         InstallSheetPreview.showIfAsked()
+        // `--open-plugin-settings <id>` opens a plugin's settings once plugins are loaded (UI tests).
+        if let flag = CommandLine.arguments.firstIndex(of: "--open-plugin-settings"), flag + 1 < CommandLine.arguments.count {
+            let id = CommandLine.arguments[flag + 1]
+            Task { await plugins.reload(); settingsWindow.showPlugin(id) }
+        }
     }
 
     private func apply(_ settings: BaronSettings) {
         coordinator.apply(settings)
+        plugins.setDisabled(Set(settings.disabledPlugins))
         pauseItem.title = settings.isPaused ? "Resume \(Baron.name)" : "Pause \(Baron.name)"
         statusItem?.button?.image = NSImage(
             systemSymbolName: settings.isPaused ? "pause.circle" : "text.cursor",

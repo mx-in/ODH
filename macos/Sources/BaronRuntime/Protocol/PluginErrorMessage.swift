@@ -6,6 +6,7 @@ public enum PluginErrorMessage {
         case "unavailable": "\(pluginName) isn't available: \(error.message)"
         case "plugin_error": "\(pluginName) failed: \(error.message)"
         case "not_found": "\(pluginName) can't run this action: \(error.message)"
+        case "needs_settings": error.message
         default: "\(pluginName): \(error.message)"
         }
     }

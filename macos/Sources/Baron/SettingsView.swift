@@ -4,6 +4,22 @@ import BaronPlatform
 import KeyboardShortcuts
 import SwiftUI
 
+/// The Settings window: General and Plugins tabs.
+struct SettingsRoot: View {
+    @ObservedObject var store: SettingsStore
+    @ObservedObject var navigation: SettingsNavigation
+    let plugins: PluginController
+
+    var body: some View {
+        TabView(selection: $navigation.tab) {
+            SettingsView(store: store).tabItem { Label("General", systemImage: "gearshape") }.tag(SettingsNavigation.Tab.general)
+            PluginsPane(controller: plugins, store: store, navigation: navigation)
+                .tabItem { Label("Plugins", systemImage: "puzzlepiece.extension") }.tag(SettingsNavigation.Tab.plugins)
+        }
+        .frame(minWidth: 640, idealWidth: 720, minHeight: SettingsWindowController.minimumSize.height, idealHeight: SettingsWindowController.size.height)
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var store: SettingsStore
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
@@ -46,7 +62,7 @@ struct SettingsView: View {
         }
         .formStyle(.grouped)
         // A grouped form scrolls, so it has no height of its own: without one the window opens as just its title bar.
-        .frame(minWidth: 460, idealWidth: 460, minHeight: SettingsWindowController.minimumSize.height, idealHeight: SettingsWindowController.size.height)
+        .frame(minWidth: 460, idealWidth: 460, minHeight: SettingsWindowController.minimumSize.height - 60, idealHeight: SettingsWindowController.size.height - 60)
         .padding(.vertical, 8)
     }
 
@@ -71,18 +87,29 @@ struct SettingsView: View {
 /// activates itself while the window is open to take keyboard input.
 @MainActor
 final class SettingsWindowController {
-    static let size = NSSize(width: 460, height: 560)
-    static let minimumSize = NSSize(width: 460, height: 360)
+    static let size = NSSize(width: 720, height: 620)
+    static let minimumSize = NSSize(width: 640, height: 420)
     private var window: NSWindow?
     private let store: SettingsStore
+    private let plugins: PluginController
+    let navigation = SettingsNavigation()
 
-    init(store: SettingsStore) {
+    init(store: SettingsStore, plugins: PluginController) {
         self.store = store
+        self.plugins = plugins
+    }
+
+    /// Opens the Plugins tab on a plugin, highlighting fields (required ones that are empty).
+    func showPlugin(_ id: String, highlight: Set<String> = []) {
+        navigation.tab = .plugins
+        navigation.selectedPlugin = id
+        navigation.highlighted = highlight
+        show()
     }
 
     func show() {
         if window == nil {
-            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(store: store)))
+            let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsRoot(store: store, navigation: navigation, plugins: plugins)))
             window.title = "\(Baron.name) Settings"
             window.styleMask = [.titled, .closable, .resizable]
             window.setContentSize(Self.size)

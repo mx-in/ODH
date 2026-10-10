@@ -5,17 +5,21 @@ public struct BaronSettings: Codable, Equatable, Sendable {
     public var excludedApps: [String]
     public var searchTemplate: String
     public var retrievalRules: AppRetrievalRules
+    /// Plugins the user switched off: installed, data kept, no actions on the bar.
+    public var disabledPlugins: [String]
 
     public init(
         isPaused: Bool = false,
         excludedApps: [String] = ExcludedAppRule.defaults.sorted(),
         searchTemplate: String = SearchAction.defaultTemplate,
-        retrievalRules: AppRetrievalRules = AppRetrievalRules()
+        retrievalRules: AppRetrievalRules = AppRetrievalRules(),
+        disabledPlugins: [String] = []
     ) {
         self.isPaused = isPaused
         self.excludedApps = excludedApps
         self.searchTemplate = searchTemplate
         self.retrievalRules = retrievalRules
+        self.disabledPlugins = disabledPlugins
     }
 
     public init(from decoder: Decoder) throws {
@@ -25,6 +29,16 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         excludedApps = try container.decodeIfPresent([String].self, forKey: .excludedApps) ?? defaults.excludedApps
         searchTemplate = try container.decodeIfPresent(String.self, forKey: .searchTemplate) ?? defaults.searchTemplate
         retrievalRules = try container.decodeIfPresent(AppRetrievalRules.self, forKey: .retrievalRules) ?? defaults.retrievalRules
+        disabledPlugins = try container.decodeIfPresent([String].self, forKey: .disabledPlugins) ?? defaults.disabledPlugins
+    }
+
+    public func isPluginEnabled(_ id: String) -> Bool {
+        !disabledPlugins.contains(id)
+    }
+
+    public mutating func setPlugin(_ id: String, enabled: Bool) {
+        disabledPlugins.removeAll { $0 == id }
+        if !enabled { disabledPlugins.append(id); disabledPlugins.sort() }
     }
 
     /// Baron never shows its bar over itself, whatever the user removes from the list.

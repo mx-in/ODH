@@ -88,6 +88,9 @@ public enum NativeTextContext {
             start = max(start, selection.lowerBound - room / 2)
             end = min(end, max(selection.upperBound, start + cap))
             start = max(start, end - cap)
+            // Cut between characters, not inside a surrogate pair (an emoji would decode as U+FFFD).
+            if start > 0, UTF16.isTrailSurrogate(units[start]) { start += 1 }
+            if end < units.count, UTF16.isLeadSurrogate(units[end - 1]) { end -= 1 }
         }
         let text = String(decoding: units[start..<end], as: UTF16.self)
         return TextSpan(text: text, selectionStart: selection.lowerBound - start, selectionEnd: selection.upperBound - start, truncated: truncated)

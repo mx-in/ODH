@@ -16,6 +16,37 @@ struct NativeTextContextTests {
         #expect(String(decoding: selected, as: UTF16.self) == "fox")
     }
 
+    private func selected(_ span: TextSpan) -> String {
+        String(decoding: Array(span.text.utf16)[span.selectionStart..<span.selectionEnd], as: UTF16.self)
+    }
+
+    @Test func offsetsAreUTF16UnitsPastEmojiAndCJK() {
+        let window = "Intro.\nHi 👋🏽 there, 狐狸 jumps. The 🦊 fox runs! 日本語の文。\nEnd."
+        let paragraph = NativeTextContext.paragraph(in: window, selection: range(of: "fox", in: window), windowStartsAtDocumentStart: true, windowEndsAtDocumentEnd: true)!
+        #expect(paragraph.text == "Hi 👋🏽 there, 狐狸 jumps. The 🦊 fox runs! 日本語の文。")
+        #expect(paragraph.selectionStart == ("Hi 👋🏽 there, 狐狸 jumps. The 🦊 " as String).utf16.count)
+        #expect(selected(paragraph) == "fox")
+        let sentence = NativeTextContext.sentence(in: paragraph)!
+        #expect(sentence.text == "The 🦊 fox runs!")
+        #expect(sentence.selectionStart == 7 && selected(sentence) == "fox")
+
+        let cjk = NativeTextContext.paragraph(in: window, selection: range(of: "語", in: window), windowStartsAtDocumentStart: true, windowEndsAtDocumentEnd: true)!
+        #expect(NativeTextContext.sentence(in: cjk).map(\.text) == "日本語の文。")
+    }
+
+    @Test func capsNeverSplitASurrogatePair() {
+        // 🦊 is two UTF-16 units; pad so that a cap centred on the selection lands inside one on each side.
+        let pad = String(repeating: "🦊", count: 3_000)
+        let text = pad + " fox " + pad
+        let selection = range(of: "fox", in: text)
+        for shift in 0..<2 {
+            let span = NativeTextContext.capped(TextSpan(text: text, selectionStart: selection.lowerBound, selectionEnd: selection.upperBound), to: NativeTextContext.paragraphCap - shift)
+            #expect(!span.text.contains("\u{FFFD}"))
+            #expect(span.text.utf16.count <= NativeTextContext.paragraphCap - shift && span.truncated)
+            #expect(selected(span) == "fox")
+        }
+    }
+
     @Test func paragraphReachingAWindowEdgeIsTruncated() {
         let window = "brown fox jumps over"
         let span = NativeTextContext.paragraph(in: window, selection: range(of: "fox", in: window), windowStartsAtDocumentStart: false, windowEndsAtDocumentEnd: true)!

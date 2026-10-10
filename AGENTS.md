@@ -5,10 +5,10 @@
 **Task:** task-004-plugin-contract: the manifest and types everything else builds on (gate: the JSON Schema and the Swift validator agree on 30+ manifests; `when` rules and localisation are unit tested; ODH's manifest validates)
 **Started:** 2026-10-10 · **Agent:** Claude (Claude Code) · design: [01](docs/design/plugin-platform/01-package-and-manifest.md), types in [03](docs/design/plugin-platform/03-host-api-and-ipc.md)
 
-- [ ] **▶ IN PROGRESS** Workspace
-    - [ ] Add `packages/*` as an npm workspace with an empty `@baron/api`, tested with Bun
-    - [ ] Add the workspace's tests and type check to the checks in `AGENTS.md`
-- [ ] `@baron/api` types
+- [x] Workspace
+    - [x] Add `packages/*` as an npm workspace with an empty `@baron/api`, tested with Bun (c7fe921)
+    - [x] Add the workspace's tests and type check to the checks in `AGENTS.md`
+- [ ] **▶ IN PROGRESS** `@baron/api` types
     - [ ] Write the manifest types, including every preference type
     - [ ] Write `SelectionContext`, `TextSpan` and `ActionResult`
     - [ ] Write `Host` and `ViewHandle` for apiVersion 1
@@ -80,6 +80,13 @@ Run these before every commit:
 npm run lint
 npm run test:contracts
 npm run test:unit
+```
+
+When `packages/` changed, also run these (they need [Bun](https://bun.sh) 1.4 or later, for example `npm install -g bun`):
+
+```sh
+npm run test:baron
+npm run typecheck:baron
 ```
 
 When `macos/` changed, also run:

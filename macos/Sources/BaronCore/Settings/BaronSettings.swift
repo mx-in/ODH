@@ -10,6 +10,8 @@ public struct BaronSettings: Codable, Equatable, Sendable {
     /// Bundled plugins already offered at first launch, whatever the answer.
     public var offeredBundledPlugins: [String]
     public var bar: BarArrangement
+    /// Lets `baron dev` load and reload plugins through a socket only this user can open.
+    public var developerMode: Bool
 
     public init(
         isPaused: Bool = false,
@@ -18,7 +20,8 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         retrievalRules: AppRetrievalRules = AppRetrievalRules(),
         disabledPlugins: [String] = [],
         offeredBundledPlugins: [String] = [],
-        bar: BarArrangement = BarArrangement()
+        bar: BarArrangement = BarArrangement(),
+        developerMode: Bool = false
     ) {
         self.isPaused = isPaused
         self.excludedApps = excludedApps
@@ -27,6 +30,7 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         self.disabledPlugins = disabledPlugins
         self.offeredBundledPlugins = offeredBundledPlugins
         self.bar = bar
+        self.developerMode = developerMode
     }
 
     public init(from decoder: Decoder) throws {
@@ -39,6 +43,7 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         disabledPlugins = try container.decodeIfPresent([String].self, forKey: .disabledPlugins) ?? defaults.disabledPlugins
         offeredBundledPlugins = try container.decodeIfPresent([String].self, forKey: .offeredBundledPlugins) ?? defaults.offeredBundledPlugins
         bar = try container.decodeIfPresent(BarArrangement.self, forKey: .bar) ?? defaults.bar
+        developerMode = try container.decodeIfPresent(Bool.self, forKey: .developerMode) ?? defaults.developerMode
     }
 
     public func isPluginEnabled(_ id: String) -> Bool {

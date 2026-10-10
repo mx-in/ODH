@@ -68,6 +68,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func apply(_ settings: BaronSettings) {
         coordinator.apply(settings)
         plugins.setDisabled(Set(settings.disabledPlugins))
+        plugins.setDeveloperMode(settings.developerMode)
         pauseItem.title = settings.isPaused ? "Resume \(Baron.name)" : "Pause \(Baron.name)"
         statusItem?.button?.image = NSImage(
             systemSymbolName: settings.isPaused ? "pause.circle" : "text.cursor",

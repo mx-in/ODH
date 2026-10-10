@@ -27,13 +27,14 @@ public final class JSCEngineContext: @unchecked Sendable {
         }
     }
 
-    public init(pluginID: String) {
+    public init(pluginID: String, inspectable: Bool = false) {
         self.pluginID = pluginID
         queue = DispatchQueue(label: "org.odh.baron.plugin.\(pluginID)", qos: .userInitiated)
         queue.sync {
             let virtualMachine = JSVirtualMachine()!
             let context = JSContext(virtualMachine: virtualMachine)!
             context.name = pluginID
+            context.isInspectable = inspectable
             self.virtualMachine = virtualMachine
             self.context = context
         }

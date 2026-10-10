@@ -14,6 +14,10 @@ final class PluginController {
     private(set) var found: [DevelopmentPlugins.Found] = []
     /// Installed plugins and their records (version, source, pending update).
     private(set) var installedRecords: [String: InstalledRecord] = [:]
+    /// Plugins loaded by `baron dev`, from their folders (not copied).
+    private var developmentPlugins: [String: RuntimePlugin] = [:]
+    /// Developer mode's socket while it is on.
+    private(set) var devServer: DevServer?
     /// Updated plugins whose onUpdate hasn't run yet, with the version they came from.
     private var pendingUpdateHooks: [String: String] = [:]
     private(set) var disabled: Set<String> = []
@@ -40,7 +44,7 @@ final class PluginController {
         installer = PluginInstaller(data: data)
         let gate = PermissionGate(grants: grants, actions: actions)
         let services: [HostService] = [
-            LogService(),
+            LogService(sink: { id, level, text in DevSink.shared.emit(id, "log", ["level": .string(level), "text": .string(text)]) }),
             UIService(presenter: presenter, system: system),
             HTTPService(policy: NetworkPolicy(grants: grants)),
             ClipboardService(system: system),
@@ -70,7 +74,8 @@ final class PluginController {
 
     /// Where a listed plugin came from.
     func source(of id: String) -> PluginSource {
-        installedRecords[id]?.source ?? found.first { $0.plugin?.id == id }.map { .development($0.folder.path) } ?? .development("")
+        if let dev = developmentPlugins[id] { return .development(dev.package.path) }
+        return installedRecords[id]?.source ?? found.first { $0.plugin?.id == id }.map { .development($0.folder.path) } ?? .development("")
     }
 
     /// Reads the installed plugins and the development folder again; changed plugins load fresh on their next use.
@@ -82,8 +87,10 @@ final class PluginController {
         for entry in found where entry.plugin == nil {
             logger.error("Skipped \(entry.folder.lastPathComponent, privacy: .public): \(entry.issues.map(\.description).joined(separator: "; "), privacy: .public)")
         }
-        let installedIDs = Set(installed.map(\.plugin.id))
-        let loaded = installed.map(\.plugin) + found.compactMap(\.plugin).filter { !installedIDs.contains($0.id) }
+        let developing = Set(developmentPlugins.keys)
+        let installedIDs = Set(installed.map(\.plugin.id)).union(developing)
+        let loaded = installed.map(\.plugin).filter { !developing.contains($0.id) } + developmentPlugins.values.sorted { $0.id < $1.id }
+            + found.compactMap(\.plugin).filter { !installedIDs.contains($0.id) }
         orderedPlugins = loaded
         for plugin in plugins.values { await runtime.reload(plugin.id) }
         plugins = Dictionary(loaded.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -148,6 +155,7 @@ final class PluginController {
             logger.info("\(plugin.id, privacy: .public) \(entry.actionID, privacy: .public): done")
         case .failure(let error):
             logger.error("\(plugin.id, privacy: .public) \(entry.actionID, privacy: .public): failed with \(error.code, privacy: .public): \(error.message, privacy: .private)")
+            DevSink.shared.emit(plugin.id, "error", ["code": .string(error.code), "message": .string(error.message), "stack": .string(error.stack ?? "")])
         }
         return result
     }
@@ -255,6 +263,27 @@ final class PluginController {
         await reload()
     }
 
+    // MARK: Developer mode
+
+    func setDeveloperMode(_ on: Bool) {
+        if on, devServer == nil {
+            let server = DevServer(handler: self)
+            do {
+                try server.start()
+                devServer = server
+                DevSink.shared.server = server
+            } catch {
+                logger.error("Developer mode couldn't start: \(String(describing: error), privacy: .public)")
+            }
+        } else if !on, let server = devServer {
+            server.stop()
+            devServer = nil
+            DevSink.shared.server = nil
+            developmentPlugins.removeAll()
+            Task { await reload() }
+        }
+    }
+
     func openFolder() {
         _ = DevelopmentPlugins.scan()
         NSWorkspace.shared.open(DevelopmentPlugins.defaultFolder)
@@ -265,5 +294,40 @@ extension Result {
     var isSuccess: Bool {
         if case .success = self { return true }
         return false
+    }
+}
+
+extension PluginController: DevSessionHandler {
+    nonisolated func register(folder: URL) async throws -> String {
+        let package = try PackageReader.read(folder: folder, source: .development(folder.path))
+        let plugin = RuntimePlugin(manifest: package.manifest, package: folder, development: true)
+        await MainActor.run { developmentPlugins[plugin.id] = plugin }
+        await reload()
+        return plugin.id
+    }
+
+    nonisolated func reload(pluginID: String) async {
+        await runtime.reload(pluginID)
+    }
+
+    nonisolated func unregister(pluginID: String) async {
+        await MainActor.run { _ = developmentPlugins.removeValue(forKey: pluginID) }
+        await runtime.reload(pluginID)
+        await reload()
+    }
+}
+
+/// Forwards plugin log lines and errors to `baron dev` sessions while developer mode is on.
+final class DevSink: @unchecked Sendable {
+    static let shared = DevSink()
+    private let lock = NSLock()
+    private var current: DevServer?
+    var server: DevServer? {
+        get { lock.withLock { current } }
+        set { lock.withLock { current = newValue } }
+    }
+
+    func emit(_ pluginID: String, _ event: String, _ fields: [String: JSONValue]) {
+        server?.emit(pluginID: pluginID, event: event, fields: fields)
     }
 }

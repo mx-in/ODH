@@ -43,10 +43,13 @@ public enum PluginRuntimeState: Equatable, Sendable {
 public struct RuntimePlugin: Sendable {
     public var manifest: PluginManifest
     public var package: URL
+    /// Loaded by `baron dev`: its context is inspectable in Safari's Web Inspector.
+    public var development: Bool
 
-    public init(manifest: PluginManifest, package: URL) {
+    public init(manifest: PluginManifest, package: URL, development: Bool = false) {
         self.manifest = manifest
         self.package = package
+        self.development = development
     }
 
     public var id: String { manifest.id }

@@ -27,13 +27,13 @@
     - [x] Open `.baronplugin` files (7024c33)
     - [x] Handle `baron://install?url=https://…` (7024c33)
     - [x] Offer bundled plugins at first launch (7024c33)
-- [ ] Bar settings (UI)
-    - [ ] **▶ IN PROGRESS** Reorder actions by drag, with new ones at the end
-    - [ ] Show or hide each action
-    - [ ] Run on selection for `autoRun: "allowed"` actions, optionally limited to some apps
-    - [ ] Give an action its own hotkey
+- [x] Bar settings (UI)
+    - [x] Reorder actions by drag, with new ones at the end (b805bfc)
+    - [x] Show or hide each action (b805bfc)
+    - [x] Run on selection for `autoRun: "allowed"` actions, optionally limited to some apps (b805bfc)
+    - [x] Give an action its own hotkey (b805bfc)
 - [ ] Development mode
-    - [ ] Turn it on in Settings › Advanced and listen on a same-user socket
+    - [ ] **▶ IN PROGRESS** Turn it on in Settings › Advanced and listen on a same-user socket
     - [ ] Load a registered folder as "Development" and reload it on each rebuild
     - [ ] Stream logs and errors with TypeScript line numbers; make contexts inspectable
 - [ ] CLI

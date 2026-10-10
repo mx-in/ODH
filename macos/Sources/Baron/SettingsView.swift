@@ -47,6 +47,12 @@ struct SettingsView: View {
                     Text("The URL must contain {query}.").foregroundStyle(.red).font(.caption)
                 }
             }
+            Section("Advanced") {
+                Toggle("Developer mode", isOn: $store.settings.developerMode)
+                    .accessibilityIdentifier("settings.developerMode")
+                Text("Lets `baron dev` load plugins from their folders, reload them on each build and stream their logs. Only your user account can connect.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Excluded apps") {
                 List(store.settings.excludedApps, id: \.self, selection: $selectedApp) { id in
                     Text(appName(for: id)).help(id)

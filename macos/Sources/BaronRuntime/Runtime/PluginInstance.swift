@@ -16,7 +16,7 @@ final class PluginInstance: @unchecked Sendable {
     init(plugin: RuntimePlugin, handler: HostCallHandler) {
         self.plugin = plugin
         self.handler = handler
-        engine = JSCEngineContext(pluginID: plugin.id)
+        engine = JSCEngineContext(pluginID: plugin.id, inspectable: plugin.development)
     }
 
     /// Evaluates the prelude and the plugin's bundle, and checks that the bundle defined actions.

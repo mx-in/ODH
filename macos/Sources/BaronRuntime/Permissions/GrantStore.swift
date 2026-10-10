@@ -97,6 +97,12 @@ public actor GrantStore {
         save(saved(pluginID).filter { $0.permission != permission }, pluginID)
     }
 
+    /// Drops the plugin's grants, saved and in memory (uninstalling).
+    public func forget(pluginID: String) {
+        once[pluginID] = nil
+        try? FileManager.default.removeItem(at: file(pluginID))
+    }
+
     private func file(_ pluginID: String) -> URL {
         folder.appendingPathComponent(pluginID).appendingPathComponent("grants.json")
     }

@@ -24,4 +24,10 @@ public actor PluginStores {
         caches[pluginID] = store
         return store
     }
+
+    /// Drops the open stores, before their files are deleted.
+    public func forget(_ pluginID: String) {
+        storage[pluginID] = nil
+        caches[pluginID] = nil
+    }
 }

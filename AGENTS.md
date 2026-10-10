@@ -16,11 +16,11 @@
 - [x] Cache
     - [x] Store strings in SQLite in the Caches folder, evicting the least recently read past 10 MB (064e74f)
     - [x] Serve `host.cache` (064e74f)
-- [ ] Secrets
-    - [ ] **▶ IN PROGRESS** Keep secrets in the Keychain per plugin, not synchronisable
-    - [ ] Serve `host.secrets` behind the `secrets` permission
+- [x] Secrets
+    - [x] Keep secrets in the Keychain per plugin, not synchronisable (b5ad444)
+    - [x] Serve `host.secrets` behind the `secrets` permission (b5ad444)
 - [ ] Data management
-    - [ ] Report usage; Clear cache; Reset plugin data
+    - [ ] **▶ IN PROGRESS** Report usage; Clear cache; Reset plugin data
     - [ ] Remove every store and grant of a plugin (used by uninstall)
 - [ ] Settings: Plugins section (UI)
     - [ ] List installed plugins with Enabled switches

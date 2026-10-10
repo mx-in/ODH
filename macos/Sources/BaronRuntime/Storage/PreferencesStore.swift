@@ -33,4 +33,9 @@ public actor PreferencesStore {
               let data = try? Data(contentsOf: url), case .object(let all)? = try? JSONValue(data: data) else { return [:] }
         return all
     }
+
+    public func clearAll(pluginID: String) throws {
+        let url = try location.dataFolder(for: pluginID).appendingPathComponent("preferences.json")
+        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+    }
 }

@@ -1,0 +1,11 @@
+{
+    "id": "org.example.fixture-lookup",
+    "name": "Lookup fixture",
+    "description": "Looks words up",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "main": "dist/main.js",
+    "permissions": ["network:dict.example", "selection.replace"],
+    "preferences": [{ "id": "prefix", "type": "text", "title": "Prefix", "default": "def: " }],
+    "actions": [{ "id": "lookup", "title": "Look up" }, { "id": "upper", "run": "toUpper", "title": "UPPER" }]
+}

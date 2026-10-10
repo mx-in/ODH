@@ -43,10 +43,11 @@ struct TimerTests {
     @Test func unloadingDropsPendingTimers() async throws {
         let outbox = Outbox()
         let engine = try await engine(outbox)
-        try await engine.evaluate("setTimeout(() => console.log('never'), 20)")
+        // Long enough that a busy test run can't reach the timer before unloading.
+        try await engine.evaluate("setTimeout(() => console.log('never'), 300)")
         #expect(engine.pendingTimerCount == 1)
         engine.unload()
-        try await Task.sleep(for: .milliseconds(40))
+        try await Task.sleep(for: .milliseconds(400))
         #expect(logs(outbox).isEmpty)
     }
 }

@@ -44,12 +44,12 @@
     - [x] Run plugin tests on JavaScriptCore through `node:vm` (640803a)
     - [x] Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output (29c4a95)
     - [x] `baron test --engine jsc|quickjs|all` (055eaa2)
-- [ ] Examples
+- [x] Examples
     - [x] Write the uppercase action example with tests (76479df)
-    - [ ] **▶ IN PROGRESS** Write the `fetch`-based lookup example with tests
+    - [x] Write the `fetch`-based lookup example with tests (316e545)
 - [ ] Verification
-    - [ ] Test timers, errors, time limits, idle unload and reload
-    - [ ] Measure load time, dispatch overhead and idle memory against the targets in the design
+    - [x] Test timers, errors, time limits, idle unload and reload (covered by TimerTests, PluginLoadingTests, DispatchTests, StuckPluginTests, IdleTests in BaronRuntimeTests, and the prelude's bun tests)
+    - [ ] **▶ IN PROGRESS** Measure load time, dispatch overhead and idle memory against the targets in the design
     - [ ] Run both examples from the bar in a UI test
 - [ ] Design UML
     - [ ] Replace the design-level UML in 02, 03 (core) and 09 with diagrams of the code as built

@@ -1,6 +1,7 @@
 import AppKit
 import BaronCore
 import BaronPlatform
+import BaronRuntime
 import Combine
 
 @MainActor
@@ -123,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             case .failure(let error): toasts.show("\(entry.pluginName): \(error.message)", kind: .error)
             }
         case .failure(let error):
-            toasts.show(error.message, kind: .error)
+            toasts.show(PluginErrorMessage.text(for: error, pluginName: entry.pluginName), kind: .error)
         }
     }
 

@@ -35,8 +35,8 @@
     - [x] Load plugins from the development folder (installing comes in task-008) (739a2bc)
     - [x] Show plugin actions whose `when` rules match, after the built-in ones (cf5120b)
     - [x] Dispatch a click with `text`, `source`, `editable`, `app` and `platform` (03d2b92)
-    - [ ] **▶ IN PROGRESS** Carry out action results: copy, replace, toast, open URL
-    - [ ] Show a plugin's error as a toast naming the plugin
+    - [x] Carry out action results: copy, replace, toast, open URL (148a42e)
+    - [ ] **▶ IN PROGRESS** Show a plugin's error as a toast naming the plugin
 - [ ] Tooling
     - [ ] `baron build`: bundle `src/` into one classic script with an inline source map
     - [ ] `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic`

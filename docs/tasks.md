@@ -8,7 +8,7 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
 | --- | --- | --- | --- |
 | task-001-spike | M0 · Spike | Coverage table reviewed; context fields confirmed | Done ([archive](archive/task-001-spike-archive.md)) |
 | task-002-selection-bar | M1 · Selection bar | The bar shows in every test app, or the gap is documented | Done ([archive](archive/task-002-selection-bar-archive.md)) |
-| task-003-plugin-design | Research and the platform design | The user approves the platform design | In progress |
+| task-003-plugin-design | Research and the platform design | The user approves the platform design | Done ([archive](archive/task-003-plugin-design-archive.md)) |
 | task-004-plugin-contract | [01](design/plugin-platform/01-package-and-manifest.md) Package and manifest, `@baron/api` | Schema and Swift validator agree on 30+ manifests | Not started |
 | task-005-runtime | [02](design/plugin-platform/02-runtime.md) Runtime stage 1, [03](design/plugin-platform/03-host-api-and-ipc.md) core | A sample plugin runs from the bar; tests pass on both engines | Not started |
 | task-006-host-services | [03](design/plugin-platform/03-host-api-and-ipc.md) Host API, [04](design/plugin-platform/04-permissions-and-security.md) Permissions | Every call is permission-checked; prompts are UI-tested | Not started |

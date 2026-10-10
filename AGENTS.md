@@ -25,8 +25,8 @@
     - [x] Provide `crypto.getRandomValues`, `crypto.randomUUID` and `crypto.subtle.digest` (6f16fb1)
     - [x] Load the prelude and the bundle within 2 s, and mark a plugin that fails to load as broken (0304cdd)
     - [x] Enforce each dispatch's time limit and abort its signal (54cee8c)
-    - [ ] **▶ IN PROGRESS** Disable a plugin stuck in a synchronous loop for 10 s, and one with 3 strikes in 10 minutes
-    - [ ] Unload a context after 60 s idle and load it again on the next need
+    - [x] Disable a plugin stuck in a synchronous loop for 10 s, and one with 3 strikes in 10 minutes (53d9611)
+    - [ ] **▶ IN PROGRESS** Unload a context after 60 s idle and load it again on the next need
 - [ ] Host router (Swift)
     - [ ] Decode envelopes and route `ns.method` to a service, returning the design's error codes
     - [ ] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch

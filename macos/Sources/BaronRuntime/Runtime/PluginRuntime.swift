@@ -11,6 +11,7 @@ public actor PluginRuntime {
     private var states: [String: PluginRuntimeState] = [:]
     private var strikes: [String: [ContinuousClock.Instant]] = [:]
     private var watchdog: Task<Void, Never>?
+    private var lastUsed: [String: ContinuousClock.Instant] = [:]
 
     public init(handler: HostCallHandler, limits: RuntimeLimits = RuntimeLimits()) {
         self.handler = handler
@@ -42,9 +43,25 @@ public actor PluginRuntime {
         case .failure(let error): return .failure(error)
         }
         let json = payload.json(pluginVersion: instance.plugin.manifest.version)
+        lastUsed[pluginID] = .now
         let result = await instance.dispatch(target, name: name, payload: json, limit: limits.timeLimit(for: target))
+        lastUsed[pluginID] = .now
         if result.failure?.code == "timeout", instances[pluginID] === instance { strike(pluginID) }
         return result
+    }
+
+    /// Drops the plugin's context so the next dispatch loads it fresh: after an update, a preference change
+    /// or a `baron dev` rebuild. Waiting dispatches fail with `unavailable`.
+    public func reload(_ pluginID: String) {
+        guard let instance = instances.removeValue(forKey: pluginID) else { return }
+        instance.failAll(.unavailable("The plugin was reloaded"))
+        instance.engine.unload()
+        if state(of: pluginID) == .ready { states[pluginID] = .unloaded }
+    }
+
+    /// Whether the plugin's context is loaded now.
+    public func isLoaded(_ pluginID: String) -> Bool {
+        instances[pluginID] != nil
     }
 
     /// Lets a suspended plugin run again, in a fresh context.
@@ -73,9 +90,12 @@ public actor PluginRuntime {
 
     /// Suspends plugins stuck in synchronous code. Their thread can't be stopped (stage 1), so the context is abandoned.
     private func checkForStuckPlugins() {
+        let now = ContinuousClock.now
         for (pluginID, instance) in instances {
             if let busy = instance.engine.busyFor, busy > limits.stuck {
                 suspend(pluginID, "It stopped responding (stuck for more than \(limits.stuck)); re-enable it to try again")
+            } else if instance.pendingDispatches == 0, instance.engine.busyFor == nil, now - (lastUsed[pluginID] ?? now) > limits.idle {
+                reload(pluginID)
             }
         }
         if instances.isEmpty {
@@ -110,6 +130,7 @@ public actor PluginRuntime {
             }
             instances[pluginID] = instance
             states[pluginID] = .ready
+            lastUsed[pluginID] = .now
             startWatchdog()
             return .success(instance)
         } catch {

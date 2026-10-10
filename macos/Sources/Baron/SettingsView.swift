@@ -45,7 +45,8 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 460)
+        // A grouped form scrolls, so it has no height of its own: without one the window opens as just its title bar.
+        .frame(minWidth: 460, idealWidth: 460, minHeight: SettingsWindowController.minimumSize.height, idealHeight: SettingsWindowController.size.height)
         .padding(.vertical, 8)
     }
 
@@ -70,6 +71,8 @@ struct SettingsView: View {
 /// activates itself while the window is open to take keyboard input.
 @MainActor
 final class SettingsWindowController {
+    static let size = NSSize(width: 460, height: 560)
+    static let minimumSize = NSSize(width: 460, height: 360)
     private var window: NSWindow?
     private let store: SettingsStore
 
@@ -81,7 +84,9 @@ final class SettingsWindowController {
         if window == nil {
             let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(store: store)))
             window.title = "\(Baron.name) Settings"
-            window.styleMask = [.titled, .closable]
+            window.styleMask = [.titled, .closable, .resizable]
+            window.setContentSize(Self.size)
+            window.contentMinSize = Self.minimumSize
             window.isReleasedWhenClosed = false
             window.setAccessibilityIdentifier("baron.settings")
             self.window = window

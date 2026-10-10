@@ -8,9 +8,12 @@ public enum SelectionReplacer {
     public static func replace(with text: String) {
         if let app = FocusedElementReader.frontmostApplication,
            let focused = FocusedElementReader.focusedElement(in: AXElement.application(pid: app.processIdentifier)),
-           focused.isSettable(kAXSelectedTextAttribute),
-           focused.set(kAXSelectedTextAttribute, to: text as CFString) {
-            return
+           focused.isSettable(kAXSelectedTextAttribute) {
+            let before = focused.string(kAXValueAttribute)
+            // Some fields (web text areas in Safari) accept the write but don't change, so check the value moved.
+            if focused.set(kAXSelectedTextAttribute, to: text as CFString), before == nil || focused.string(kAXValueAttribute) != before {
+                return
+            }
         }
         paste(text)
     }

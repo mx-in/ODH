@@ -8,6 +8,8 @@ public final class JSCEngineContext: @unchecked Sendable {
     let queue: DispatchQueue
     private var virtualMachine: JSVirtualMachine?
     private var context: JSContext?
+    /// Pending timers by the prelude's id; only touched on `queue`.
+    private var timers: [Int: DispatchWorkItem] = [:]
 
     public enum EngineError: Error, Equatable, CustomStringConvertible {
         case exception(String)
@@ -64,8 +66,30 @@ public final class JSCEngineContext: @unchecked Sendable {
             let native = JSValue(newObjectIn: context)!
             let sendBlock: @convention(block) (String) -> Void = { json in send(json) }
             native.setObject(sendBlock, forKeyedSubscript: "send" as NSString)
+            let setTimer: @convention(block) (Int, Double) -> Void = { [weak self] id, ms in self?.setTimer(id: id, milliseconds: ms) }
+            let clearTimer: @convention(block) (Int) -> Void = { [weak self] id in self?.timers.removeValue(forKey: id)?.cancel() }
+            native.setObject(setTimer, forKeyedSubscript: "setTimer" as NSString)
+            native.setObject(clearTimer, forKeyedSubscript: "clearTimer" as NSString)
             context.setObject(native, forKeyedSubscript: "__baronNative" as NSString)
         }
+    }
+
+    /// Called on `queue` by the prelude; fires `__baronFireTimer(id)` on the same queue.
+    private func setTimer(id: Int, milliseconds: Double) {
+        timers.removeValue(forKey: id)?.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            guard let self, self.timers.removeValue(forKey: id) != nil, let context = self.context else { return }
+            context.exception = nil
+            context.objectForKeyedSubscript("__baronFireTimer")?.call(withArguments: [id])
+            context.exception = nil
+        }
+        timers[id] = item
+        queue.asyncAfter(deadline: .now() + .milliseconds(Int(max(0, milliseconds).rounded())), execute: item)
+    }
+
+    /// Timers waiting to fire.
+    public var pendingTimerCount: Int {
+        queue.sync { timers.count }
     }
 
     /// Hands one envelope to the prelude's `__baronReceive`, on the plugin's queue.
@@ -81,6 +105,8 @@ public final class JSCEngineContext: @unchecked Sendable {
     /// Drops the context and its virtual machine; later calls fail with `unloaded`.
     public func unload() {
         queue.async {
+            self.timers.values.forEach { $0.cancel() }
+            self.timers.removeAll()
             self.context = nil
             self.virtualMachine = nil
         }

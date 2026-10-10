@@ -28,9 +28,9 @@
     - [x] Disable a plugin stuck in a synchronous loop for 10 s, and one with 3 strikes in 10 minutes (53d9611)
     - [x] Unload a context after 60 s idle and load it again on the next need (192655a)
 - [ ] Host router (Swift)
-    - [ ] **▶ IN PROGRESS** Decode envelopes and route `ns.method` to a service, returning the design's error codes
-    - [ ] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch
-    - [ ] Serve `http.fetch` with its time and size limits (permission checks come in task-006)
+    - [x] Decode envelopes and route `ns.method` to a service, returning the design's error codes (815a37c)
+    - [x] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch (815a37c)
+    - [ ] **▶ IN PROGRESS** Serve `http.fetch` with its time and size limits (permission checks come in task-006)
 - [ ] Bar integration
     - [ ] Load plugins from the development folder (installing comes in task-008)
     - [ ] Show plugin actions whose `when` rules match, after the built-in ones

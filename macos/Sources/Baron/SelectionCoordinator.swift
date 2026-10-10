@@ -15,6 +15,7 @@ final class SelectionCoordinator {
     private let bar = ActionBarController()
     private var current: SelectionRun?
     private var capture: ContextCapture?
+    private var askBrowsersForPage = false
 
     init(pipeline: SelectionPipeline) {
         self.pipeline = pipeline
@@ -30,6 +31,7 @@ final class SelectionCoordinator {
         pipeline.retrievalRules = settings.retrievalRules
         pipeline.actions = BuiltInActions(searchTemplate: settings.searchTemplate)
         pipeline.arrangement = settings.bar
+        askBrowsersForPage = settings.askBrowsersForPage
         if settings.isPaused { bar.hide() }
     }
 
@@ -85,7 +87,8 @@ final class SelectionCoordinator {
     }
 
     private func startCapture(_ fields: Set<ContextField>, source: FocusedSelectionSource, run: SelectionRun) {
-        let target = SelectionContextReader.Target(app: AXElement.application(pid: source.app.processIdentifier), focused: source.focused, step: run.step)
+        let target = SelectionContextReader.Target(app: AXElement.application(pid: source.app.processIdentifier), focused: source.focused, step: run.step,
+                                                   bundleIdentifier: source.bundleIdentifier, askBrowsers: askBrowsersForPage)
         capture = ContextCapture(fields) { fields in
             let started = ContinuousClock.now
             let context = SelectionContextReader.read(fields, from: target)

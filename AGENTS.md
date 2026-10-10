@@ -63,8 +63,8 @@
     - [x] Wake Chrome and Electron accessibility only for the frontmost app, and only when a field needs it (d562761)
 - [ ] Fields
     - [x] Apply the caps and the `truncated` flag on the web paths, as the native path already does (4d8ebcf)
-    - [ ] **▶ IN PROGRESS** Check that every offset is in UTF-16 units
-    - [ ] Fall back to AppleScript for the page URL, behind a user setting
+    - [x] Check that every offset is in UTF-16 units (a0b8bd0)
+    - [ ] **▶ IN PROGRESS** Fall back to AppleScript for the page URL, behind a user setting
     - [ ] Read the sentence and paragraph from Preview's PDF text blocks (gap from task-001)
 - [ ] Verification
     - [ ] Run the test plugin in the six apps in `baron-uitest`, with and without the permissions

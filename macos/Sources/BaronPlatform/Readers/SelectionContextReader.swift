@@ -12,11 +12,16 @@ public enum SelectionContextReader {
         public let app: AXElement
         public let focused: AXElement?
         public let step: RetrievalStep
+        public let bundleIdentifier: String?
+        /// The user allowed asking browsers for the page through AppleScript when Accessibility has no address.
+        public let askBrowsers: Bool
 
-        public init(app: AXElement, focused: AXElement?, step: RetrievalStep) {
+        public init(app: AXElement, focused: AXElement?, step: RetrievalStep, bundleIdentifier: String? = nil, askBrowsers: Bool = false) {
             self.app = app
             self.focused = focused
             self.step = step
+            self.bundleIdentifier = bundleIdentifier
+            self.askBrowsers = askBrowsers
         }
     }
 
@@ -32,8 +37,12 @@ public enum SelectionContextReader {
             context.window = .init(title: WindowReader.title(of: window), documentURL: WindowReader.documentURL(of: window)?.absoluteString)
         }
         guard let focused = target.focused else { return context }
-        if fields.contains(.page), inTime, let area = WebAreaReader.webArea(containing: focused), let url = WebAreaReader.url(of: area) {
-            context.page = .init(url: url.absoluteString, title: WebAreaReader.title(of: area))
+        if fields.contains(.page), inTime {
+            if let area = WebAreaReader.webArea(containing: focused), let url = WebAreaReader.url(of: area) {
+                context.page = .init(url: url.absoluteString, title: WebAreaReader.title(of: area))
+            } else if target.askBrowsers, target.step == .axWeb, let id = target.bundleIdentifier {
+                context.page = BrowserPageReader.page(of: id)
+            }
         }
         let wantsSentence = fields.contains(.sentence), wantsParagraph = fields.contains(.paragraph)
         guard wantsSentence || wantsParagraph, inTime else { return context }

@@ -20,6 +20,8 @@
     <string>1</string>
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>When you allow it in Settings, Baron asks your browser for the address of the page you selected text on, for plugins allowed to read the page.</string>
     <key>LSUIElement</key>
     <true/>
     <key>CFBundleDocumentTypes</key>

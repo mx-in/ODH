@@ -12,6 +12,8 @@ public struct BaronSettings: Codable, Equatable, Sendable {
     public var bar: BarArrangement
     /// Lets `baron dev` load and reload plugins through a socket only this user can open.
     public var developerMode: Bool
+    /// When a web page's address isn't in Accessibility, ask Safari or the Chrome family for it through AppleScript.
+    public var askBrowsersForPage: Bool
 
     public init(
         isPaused: Bool = false,
@@ -21,7 +23,8 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         disabledPlugins: [String] = [],
         offeredBundledPlugins: [String] = [],
         bar: BarArrangement = BarArrangement(),
-        developerMode: Bool = false
+        developerMode: Bool = false,
+        askBrowsersForPage: Bool = false
     ) {
         self.isPaused = isPaused
         self.excludedApps = excludedApps
@@ -31,6 +34,7 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         self.offeredBundledPlugins = offeredBundledPlugins
         self.bar = bar
         self.developerMode = developerMode
+        self.askBrowsersForPage = askBrowsersForPage
     }
 
     public init(from decoder: Decoder) throws {
@@ -44,6 +48,7 @@ public struct BaronSettings: Codable, Equatable, Sendable {
         offeredBundledPlugins = try container.decodeIfPresent([String].self, forKey: .offeredBundledPlugins) ?? defaults.offeredBundledPlugins
         bar = try container.decodeIfPresent(BarArrangement.self, forKey: .bar) ?? defaults.bar
         developerMode = try container.decodeIfPresent(Bool.self, forKey: .developerMode) ?? defaults.developerMode
+        askBrowsersForPage = try container.decodeIfPresent(Bool.self, forKey: .askBrowsersForPage) ?? defaults.askBrowsersForPage
     }
 
     public func isPluginEnabled(_ id: String) -> Bool {

@@ -52,6 +52,10 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.developerMode")
                 Text("Lets `baron dev` load plugins from their folders, reload them on each build and stream their logs. Only your user account can connect.")
                     .font(.caption).foregroundStyle(.secondary)
+                Toggle("Ask browsers for the page address", isOn: $store.settings.askBrowsersForPage)
+                    .accessibilityIdentifier("settings.askBrowsersForPage")
+                Text("For plugins allowed to read the page: when a browser doesn't share its address through Accessibility, ask Safari, Chrome, Arc, Edge, Brave, Vivaldi or Opera with AppleScript. macOS asks you once for each browser.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section("Excluded apps") {
                 List(store.settings.excludedApps, id: \.self, selection: $selectedApp) { id in

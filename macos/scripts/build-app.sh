@@ -48,7 +48,7 @@ else
 fi
 
 codesign --force --options runtime --timestamp=none --sign "$identity" --identifier org.odh.baron.probe "$out/baron-probe"
-codesign --force --options runtime --timestamp=none --sign "$identity" "$app"
+codesign --force --options runtime --timestamp=none --entitlements Resources/Baron.entitlements --sign "$identity" "$app"
 codesign --verify --strict "$app"
 
 echo "Built $app and $out/baron-probe (signed with: $identity)"

@@ -1,8 +1,10 @@
+import Foundation
 import BaronCore
 import NaturalLanguage
 
 /// `host.text.segment`: word or sentence boundaries from the system's tokenizer, as UTF-16 offsets
-/// (JavaScript string indices). Words exclude spaces and punctuation; sentences cover the text.
+/// (JavaScript string indices). Words need a letter or digit, so spaces, punctuation and emoji aren't words
+/// (as with Intl.Segmenter's isWordLike); sentences cover the text, trailing spaces included.
 public struct TextService: HostService {
     public let namespace = "text"
 
@@ -23,7 +25,9 @@ public struct TextService: HostService {
     static func segments(of text: String, unit: NLTokenUnit) -> [(start: Int, end: Int)] {
         let tokenizer = NLTokenizer(unit: unit)
         tokenizer.string = text
-        return tokenizer.tokens(for: text.startIndex..<text.endIndex).map { range in
+        return tokenizer.tokens(for: text.startIndex..<text.endIndex)
+            .filter { unit != .word || text[$0].unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) } }
+            .map { range in
             (text.utf16.distance(from: text.utf16.startIndex, to: range.lowerBound.samePosition(in: text.utf16) ?? text.utf16.startIndex),
              text.utf16.distance(from: text.utf16.startIndex, to: range.upperBound.samePosition(in: text.utf16) ?? text.utf16.endIndex))
         }

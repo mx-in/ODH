@@ -32,8 +32,9 @@ func runBarShowsChecks(action: String) async -> [PluginCheck] {
         return checks
     }
     SyntheticInput.doubleClick(at: quick.point)
-    let shown = BaronBarDetector.waitForBar(timeout: 2.5) && BaronBarDetector.hasAction(action)
-    record("the new action is on the bar", shown, shown ? action : "missing from the bar")
+    let bar = BaronBarDetector.waitForBar(timeout: 2.5)
+    let shown = bar && BaronBarDetector.hasAction(action)
+    record("the new action is on the bar", shown, shown ? action : bar ? "missing; the bar shows \(barActionOrder().joined(separator: ", "))" : "no bar")
     if shown, BaronBarDetector.pressAction(action) {
         SyntheticInput.pause(1)
         let text = documentText(safari) ?? ""

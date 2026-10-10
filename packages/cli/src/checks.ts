@@ -1,6 +1,7 @@
 /** What `baron build` checks besides compiling. Design: 09-developer-tooling.md#checks-in-baron-build */
 import Ajv2020, { type ErrorObject } from "ajv/dist/2020.js";
 import schema from "@baron/api/schema/manifest-1.json" with { type: "json" };
+import { networkPermissionCovers } from "@baron/api";
 import { builtinModules } from "node:module";
 
 const validate = new Ajv2020({ allErrors: true, strict: true }).compile(schema);
@@ -47,18 +48,7 @@ export function literalFetchHosts(code: string): string[] {
     return [...hosts];
 }
 
-/** Whether a `network:` permission covers the URL origin, as the design's patterns describe. */
+/** Whether a `network:` permission covers the URL origin; the matcher is shared with `@baron/test`. */
 export function permits(permissions: string[], origin: string): boolean {
-    const [, scheme, host, port] = origin.match(/^(https?):\/\/([^:]+)(?::(\d+))?$/) ?? [];
-    if (!scheme || !host) return false;
-    return permissions.some((permission) => {
-        const pattern = permission.match(/^network:(?:(https?):\/\/)?(\*\.)?([^:]+)(?::(\d+))?$/);
-        if (!pattern) return false;
-        const [, wantScheme, wildcard, wantHost, wantPort] = pattern;
-        const loopback = /^(127\.\d+\.\d+\.\d+|localhost|\[::1\])$/.test(wantHost!);
-        const schemeOK = wantScheme ? wantScheme === scheme : scheme === "https" || loopback;
-        const hostOK = wildcard ? host.endsWith(`.${wantHost}`) : host === wantHost;
-        const portOK = (port ?? (scheme === "https" ? "443" : "80")) === (wantPort ?? (scheme === "https" ? "443" : "80"));
-        return schemeOK && hostOK && portOK;
-    });
+    return permissions.some((permission) => networkPermissionCovers(permission, origin));
 }

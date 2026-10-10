@@ -10,3 +10,4 @@ export { definePlugin } from "./plugin.ts";
 export type * from "./plugin.ts";
 export { base64ToBytes, bytesToBase64, decodeValue, encodeValue, envelopeVersion } from "./envelope.ts";
 export type * from "./envelope.ts";
+export { networkPermissionCovers, networkPermissionFor } from "./network.ts";

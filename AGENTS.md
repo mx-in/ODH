@@ -16,11 +16,11 @@
     - [x] Record bar clicks per plugin, and reject side-effecting calls without one in the last 5 s (f1a9750)
 - [x] Permission gate
     - [x] Check every routed call before its service runs (a8bae3f)
-- [ ] Network policy in `http.fetch`
+- [x] Network policy in `http.fetch`
     - [x] Check the first URL and every redirect hop against the granted set, answering permission_denied with requestable (e34bc99)
-    - [ ] **▶ IN PROGRESS** Resolve hosts before connecting, so a public name can't reach a private address
+    - [x] Resolve hosts before connecting, so a public name can't reach a private address (9b6e418)
 - [ ] Services
-    - [ ] `clipboard.readText` and `clipboard.writeText`
+    - [ ] **▶ IN PROGRESS** `clipboard.readText` and `clipboard.writeText`
     - [ ] `selection.replace` (only on an editable selection)
     - [ ] `text.segment` with `NLTokenizer`
     - [ ] `ui.openUrl` for `https`, `http` and `mailto`, and `ui.openSettings`

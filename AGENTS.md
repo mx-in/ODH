@@ -2,7 +2,51 @@
 
 ## Current task
 
-_No active task._
+**Task:** task-004-plugin-contract: the manifest and types everything else builds on (gate: the JSON Schema and the Swift validator agree on 30+ manifests; `when` rules and localisation are unit tested; ODH's manifest validates)
+**Started:** 2026-10-10 · **Agent:** Claude (Claude Code) · design: [01](docs/design/plugin-platform/01-package-and-manifest.md), types in [03](docs/design/plugin-platform/03-host-api-and-ipc.md)
+
+- [ ] **▶ IN PROGRESS** Workspace
+    - [ ] Add `packages/*` as an npm workspace with an empty `@baron/api`, tested with Bun
+    - [ ] Add the workspace's tests and type check to the checks in `AGENTS.md`
+- [ ] `@baron/api` types
+    - [ ] Write the manifest types, including every preference type
+    - [ ] Write `SelectionContext`, `TextSpan` and `ActionResult`
+    - [ ] Write `Host` and `ViewHandle` for apiVersion 1
+    - [ ] Write `BaronError` and the error codes
+    - [ ] Write `definePlugin`
+- [ ] Manifest JSON Schema
+    - [ ] Write the schema for the package fields and actions
+    - [ ] Add the preference types to the schema
+    - [ ] Test that the schema and the TypeScript types list the same fields
+- [ ] Manifest corpus
+    - [ ] Write the valid cases and the cases the schema rejects, each with its expected JSON Pointer
+    - [ ] Write the cases only the semantic checks reject, with their package files
+    - [ ] Run the corpus against the JSON Schema
+- [ ] Swift manifest model (BaronCore)
+    - [ ] Check a manifest's structure as the schema does, reporting JSON Pointers
+    - [ ] Decode a valid manifest into Swift types
+    - [ ] Check unique IDs, `dependsOn` targets, and that `needs` are granted
+    - [ ] Check that paths stay inside the package and referenced files exist
+    - [ ] Compile each `regex` as JavaScript and as ICU
+    - [ ] Check `apiVersion`, `minBaronVersion` and `platforms`
+    - [ ] Check that `%key%` strings exist in the default locale
+    - [ ] Run the shared corpus in Swift tests
+- [ ] `when` rules (BaronCore)
+    - [ ] Evaluate `minLength` and `maxLength` in UTF-16 units
+    - [ ] Evaluate `regex`
+    - [ ] Classify the text as `word`, `url`, `email`, `number` or `text`
+    - [ ] Evaluate `apps`, `excludeApps` and `editable`
+- [ ] Localisation (BaronCore)
+    - [ ] Resolve `%key%` strings through the preferred languages, then `defaultLocale`, then the key
+- [ ] ODH manifest
+    - [ ] Convert ODH's `_locales` into `plugins/odh/locales/` with a script and a test that keeps them in sync
+    - [ ] Write `plugins/odh/manifest.json` with the action, permissions and every preference
+- [ ] Verification
+    - [ ] Check the gate
+- [ ] Design UML
+    - [ ] Replace the design-level UML in `01-package-and-manifest.md` with diagrams of the code as built
+
+**Notes for the next agent:** the JavaScript side is an npm workspace in the root `package.json` (one installer, one lockfile with ODH); Bun 1.4 runs the tests and, later, builds (installed with `npm install -g bun`). The corpus lives in `packages/api/test/corpus/` and is read by both `bun test` and the Swift tests. Pointer convention: an error points at the offending field; a missing or unknown field points at where that field is or would be.
 
 <!--
 Template while a task is active (replace the line above):

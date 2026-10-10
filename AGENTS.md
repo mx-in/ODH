@@ -22,19 +22,19 @@
     - [x] Write the valid cases and the cases the schema rejects, each with its expected JSON Pointer (90f2d2d)
     - [x] Write the cases only the semantic checks reject, with their package files (7b3ddae)
     - [x] Run the corpus against the JSON Schema (90f2d2d)
-- [ ] **▶ IN PROGRESS** Swift manifest model (BaronCore)
+- [x] Swift manifest model (BaronCore)
     - [x] Check a manifest's structure as the schema does, reporting JSON Pointers (63cdb3d)
     - [x] Decode a valid manifest into Swift types (9516f33)
     - [x] Check unique IDs, `dependsOn` targets, and that `needs` are granted (42c5e2e)
-    - [ ] Check ranges and defaults: minLength ≤ maxLength, a default within its options or range (found while writing the corpus)
-    - [ ] Check that paths stay inside the package and referenced files exist
-    - [ ] Compile each `regex` as JavaScript and as ICU
-    - [ ] Check `apiVersion`, `minBaronVersion` and `platforms`
-    - [ ] Check that `%key%` strings exist in the default locale
-    - [ ] Run the shared corpus in Swift tests
+    - [x] Check ranges and defaults: minLength ≤ maxLength, a default within its options or range (found while writing the corpus) (c86f3e7)
+    - [x] Check that paths stay inside the package and referenced files exist (bd552a2)
+    - [x] Compile each `regex` as JavaScript and as ICU (0dec757)
+    - [x] Check `apiVersion`, `minBaronVersion` and `platforms` (5ad0b00)
+    - [x] Check that `%key%` strings exist in the default locale (abc30e8)
+    - [x] Run the shared corpus in Swift tests (3d93f41)
 - [ ] `when` rules (BaronCore)
-    - [ ] Evaluate `minLength` and `maxLength` in UTF-16 units
-    - [ ] Evaluate `regex`
+    - [x] Evaluate `minLength` and `maxLength` in UTF-16 units (f065c4b)
+    - [ ] **▶ IN PROGRESS** Evaluate `regex`
     - [ ] Classify the text as `word`, `url`, `email`, `number` or `text`
     - [ ] Evaluate `apps`, `excludeApps` and `editable`
 - [ ] Localisation (BaronCore)

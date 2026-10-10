@@ -19,4 +19,15 @@ struct WhenRulesTests {
         #expect(rules.matches(input("🦊")))
         #expect(!WhenRules(maxLength: 1).matches(input("🦊")))
     }
+
+    @Test func regexSearchesAnywhereLikeJavaScript() {
+        #expect(WhenRules(regex: "o").matches(input("fox")))
+        #expect(WhenRules(regex: "^\\p{L}+$").matches(input("Füchse")))
+        #expect(!WhenRules(regex: "^\\p{L}+$").matches(input("fox 2")))
+        #expect(!WhenRules(regex: "^fox$").matches(input("Fox")))
+    }
+
+    @Test func aBrokenPatternNeverMatches() {
+        #expect(!WhenRules(regex: "[]").matches(input("fox")))
+    }
 }

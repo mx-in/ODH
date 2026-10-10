@@ -1,0 +1,22 @@
+{
+    "name": "@baron/test",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Test Baron plugins: a mock host and runners for JavaScriptCore and QuickJS-NG",
+    "license": "MIT",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "test": "bun test",
+        "typecheck": "tsc --noEmit -p ."
+    },
+    "dependencies": {
+        "@baron/api": "0.1.0"
+    },
+    "devDependencies": {
+        "@types/bun": "1.4.2",
+        "typescript": "7.0.2"
+    }
+}

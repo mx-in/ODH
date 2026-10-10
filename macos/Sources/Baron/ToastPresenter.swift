@@ -1,11 +1,18 @@
+import AppKit
+import BaronPlatform
 import BaronRuntime
-import os
 
-/// Shows plugin toasts. For now it only logs them; the toast panel comes with action results.
-final class ToastPresenter: PluginPresenter {
-    private let logger = Logger(subsystem: "org.odh.baron", category: "plugins")
+/// Shows plugin toasts (and Baron's messages about plugins) near the last selection.
+final class ToastPresenter: PluginPresenter, @unchecked Sendable {
+    @MainActor private let panel = ToastPanel()
+    @MainActor var anchor: CGPoint = .zero
 
     func toast(_ message: String, kind: String, from plugin: RuntimePlugin) async {
-        logger.info("\(plugin.id, privacy: .public) toast (\(kind, privacy: .public)): \(message, privacy: .private)")
+        await show(message, kind: ToastPanel.Kind(rawValue: kind) ?? .info)
+    }
+
+    @MainActor
+    func show(_ message: String, kind: ToastPanel.Kind) {
+        panel.show(message, kind: kind, near: anchor)
     }
 }

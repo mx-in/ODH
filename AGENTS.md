@@ -34,8 +34,8 @@
 - [ ] Bar integration
     - [x] Load plugins from the development folder (installing comes in task-008) (739a2bc)
     - [x] Show plugin actions whose `when` rules match, after the built-in ones (cf5120b)
-    - [ ] **▶ IN PROGRESS** Dispatch a click with `text`, `source`, `editable`, `app` and `platform`
-    - [ ] Carry out action results: copy, replace, toast, open URL
+    - [x] Dispatch a click with `text`, `source`, `editable`, `app` and `platform` (03d2b92)
+    - [ ] **▶ IN PROGRESS** Carry out action results: copy, replace, toast, open URL
     - [ ] Show a plugin's error as a toast naming the plugin
 - [ ] Tooling
     - [ ] `baron build`: bundle `src/` into one classic script with an inline source map

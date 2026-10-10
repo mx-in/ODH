@@ -4,6 +4,8 @@ import Foundation
 public enum ActionEffect: Equatable, Sendable {
     case copy(String)
     case openURL(URL)
+    /// Replaces the selection in the source app.
+    case replace(String)
 }
 
 /// An action that ships with Baron, as opposed to a plugin.

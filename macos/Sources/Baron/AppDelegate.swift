@@ -14,7 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let debugPanel = DebugPanelController()
     private let debugItem = NSMenuItem()
     private var subscriptions: Set<AnyCancellable> = []
-    private lazy var plugins = PluginController(presenter: ToastPresenter())
+    private let toasts = ToastPresenter()
+    private lazy var plugins = PluginController(presenter: toasts)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -36,7 +37,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         plugins.onCatalogChange = { [weak self] in self?.coordinator.pipeline.plugins = $0 }
         coordinator.onPluginAction = { [weak self] entry, run in
             guard let self else { return }
-            Task { _ = await self.plugins.run(entry, for: run) }
+            Task { await self.runPluginAction(entry, run) }
         }
         Task { await plugins.reload() }
         coordinator.start()
@@ -105,6 +106,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleDebugPanel() {
         debugPanel.toggle()
+    }
+
+    /// Runs a plugin action and carries out what it returns; failures show as a toast naming the plugin.
+    private func runPluginAction(_ entry: PluginActionCatalog.Entry, _ run: SelectionRun) async {
+        toasts.anchor = run.bounds.map { CGPoint(x: $0.midX, y: $0.minY) } ?? run.trigger.location
+        let mayReplace = plugins.plugins[entry.pluginID]?.manifest.permissions.contains("selection.replace") ?? false
+        switch await plugins.run(entry, for: run) {
+        case .success(let value):
+            switch PluginActionResult.parse(value, editable: run.editable, mayReplace: mayReplace) {
+            case .success(.nothing): break
+            case .success(.copy(let text)): ActionEffectPerformer.perform(.copy(text))
+            case .success(.replace(let text)): ActionEffectPerformer.perform(.replace(text))
+            case .success(.openURL(let url)): ActionEffectPerformer.perform(.openURL(url))
+            case .success(.toast(let message, let kind)): toasts.show(message, kind: ToastPanel.Kind(rawValue: kind) ?? .info)
+            case .failure(let error): toasts.show("\(entry.pluginName): \(error.message)", kind: .error)
+            }
+        case .failure(let error):
+            toasts.show(error.message, kind: .error)
+        }
     }
 
     @objc private func reloadPlugins() {

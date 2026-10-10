@@ -12,6 +12,8 @@ public enum ActionEffectPerformer {
             pasteboard.setString(text, forType: .string)
         case .openURL(let url):
             NSWorkspace.shared.open(url)
+        case .replace(let text):
+            SelectionReplacer.replace(with: text)
         }
     }
 }

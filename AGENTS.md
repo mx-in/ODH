@@ -10,10 +10,10 @@
     - [x] Match network patterns: hosts, subdomain wildcards, ports, schemes; private, link-local and loopback addresses only by an exact entry (715bfab)
     - [x] Share a network matcher corpus between `@baron/api` and Swift, and pass it in both (3ad0b12)
     - [x] Describe what each host method needs: a permission, a user action, or nothing (2d4bd5f)
-- [ ] Grants
-    - [ ] **▶ IN PROGRESS** Hold each plugin's granted set: install permissions plus saved run-time grants (Always Allow saved, Deny remembered 24 h, Allow Once in memory)
+- [x] Grants
+    - [x] Hold each plugin's granted set: install permissions plus saved run-time grants (Always Allow saved, Deny remembered 24 h, Allow Once in memory) (27a0bdf)
 - [ ] User-action tracker
-    - [ ] Record bar clicks per plugin, and reject side-effecting calls without one in the last 5 s
+    - [ ] **▶ IN PROGRESS** Record bar clicks per plugin, and reject side-effecting calls without one in the last 5 s
 - [ ] Permission gate
     - [ ] Check every routed call before its service runs
 - [ ] Network policy in `http.fetch`

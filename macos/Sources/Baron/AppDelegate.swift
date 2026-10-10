@@ -45,6 +45,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         coordinator.start()
         // `open build/Baron.app --args --debug-panel` starts with the panel showing.
         if CommandLine.arguments.contains("--debug-panel") { debugPanel.toggle() }
+        InstallSheetPreview.showIfAsked()
     }
 
     private func apply(_ settings: BaronSettings) {

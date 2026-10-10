@@ -55,6 +55,22 @@ struct PageTests {
         #expect(await waitFor("document.title.startsWith('ready') ? document.title : ''", in: view) == "ready object fox")
     }
 
+    @Test func givesPagesBaronsColoursForTheAppearance() async throws {
+        try write("views/page.html", #"<!doctype html><html><head><script src="page.js"></script></head><body></body></html>"#)
+        try write("views/page.js", """
+        addEventListener("DOMContentLoaded", () => {
+            const style = getComputedStyle(document.documentElement);
+            document.title = [style.getPropertyValue("--baron-accent").trim() !== "", style.colorScheme, baron.environment.locale].join(" ");
+        });
+        """)
+        let recorder = Recorder()
+        let view = views(recorder).make(pluginID: "org.example.web", path: "views/page.html",
+                                        config: PageConfig(environment: Self.environment, preferences: .object([:])))
+        view.appearance = NSAppearance(named: .darkAqua)
+        #expect(await waitFor("document.title", in: view) == "true light dark en")
+        #expect(await waitFor("matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'", in: view) == "dark")
+    }
+
     @Test func callsCarryThePluginFromTheOrigin() async throws {
         try write("views/page.html", #"<!doctype html><script src="page.js"></script>"#)
         try write("views/page.js", #"baron.storage.get("k").then((v) => { document.title = "got " + v; });"#)

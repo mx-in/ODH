@@ -94,7 +94,7 @@
     - [x] `host.ui.openWebView` and `ViewHandle` on the engine side (9d24fb5)
 - [ ] Look and feel
     - [ ] **▶ IN PROGRESS** Colour variables, dark mode and locale
-    - [ ] Play audio without an extra click
+    - [x] Play audio without an extra click (6deb357)
 - [ ] Lifecycle
     - [ ] Keep a closed web view loaded for 30 s
 - [ ] Settings page

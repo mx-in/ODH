@@ -56,6 +56,7 @@ public final class PluginPageViews {
         let scripts = configuration.userContentController
         scripts.addUserScript(WKUserScript(source: "window.__baronPageConfig = \(config.json);", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         scripts.addUserScript(WKUserScript(source: Self.bridgeSource, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        scripts.addUserScript(WKUserScript(source: PageTheme.script, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         scripts.addScriptMessageHandler(bridge, contentWorld: .page, name: PageBridge.handlerName)
 
         let view = PluginWebView(pluginID: pluginID, bridge: bridge, configuration: configuration)

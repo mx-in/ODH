@@ -31,14 +31,14 @@
     - [x] Decode envelopes and route `ns.method` to a service, returning the design's error codes (815a37c)
     - [x] Serve `log` and `ui.toast`; send `environment` and `preferences` (manifest defaults) with each dispatch (e21fc40)
     - [x] Serve `http.fetch` with its time and size limits (permission checks come in task-006) (87ccbca)
-- [ ] Bar integration
+- [x] Bar integration
     - [x] Load plugins from the development folder (installing comes in task-008) (739a2bc)
     - [x] Show plugin actions whose `when` rules match, after the built-in ones (cf5120b)
     - [x] Dispatch a click with `text`, `source`, `editable`, `app` and `platform` (03d2b92)
     - [x] Carry out action results: copy, replace, toast, open URL (148a42e)
-    - [ ] **▶ IN PROGRESS** Show a plugin's error as a toast naming the plugin
+    - [x] Show a plugin's error as a toast naming the plugin (eb2fa5a)
 - [ ] Tooling
-    - [ ] `baron build`: bundle `src/` into one classic script with an inline source map
+    - [ ] **▶ IN PROGRESS** `baron build`: bundle `src/` into one classic script with an inline source map
     - [ ] `baron build` checks: manifest, Node built-ins, bundle size, `eval` without `code.dynamic`
     - [ ] `@baron/test`: a mock host with in-memory services
     - [ ] Run plugin tests on JavaScriptCore through `node:vm`

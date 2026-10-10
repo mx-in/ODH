@@ -45,8 +45,8 @@
     - [x] Run plugin tests on QuickJS-NG through `qjs`, with envelopes on standard input and output (29c4a95)
     - [x] `baron test --engine jsc|quickjs|all` (055eaa2)
 - [ ] Examples
-    - [ ] **▶ IN PROGRESS** Write the uppercase action example with tests
-    - [ ] Write the `fetch`-based lookup example with tests
+    - [x] Write the uppercase action example with tests (76479df)
+    - [ ] **▶ IN PROGRESS** Write the `fetch`-based lookup example with tests
 - [ ] Verification
     - [ ] Test timers, errors, time limits, idle unload and reload
     - [ ] Measure load time, dispatch overhead and idle memory against the targets in the design

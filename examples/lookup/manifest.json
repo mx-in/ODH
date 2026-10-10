@@ -1,0 +1,21 @@
+{
+    "$schema": "../../packages/api/schema/manifest-1.json",
+    "id": "org.baron.example.lookup",
+    "name": "Define",
+    "description": "Shows an English definition of the selected word, from the Free Dictionary API.",
+    "version": "1.0.0",
+    "apiVersion": 1,
+    "author": "Baron",
+    "license": "MIT",
+    "homepage": "https://dictionaryapi.dev",
+    "main": "dist/main.js",
+    "permissions": ["network:api.dictionaryapi.dev"],
+    "actions": [
+        {
+            "id": "define",
+            "title": "Define",
+            "when": { "contentTypes": ["word"], "maxLength": 40 },
+            "autoRun": "allowed"
+        }
+    ]
+}

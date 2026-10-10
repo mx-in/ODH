@@ -1,0 +1,19 @@
+{
+    "name": "@baron/plugin-odh",
+    "version": "0.1.0",
+    "private": true,
+    "description": "ODH as a Baron plugin, built from the extension's sources in src/",
+    "license": "MIT",
+    "type": "module",
+    "scripts": {
+        "locales": "bun scripts/locales.ts",
+        "test": "bun test",
+        "typecheck": "tsc --noEmit -p ."
+    },
+    "devDependencies": {
+        "@baron/api": "0.1.0",
+        "@types/bun": "1.4.2",
+        "ajv": "8.20.0",
+        "typescript": "7.0.2"
+    }
+}

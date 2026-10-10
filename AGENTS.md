@@ -32,15 +32,15 @@
     - [x] Check `apiVersion`, `minBaronVersion` and `platforms` (5ad0b00)
     - [x] Check that `%key%` strings exist in the default locale (abc30e8)
     - [x] Run the shared corpus in Swift tests (3d93f41)
-- [ ] `when` rules (BaronCore)
+- [x] `when` rules (BaronCore)
     - [x] Evaluate `minLength` and `maxLength` in UTF-16 units (f065c4b)
-    - [ ] **▶ IN PROGRESS** Evaluate `regex`
-    - [ ] Classify the text as `word`, `url`, `email`, `number` or `text`
-    - [ ] Evaluate `apps`, `excludeApps` and `editable`
-- [ ] Localisation (BaronCore)
-    - [ ] Resolve `%key%` strings through the preferred languages, then `defaultLocale`, then the key
+    - [x] Evaluate `regex` (e78fe26)
+    - [x] Classify the text as `word`, `url`, `email`, `number` or `text` (17be52b)
+    - [x] Evaluate `apps`, `excludeApps` and `editable` (cb36467)
+- [x] Localisation (BaronCore)
+    - [x] Resolve `%key%` strings through the preferred languages, then `defaultLocale`, then the key (f12ffb3)
 - [ ] ODH manifest
-    - [ ] Convert ODH's `_locales` into `plugins/odh/locales/` with a script and a test that keeps them in sync
+    - [ ] **▶ IN PROGRESS** Convert ODH's `_locales` into `plugins/odh/locales/` with a script and a test that keeps them in sync
     - [ ] Write `plugins/odh/manifest.json` with the action, permissions and every preference
 - [ ] Verification
     - [ ] Check the gate

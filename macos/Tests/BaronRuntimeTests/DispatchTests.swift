@@ -72,10 +72,3 @@ struct DispatchTests {
         #expect(try await runtime.dispatch(id, .lifecycle, name: "onInstall", payload: DispatchPayload()).get() == .null)
     }
 }
-
-extension Result {
-    var failure: Failure? {
-        if case .failure(let error) = self { return error }
-        return nil
-    }
-}

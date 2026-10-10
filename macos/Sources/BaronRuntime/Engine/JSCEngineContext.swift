@@ -10,6 +10,8 @@ public final class JSCEngineContext: @unchecked Sendable {
     let queue: DispatchQueue
     private var virtualMachine: JSVirtualMachine?
     private var context: JSContext?
+    private let busyLock = NSLock()
+    private var busySince: ContinuousClock.Instant?
     /// Pending timers by the prelude's id; only touched on `queue`.
     private var timers: [Int: DispatchWorkItem] = [:]
 
@@ -42,7 +44,7 @@ public final class JSCEngineContext: @unchecked Sendable {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 guard let context = self.context else { return continuation.resume(throwing: EngineError.unloaded) }
-                continuation.resume(with: Result { try body(context) })
+                continuation.resume(with: self.running { Result { try body(context) } })
             }
         }
     }
@@ -85,12 +87,26 @@ public final class JSCEngineContext: @unchecked Sendable {
         timers.removeValue(forKey: id)?.cancel()
         let item = DispatchWorkItem { [weak self] in
             guard let self, self.timers.removeValue(forKey: id) != nil, let context = self.context else { return }
-            context.exception = nil
-            context.objectForKeyedSubscript("__baronFireTimer")?.call(withArguments: [id])
-            context.exception = nil
+            self.running {
+                context.exception = nil
+                context.objectForKeyedSubscript("__baronFireTimer")?.call(withArguments: [id])
+                context.exception = nil
+            }
         }
         timers[id] = item
         queue.asyncAfter(deadline: .now() + .milliseconds(Int(max(0, milliseconds).rounded())), execute: item)
+    }
+
+    /// Marks the time spent inside plugin code, so a watchdog can tell a stuck plugin.
+    private func running<T>(_ body: () -> T) -> T {
+        busyLock.withLock { busySince = ContinuousClock.now }
+        defer { busyLock.withLock { busySince = nil } }
+        return body()
+    }
+
+    /// How long the current synchronous run of plugin code has lasted, or nil when none is running.
+    public var busyFor: Duration? {
+        busyLock.withLock { busySince.map { ContinuousClock.now - $0 } }
     }
 
     /// Timers waiting to fire.
@@ -102,9 +118,11 @@ public final class JSCEngineContext: @unchecked Sendable {
     public func deliver(_ json: String) {
         queue.async {
             guard let context = self.context else { return }
-            context.exception = nil
-            context.objectForKeyedSubscript("__baronReceive")?.call(withArguments: [json])
-            context.exception = nil
+            self.running {
+                context.exception = nil
+                context.objectForKeyedSubscript("__baronReceive")?.call(withArguments: [json])
+                context.exception = nil
+            }
         }
     }
 

@@ -9,6 +9,8 @@ public actor PluginRuntime {
     private var plugins: [String: RuntimePlugin] = [:]
     private var instances: [String: PluginInstance] = [:]
     private var states: [String: PluginRuntimeState] = [:]
+    private var strikes: [String: [ContinuousClock.Instant]] = [:]
+    private var watchdog: Task<Void, Never>?
 
     public init(handler: HostCallHandler, limits: RuntimeLimits = RuntimeLimits()) {
         self.handler = handler
@@ -40,7 +42,57 @@ public actor PluginRuntime {
         case .failure(let error): return .failure(error)
         }
         let json = payload.json(pluginVersion: instance.plugin.manifest.version)
-        return await instance.dispatch(target, name: name, payload: json, limit: limits.timeLimit(for: target))
+        let result = await instance.dispatch(target, name: name, payload: json, limit: limits.timeLimit(for: target))
+        if result.failure?.code == "timeout", instances[pluginID] === instance { strike(pluginID) }
+        return result
+    }
+
+    /// Lets a suspended plugin run again, in a fresh context.
+    public func reenable(_ pluginID: String) {
+        guard case .suspended = state(of: pluginID) else { return }
+        strikes[pluginID] = nil
+        states[pluginID] = .unloaded
+    }
+
+    /// Counts a dispatch that ran out of time; too many in the window suspends the plugin.
+    private func strike(_ pluginID: String) {
+        let now = ContinuousClock.now
+        let recent = (strikes[pluginID] ?? []).filter { now - $0 < limits.strikeWindow } + [now]
+        strikes[pluginID] = recent
+        if recent.count >= limits.strikes {
+            suspend(pluginID, "It ran out of time \(recent.count) times in \(limits.strikeWindow); re-enable it to try again")
+        }
+    }
+
+    private func suspend(_ pluginID: String, _ reason: String) {
+        states[pluginID] = .suspended(reason)
+        guard let instance = instances.removeValue(forKey: pluginID) else { return }
+        instance.failAll(.unavailable(reason))
+        instance.engine.unload()
+    }
+
+    /// Suspends plugins stuck in synchronous code. Their thread can't be stopped (stage 1), so the context is abandoned.
+    private func checkForStuckPlugins() {
+        for (pluginID, instance) in instances {
+            if let busy = instance.engine.busyFor, busy > limits.stuck {
+                suspend(pluginID, "It stopped responding (stuck for more than \(limits.stuck)); re-enable it to try again")
+            }
+        }
+        if instances.isEmpty {
+            watchdog?.cancel()
+            watchdog = nil
+        }
+    }
+
+    private func startWatchdog() {
+        guard watchdog == nil else { return }
+        let interval = limits.stuck / 4
+        watchdog = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: interval)
+                await self?.checkForStuckPlugins()
+            }
+        }
     }
 
     func instance(for pluginID: String) async -> Result<PluginInstance, HostError> {
@@ -58,6 +110,7 @@ public actor PluginRuntime {
             }
             instances[pluginID] = instance
             states[pluginID] = .ready
+            startWatchdog()
             return .success(instance)
         } catch {
             instance.engine.unload()

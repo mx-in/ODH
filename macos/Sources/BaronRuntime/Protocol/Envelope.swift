@@ -94,3 +94,11 @@ enum InboundEnvelope {
 public enum DispatchTarget: String, Sendable {
     case action, options, button, lifecycle, event
 }
+
+extension Result {
+    /// The error, when this is a failure.
+    var failure: Failure? {
+        if case .failure(let error) = self { return error }
+        return nil
+    }
+}

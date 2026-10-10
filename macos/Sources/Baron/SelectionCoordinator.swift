@@ -8,6 +8,8 @@ final class SelectionCoordinator {
     let pipeline: SelectionPipeline
     /// Called after every run, with the source it read from (used by the debug panel).
     var onRun: ((Trigger, PipelineOutcome, FocusedSelectionSource) -> Void)?
+    /// Called on every new selection trigger, before it is read (the result panel closes unless pinned).
+    var onSelection: (() -> Void)?
     /// Runs a plugin's action for the selection with the context read for it; set by the app delegate.
     var onPluginAction: ((PluginActionCatalog.Entry, SelectionRun, CapturedContext?) -> Void)?
     private let events = SelectionEventMonitor()
@@ -47,6 +49,7 @@ final class SelectionCoordinator {
 
     private func handle(_ trigger: Trigger) {
         bar.hide()
+        onSelection?()
         guard let source = FocusedSelectionSource.current(wakeElectron: pipeline.plugins.usesContext) else { return }
         Task {
             let outcome = await pipeline.run(trigger, source: source)

@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         store.$settings
             .sink { [weak self] in self?.apply($0) }
             .store(in: &subscriptions)
+        coordinator.onSelection = { [weak self] in self?.plugins.panels.selectionChanged() }
         coordinator.onRun = { [weak self] trigger, outcome, source in
             guard let self, self.debugPanel.isVisible else { return }
             Task { await self.debugPanel.store.record(trigger: trigger, outcome: outcome, source: source) }
@@ -133,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Runs a plugin action and carries out what it returns; failures show as a toast naming the plugin.
     private func runPluginAction(_ entry: PluginActionCatalog.Entry, _ run: SelectionRun, _ context: CapturedContext?) async {
         toasts.anchor = run.bounds.map { CGPoint(x: $0.midX, y: $0.minY) } ?? run.trigger.location
+        plugins.panels.anchor = (run.bounds, run.trigger.location)
         let mayReplace = plugins.plugins[entry.pluginID]?.manifest.permissions.contains("selection.replace") ?? false
         switch await plugins.run(entry, for: run, context: context) {
         case .success(let value):

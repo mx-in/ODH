@@ -82,7 +82,7 @@ public struct PluginEnvironment: Sendable {
         self.development = development
     }
 
-    func json(pluginVersion: String) -> JSONValue {
+    public func json(pluginVersion: String) -> JSONValue {
         .object(["apiVersion": .number(1), "baronVersion": .string(baronVersion), "pluginVersion": .string(pluginVersion),
                  "platform": .string(platform), "locale": .string(locale), "appearance": .string(appearance), "development": .bool(development)])
     }
@@ -104,7 +104,7 @@ public struct DispatchPayload: Sendable {
         self.arguments = arguments
     }
 
-    func json(pluginVersion: String) -> JSONValue {
+    public func json(pluginVersion: String) -> JSONValue {
         var object: [String: JSONValue] = ["environment": environment.json(pluginVersion: pluginVersion), "preferences": .object(preferences)]
         if let context { object["context"] = context }
         if let arguments { object["args"] = .array(arguments) }

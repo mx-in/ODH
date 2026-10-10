@@ -41,6 +41,8 @@ targets:
         product: BaronPlatform
       - package: BaronPackage
         product: BaronRuntime
+      - package: BaronPackage
+        product: BaronWeb
       - package: KeyboardShortcuts
     scheme:
       commandLineArguments:

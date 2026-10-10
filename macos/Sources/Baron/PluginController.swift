@@ -1,6 +1,7 @@
 import AppKit
 import BaronCore
 import BaronRuntime
+import BaronWeb
 import os
 
 /// Loads plugins, keeps the bar's plugin actions current, and serves the settings pages: preferences, options,
@@ -35,6 +36,9 @@ final class PluginController {
     let data: PluginDataManager
     let system = AppSystemActions()
     let installer: PluginInstaller
+    /// The result panel for plugin pages (`host.ui.openWebView`).
+    private(set) var panels: WebViewPanels!
+    private let viewPresenter = WebViewPresenter()
 
     init(presenter: PluginPresenter) {
         grants = GrantStore(folder: location.dataRoot)
@@ -45,7 +49,7 @@ final class PluginController {
         let gate = PermissionGate(grants: grants, actions: actions)
         let services: [HostService] = [
             LogService(sink: { id, level, text in DevSink.shared.emit(id, "log", ["level": .string(level), "text": .string(text)]) }),
-            UIService(presenter: presenter, system: system),
+            UIService(presenter: presenter, system: system, views: viewPresenter),
             HTTPService(policy: NetworkPolicy(grants: grants)),
             ClipboardService(system: system),
             SelectionService(system: system),
@@ -57,8 +61,25 @@ final class PluginController {
                 PluginLocalizer(package: plugin.package, defaultLocale: plugin.manifest.defaultLocale).resolve(plugin.manifest.name)
             },
         ]
-        runtime = PluginRuntime(handler: HostRouter(services: services, gate: gate))
+        let router = HostRouter(services: services, gate: gate)
+        runtime = PluginRuntime(handler: router)
         system.openSettingsWindow = { [weak self] id in self?.openSettings(id, []) }
+
+        // Pages call the same router, so the same permissions and user-action checks apply.
+        let server = PluginPageServer { [weak self] id in
+            MainActor.assumeIsolated { self?.plugins[id].map { PluginPageSource(package: $0.package, granted: $0.manifest.permissions) } }
+        }
+        let pages = PluginPageViews(server: server, route: { [weak self] call, id in
+            guard let plugin = self?.plugins[id] else { return .failure(.notFound("\(id) isn't loaded")) }
+            return await router.handle(call, from: plugin)
+        }, openExternal: { NSWorkspace.shared.open($0) })
+        panels = WebViewPanels(pages: pages, runtime: runtime, describe: { [weak self] plugin in
+            (self?.displayName(plugin) ?? plugin.id, plugin.manifest.icon.flatMap { NSImage(contentsOf: plugin.package.appendingPathComponent($0)) })
+        }, pageConfig: { [weak self] plugin, view, data in
+            let payload = await self?.payload(for: plugin) ?? DispatchPayload()
+            return PageConfig(environment: payload.environment.json(pluginVersion: plugin.manifest.version), preferences: .object(payload.preferences), view: view, data: data)
+        }, userInput: { [actions] id in actions.record(id) })
+        viewPresenter.panels = panels
     }
 
     func localizer(for plugin: RuntimePlugin) -> PluginLocalizer {

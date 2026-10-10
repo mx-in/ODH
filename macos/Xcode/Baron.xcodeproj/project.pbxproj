@@ -10,6 +10,7 @@
 		059DFA27AB6AB948416A5AD3 /* DebugPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5702184C82A004E7964DAD30 /* DebugPanel.swift */; };
 		3CE93BD62BB8F2E0BD3A7E74 /* AlertPrompter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F38BA5046A1291BAB43F6462 /* AlertPrompter.swift */; };
 		3DC2A65FCBB8763A4FC1B548 /* BaronRuntime in Frameworks */ = {isa = PBXBuildFile; productRef = 4489929408D12077D0D8E325 /* BaronRuntime */; };
+		3E1CB2B59E06E1B19FB41184 /* WebViewPanels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CADE054A9A6E3117332857A /* WebViewPanels.swift */; };
 		4195CCCBE15D82E4381565D4 /* BaronCore in Frameworks */ = {isa = PBXBuildFile; productRef = FEFB15955935063E4562CDA0 /* BaronCore */; };
 		5011C889EAEFD30795A54500 /* BaronPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = 8B2BF3EDF94221E81C377655 /* BaronPlatform */; };
 		5040303511BFE9488BF94075 /* PluginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FBE1125281BAC0C5AF31DF8 /* PluginController.swift */; };
@@ -19,20 +20,24 @@
 		82FEB48CEBEE96735B027E0B /* PreferenceControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC41B21198D1BFA969A345E9 /* PreferenceControls.swift */; };
 		9F20739737F625552011A462 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0707021CAC10997333A99D /* SettingsView.swift */; };
 		A7810D1A4AA75EDF5EFA6FF0 /* AppSystemActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27D6DA277CF35B7001F2F189 /* AppSystemActions.swift */; };
-		B02361AD1BA6ED611D437899 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 12C577B8C6F579A542E8DA1F /* KeyboardShortcuts */; };
+		B02361AD1BA6ED611D437899 /* BaronWeb in Frameworks */ = {isa = PBXBuildFile; productRef = 0161CC7ABC22B91FCD7BD55F /* BaronWeb */; };
 		B0530ED72B0AD73042408288 /* ToastPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54793A19E7FD423395878D68 /* ToastPresenter.swift */; };
+		B28A45B1B65F45C1A9EDC492 /* ResultPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EA2846C70A83F16EA717B35 /* ResultPanel.swift */; };
 		B347703A02A2EEF74BBD031A /* SelectionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1085BA13234DBBA825D4570 /* SelectionCoordinator.swift */; };
 		C08FCC34B9C4E1A3305B362D /* InstallFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5417B38F412D13CA674155A /* InstallFlow.swift */; };
 		C4725F69C2177BACAB36C834 /* PluginSettingsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0874B24AC3656FFE188B28B4 /* PluginSettingsModel.swift */; };
 		C765E748F9FD8C6C72959655 /* BarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C78BE3F4FE1C9A4B44B5E51C /* BarSettingsView.swift */; };
 		EB6FE8301B1303FA17555BA9 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCA79BD6C0848BEDCB9FF93 /* main.swift */; };
+		FC5745B26E7BB1980FD3C343 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 12C577B8C6F579A542E8DA1F /* KeyboardShortcuts */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0874B24AC3656FFE188B28B4 /* PluginSettingsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginSettingsModel.swift; sourceTree = "<group>"; };
 		0A0707021CAC10997333A99D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1CADE054A9A6E3117332857A /* WebViewPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewPanels.swift; sourceTree = "<group>"; };
 		27D6DA277CF35B7001F2F189 /* AppSystemActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSystemActions.swift; sourceTree = "<group>"; };
 		3A1540371BBC2647ACAC8A12 /* InstallSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallSheetView.swift; sourceTree = "<group>"; };
+		4EA2846C70A83F16EA717B35 /* ResultPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultPanel.swift; sourceTree = "<group>"; };
 		54793A19E7FD423395878D68 /* ToastPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastPresenter.swift; sourceTree = "<group>"; };
 		54B04B291FC579487AD80A1F /* macos */ = {isa = PBXFileReference; lastKnownFileType = folder; name = macos; path = ..; sourceTree = SOURCE_ROOT; };
 		5702184C82A004E7964DAD30 /* DebugPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugPanel.swift; sourceTree = "<group>"; };
@@ -56,7 +61,8 @@
 				4195CCCBE15D82E4381565D4 /* BaronCore in Frameworks */,
 				5011C889EAEFD30795A54500 /* BaronPlatform in Frameworks */,
 				3DC2A65FCBB8763A4FC1B548 /* BaronRuntime in Frameworks */,
-				B02361AD1BA6ED611D437899 /* KeyboardShortcuts in Frameworks */,
+				B02361AD1BA6ED611D437899 /* BaronWeb in Frameworks */,
+				FC5745B26E7BB1980FD3C343 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,9 +109,11 @@
 				0874B24AC3656FFE188B28B4 /* PluginSettingsModel.swift */,
 				C142A41C39608F728803EE6B /* PluginsPane.swift */,
 				EC41B21198D1BFA969A345E9 /* PreferenceControls.swift */,
+				4EA2846C70A83F16EA717B35 /* ResultPanel.swift */,
 				C1085BA13234DBBA825D4570 /* SelectionCoordinator.swift */,
 				0A0707021CAC10997333A99D /* SettingsView.swift */,
 				54793A19E7FD423395878D68 /* ToastPresenter.swift */,
+				1CADE054A9A6E3117332857A /* WebViewPanels.swift */,
 			);
 			path = Baron;
 			sourceTree = "<group>";
@@ -146,6 +154,7 @@
 				FEFB15955935063E4562CDA0 /* BaronCore */,
 				8B2BF3EDF94221E81C377655 /* BaronPlatform */,
 				4489929408D12077D0D8E325 /* BaronRuntime */,
+				0161CC7ABC22B91FCD7BD55F /* BaronWeb */,
 				12C577B8C6F579A542E8DA1F /* KeyboardShortcuts */,
 			);
 			productName = Baron;
@@ -206,9 +215,11 @@
 				C4725F69C2177BACAB36C834 /* PluginSettingsModel.swift in Sources */,
 				7A314F6721C00035967ED7F5 /* PluginsPane.swift in Sources */,
 				82FEB48CEBEE96735B027E0B /* PreferenceControls.swift in Sources */,
+				B28A45B1B65F45C1A9EDC492 /* ResultPanel.swift in Sources */,
 				B347703A02A2EEF74BBD031A /* SelectionCoordinator.swift in Sources */,
 				9F20739737F625552011A462 /* SettingsView.swift in Sources */,
 				B0530ED72B0AD73042408288 /* ToastPresenter.swift in Sources */,
+				3E1CB2B59E06E1B19FB41184 /* WebViewPanels.swift in Sources */,
 				EB6FE8301B1303FA17555BA9 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -421,6 +432,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		0161CC7ABC22B91FCD7BD55F /* BaronWeb */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BaronWeb;
+		};
 		12C577B8C6F579A542E8DA1F /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4CEBFDAB24C9AD6BC3B1B10C /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;

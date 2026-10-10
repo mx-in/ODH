@@ -80,20 +80,20 @@
 **Started:** 2026-10-11 · **Agent:** Claude (Claude Code) · design: [07 Web views](docs/design/plugin-platform/07-web-views.md).
 
 - [ ] Result panel (UI)
-    - [ ] **▶ IN PROGRESS** Show a panel next to the selection that never takes focus from the source app, with Baron's header: icon, name, pin, close
-    - [ ] Close it on an outside click, Escape, an app switch or a new selection unless pinned; one panel at a time
-    - [ ] Size it to its content, up to 640 points
+    - [x] Show a panel next to the selection that never takes focus from the source app, with Baron's header: icon, name, pin, close
+    - [x] Close it on an outside click, Escape, an app switch or a new selection unless pinned; one panel at a time
+    - [x] Size it to its content, up to 640 points
 - [ ] Serving pages
-    - [x] Serve `baron-plugin://<id>/` from the installed package
-    - [x] Give each plugin a non-persistent data store
-    - [x] Block navigation to other origins and `window.open`; open links in the browser
-    - [x] Apply the Content Security Policy, with declared hosts for images and media, and `'unsafe-eval'` only with `code.dynamic`
+    - [x] Serve `baron-plugin://<id>/` from the installed package (6deb357)
+    - [x] Give each plugin a non-persistent data store (6deb357)
+    - [x] Block navigation to other origins and `window.open`; open links in the browser (6deb357)
+    - [x] Apply the Content Security Policy, with declared hosts for images and media, and `'unsafe-eval'` only with `code.dynamic` (685d772, 6deb357)
 - [ ] Page bridge
-    - [x] Inject `window.baron` with the host API, taking the plugin's identity from the page's origin
-    - [ ] `baron.view`: data, messages, resize and close
+    - [x] Inject `window.baron` with the host API, taking the plugin's identity from the page's origin (0e7cd9f, 6deb357)
+    - [x] `baron.view`: data, messages, resize and close
     - [x] `host.ui.openWebView` and `ViewHandle` on the engine side (9d24fb5)
 - [ ] Look and feel
-    - [ ] Colour variables, dark mode and locale
+    - [ ] **▶ IN PROGRESS** Colour variables, dark mode and locale
     - [ ] Play audio without an extra click
 - [ ] Lifecycle
     - [ ] Keep a closed web view loaded for 30 s

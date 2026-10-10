@@ -63,13 +63,13 @@ flowchart TB
     ret["Text retriever<br/>AX text → AX web → Edit › Copy → ⌘C"]
     ctx["Context builder<br/>app, window, page URL, sentence, paragraph"]
     bar["Action bar<br/>non-activating panel; shows matching actions"]
-    host["Host API<br/>permission checks · http allowlist · clipboard · storage · text.segment"]
+    host["Host API<br/>permission checks · http allowlist · clipboard · storage · secrets · text.segment"]
     mon --> gate --> ret --> ctx --> bar --> host
   end
   subgraph plugins["Plugins · TS or JS"]
-    man["manifest.json<br/>actions, rules, permissions"]
+    man["manifest.json<br/>actions, rules, permissions, preferences"]
     act["Action runtime<br/>JavaScriptCore (macOS) / QuickJS-NG<br/>sandboxed helper process"]
-    view["View runtime<br/>WKWebView / WebView2 / WebKitGTK<br/>rich UI, e.g. ODH popup"]
+    view["View runtime<br/>native: JSON render tree → SwiftUI<br/>web: WKWebView, e.g. ODH popup"]
   end
   net["Network<br/>dictionary sites, AnkiConnect 127.0.0.1:8765"]
   src -- "events, AX reads" --> mon
@@ -177,7 +177,7 @@ Plugins must treat every optional field as absent-able and still work with `text
 
 ## Plugin system
 
-A plugin is a folder with a JSON manifest and one JavaScript bundle; rich UI is an optional HTML page. Plugin code only ever talks to one small, versioned `host` object. That object is the cross-platform contract: each OS host implements it, and plugins never see Swift, Win32 or GTK.
+A plugin is a folder with a JSON manifest and one JavaScript bundle. Its code runs in a small embedded JavaScript engine inside a sandboxed helper process, and only ever talks to one versioned `host` object, the cross-platform contract. Plugins keep data through host-backed storage and secrets, and show UI in three tiers: settings generated from the manifest, native views built with React, and web views. The choices below come from the [plugin runtime research](research/plugin-runtime.md), which compares Raycast, PopClip, VS Code, Obsidian, Figma and Zed.
 
 **Package layout**
 
@@ -185,7 +185,7 @@ A plugin is a folder with a JSON manifest and one JavaScript bundle; rich UI is 
 odh-dictionary/
   manifest.json
   dist/main.js        # ES module, bundled, no external imports
-  views/popup.html    # optional rich UI, loaded in a web view
+  views/popup.html    # optional web view
   icon.svg
 ```
 
@@ -198,7 +198,15 @@ odh-dictionary/
   "version": "1.0.0",
   "apiVersion": 1,
   "main": "dist/main.js",
-  "permissions": ["context.sentence", "context.page", "network:dict.youdao.com", "network:127.0.0.1:8765", "storage"],
+  "permissions": ["context.sentence", "context.page", "network:dict.youdao.com", "network:127.0.0.1:8765", "storage", "secrets"],
+  "preferences": [
+    { "id": "deck", "type": "text", "title": "Anki deck", "default": "Default", "required": true },
+    { "id": "dictionary", "type": "dropdown", "title": "Dictionary", "default": "collins",
+      "options": [{ "value": "collins", "title": "Collins" }, { "value": "cambridge", "title": "Cambridge" }] },
+    { "id": "maxExamples", "type": "number", "title": "Examples to show", "default": 2 },
+    { "id": "apiKey", "type": "secret", "title": "API key" }
+  ],
+  "settingsView": "SettingsView",
   "actions": [
     {
       "id": "lookup",
@@ -206,23 +214,33 @@ odh-dictionary/
       "icon": "icon.svg",
       "when": { "maxLength": 64, "regex": "^\\p{L}[\\p{L}'\\- ]*$" }
     }
-  ],
-  "options": [
-    { "id": "deck", "type": "string", "label": "Anki deck", "default": "Default" }
   ]
 }
 ```
 
-The `when` rules (length, regex, content type, apps, editable) are checked in Swift, never in JavaScript. The bar can therefore draw in a few milliseconds without loading any plugin.
+The `when` rules (length, regex, content type, apps, editable) are checked in Swift, never in JavaScript, so the bar draws in a few milliseconds without loading any plugin. `settingsView` is optional: it names a native view (tier 2 below) for settings the declared preferences can't express.
+
+**Preference types.** Baron draws these itself in the plugin's settings pane, the way Raycast, VS Code and PopClip do. A `required` preference is asked for before the plugin's first run.
+
+| Type | Control | Stored as |
+| --- | --- | --- |
+| `text` | Text field | Settings file |
+| `number` | Number field with optional `min` / `max` | Settings file |
+| `checkbox` | Checkbox with a `label` | Settings file |
+| `dropdown` | Pop-up menu of `options` | Settings file |
+| `secret` | Secure field | Keychain, never the settings file |
+| `file`, `directory` | Open panel | Settings file (path) |
+| `app` | App picker | Settings file (bundle ID) |
+| `heading` | Section heading, no value | — |
 
 **The API plugins write against**
 
 ```ts
-import { defineActions } from "@baron/plugin";
+import { defineActions } from "@baron/api";
 
 export default defineActions({
   async lookup(ctx: SelectionContext, host: Host) {
-    await host.ui.openView("views/popup.html", {
+    await host.ui.openWebView("views/popup.html", {
       word: ctx.text,
       sentence: ctx.sentence?.text,
       url: ctx.page?.url,
@@ -232,15 +250,32 @@ export default defineActions({
 
 interface Host {
   apiVersion: 1;
-  options: Record<string, string | boolean>;
-  http: { fetch(url: string, init?: RequestInit): Promise<Response> };   // allowed hosts only, no CORS
+  preferences: Readonly<Record<string, string | number | boolean | undefined>>;  // declared values; secrets excluded
+  http: { fetch(url: string, init?: RequestInit): Promise<Response> };          // allowed hosts only, no CORS
   clipboard: { readText(): Promise<string>; writeText(text: string): Promise<void> };
-  selection: { replace(text: string): Promise<void> };                   // needs "selection.replace"
-  storage: { get<T>(key: string): Promise<T | undefined>; set(key: string, value: unknown): Promise<void> };
+  selection: { replace(text: string): Promise<void> };                          // needs "selection.replace"
+  storage: {                                                                     // JSON values, per plugin, 5 MB
+    get<T>(key: string): Promise<T | undefined>;
+    set(key: string, value: unknown): Promise<void>;
+    remove(key: string): Promise<void>;
+    keys(): Promise<string[]>;
+  };
+  cache: {                                                                       // strings, LRU, 10 MB, may be evicted
+    get(key: string): Promise<string | undefined>;
+    set(key: string, value: string): Promise<void>;
+    remove(key: string): Promise<void>;
+  };
+  secrets: {                                                                     // Keychain; needs "secrets"
+    get(key: string): Promise<string | undefined>;
+    set(key: string, value: string): Promise<void>;
+    remove(key: string): Promise<void>;
+  };
   text: { segment(text: string, unit: "word" | "sentence"): { start: number; end: number }[] };
   ui: {
     toast(message: string, kind?: "info" | "success" | "error"): void;
-    openView(path: string, data?: unknown): Promise<ViewHandle>;
+    show(view: BaronElement): Promise<ViewHandle>;                               // native view, tier 2
+    openWebView(path: string, data?: unknown): Promise<ViewHandle>;              // web view, tier 3
+    openSettings(): void;
     openUrl(url: string): Promise<void>;
   };
   log(...args: unknown[]): void;
@@ -249,23 +284,52 @@ interface Host {
 
 `host.text.segment` exists because sentence splitting must not depend on `Intl.Segmenter`, which QuickJS lacks. The host uses `NLTokenizer` on macOS and ICU elsewhere.
 
-**Two runtimes**
+**Runtime: a small embedded engine, not Node.** Raycast started on JavaScriptCore and moved to Node because developers wanted npm packages and Node APIs; the cost was a large runtime and no sandbox. Baron keeps the sandbox and answers the npm problem with a fixed web-platform subset.
 
-- **Actions** run headless in a JavaScript engine: one context per plugin, inside a separate helper process. A crash or runaway loop kills the helper, not the app. Each action call has a 10 s limit, and an idle plugin is unloaded after 60 s.
-- **Views** run in the system web view: `WKWebView` on macOS, WebView2 on Windows, WebKitGTK on Linux. A view loads from a `plugin://<id>/` URL with a strict Content Security Policy (no direct network). It gets the same `host` object through a message bridge, so views and actions share one API.
-
-| Engine for actions | Platforms | Cost to ship | Verdict |
+| Engine | Platforms | Cost to ship | Verdict |
 | --- | --- | --- | --- |
-| JavaScriptCore | macOS, iOS | None, part of macOS | **v1 on macOS.** PopClip uses it too ([docs](https://www.popclip.app/dev/js-environment)) |
-| [QuickJS-NG](https://github.com/quickjs-ng/quickjs) | All | About 1 MB, MIT | **Windows and Linux hosts.** Run in CI from day one |
-| V8 or Node | All | Tens of MB | Too heavy for a menu-bar app |
-| Web view only | All | None | Slow to start, and every action pays for a page |
+| JavaScriptCore | macOS, iOS | None, part of macOS | **macOS.** PopClip and Raycast's first design use it |
+| [QuickJS-NG](https://github.com/quickjs-ng/quickjs) | All | 1.3 MB, MIT | **Windows and Linux.** Figma's sandbox engine; run in CI from day one |
+| Node | All | 61.8 MB | No: only a process-level sandbox |
+| Deno | All | 153.2 MB | No: permissions are per process |
+| WebAssembly (Extism, Javy) | All | Small runtime | Later: for plugins in other languages |
 
-The API stays inside ES2023 plus `host`. CI runs every plugin's tests on both JavaScriptCore and QuickJS-NG. A plugin that passes both should work on a future Windows host before that host exists.
+- **Web-platform subset**, provided by the host in every context: `fetch` (through `host.http`), `URL`, `URLSearchParams`, `TextEncoder`, `TextDecoder`, `setTimeout` and friends, `AbortController`, `crypto.getRandomValues`, `crypto.subtle.digest`, `structuredClone`, `console`.
+- **npm:** `baron build` bundles pure-JavaScript packages with esbuild. Packages that need Node built-ins (`fs`, `child_process`, `net`) are unsupported by design.
+- **The API stays inside ES2023 plus `host`.** CI runs every plugin's tests on JavaScriptCore and QuickJS-NG, so a plugin that passes both should work on a future Windows host.
 
-**TypeScript.** Plugins ship compiled JavaScript. A small CLI (`baron build`, `baron dev`) bundles TypeScript with esbuild and reloads the plugin on save. The app contains no TypeScript compiler. PopClip's in-app [sucrase](https://github.com/alangpierce/sucrase) approach can be added later for single-file scripts.
+**Process model.** One sandboxed helper process (an XPC service with no file or network entitlement) holds one engine context per plugin, as in Raycast's first design. A crash or runaway loop kills the helper, not Baron; Baron restarts it and disables a plugin after three strikes. Each action call has a 10 s limit, and an idle plugin is unloaded after 60 s. QuickJS can cap each runtime's memory; JavaScriptCore has no public per-context limit, so Baron watches the helper's memory instead.
 
-**DOM in actions.** The action runtime has no DOM. A plugin that scrapes HTML either bundles [linkedom](https://github.com/WebReflection/linkedom) (pure JS, also bundled by PopClip) or does the scraping inside its view.
+**Storage.** The host stores everything; plugin code never touches the file system.
+
+| API | Holds | Backed by | Limit | Kept |
+| --- | --- | --- | --- | --- |
+| `host.preferences` | Declared settings (read-only to the plugin) | Baron's settings file | — | Until the user changes them |
+| `host.storage` | Plugin data, JSON values | One file per plugin in Baron's Application Support folder | 5 MB | Until uninstall |
+| `host.cache` | Disposable strings | Files with an LRU index | 10 MB | May be evicted at any time |
+| `host.secrets` | Tokens and keys, including `secret` preferences | Keychain, one item per plugin and key | — | Until uninstall |
+
+**UI in three tiers**
+
+| Tier | The plugin writes | Baron draws | Use for |
+| --- | --- | --- | --- |
+| 1. Generated settings | `preferences` in the manifest | A native settings pane | Most settings: no UI code at all |
+| 2. Native views | React components from `@baron/ui` | SwiftUI on macOS, WinUI or GTK later | Custom settings (`settingsView`), result lists, details, forms |
+| 3. Web views | An HTML page in the package | `WKWebView` (WebView2, WebKitGTK later) | Fully custom UI, such as ODH's popup |
+
+How a native view works:
+
+1. The plugin returns a React element built from `@baron/ui` components: `Form` (`TextField`, `SecureField`, `Checkbox`, `Dropdown`, `NumberField`), `List` (`Item`, `Section`), `Detail` (Markdown plus metadata), `ActionPanel` and `Action`.
+2. React runs inside the plugin's engine context with Baron's reconciler, which ships in `@baron/ui`. React needs only timers, which the host provides. React Native ran on JavaScriptCore for years, and React has been run on QuickJS too.
+3. Each React commit produces a JSON render tree, sent to Baron. v1 sends the whole tree; JSON Patch diffs, as Raycast uses, come only if trees grow large.
+4. Baron maps the tree to SwiftUI views. The tree format is part of the cross-platform contract, so a Windows host maps the same tree to WinUI.
+5. User input (typing, toggling, choosing an action) goes back as an event message that calls the plugin's handler, which updates state and triggers the next render.
+
+Views appear in two places: the plugin's tab in Baron's Settings window (generated preferences, then `settingsView` if any) and a result panel next to the action bar. Web views follow the same rules as before: a `plugin://<id>/` URL, a strict Content Security Policy with no direct network, and the same `host` object through a message bridge.
+
+**TypeScript.** Plugins ship compiled JavaScript. Two packages: `@baron/api` (types for `host` and `SelectionContext`, plus `defineActions`) and `@baron/ui` (the components and reconciler). A small CLI (`baron build`, `baron dev`) bundles TypeScript and TSX with esbuild and reloads the plugin on save. The app contains no TypeScript compiler.
+
+**DOM in actions.** The engine context has no DOM. A plugin that scrapes HTML either bundles [linkedom](https://github.com/WebReflection/linkedom) (pure JS, also bundled by PopClip) or does the scraping inside a web view.
 
 **Permissions** are listed in the manifest, shown at install, and enforced by the host on every call.
 
@@ -276,9 +340,17 @@ The API stays inside ES2023 plus `host`. CI runs every plugin's tests on both Ja
 | `network:<host>` | `host.http.fetch` to that host only | At install |
 | `clipboard.read` | `host.clipboard.readText` | At install |
 | `selection.replace` | Replacing the selected text | At install |
-| `storage` | A private key-value store for this plugin | None |
+| `secrets` | `host.secrets` and `secret` preferences | At install |
+| `storage` | `host.storage` and `host.cache` | None |
 
-**Versioning.** `apiVersion` is an integer. The host supports the current and the previous version, and refuses newer ones with a clear message.
+**Versioning.** `apiVersion` is an integer. The host supports the current and the previous version, and refuses newer ones with a clear message. The render-tree format is versioned with it.
+
+**Open questions for the plugin system**
+
+- [ ] Accept no Node built-ins (`fs`, `child_process`, `net`) in v1? This keeps the sandbox but rules out some npm packages.
+- [ ] Build native views (tier 2) inside task-003, or as their own task after it? Tiers 1 and 3 are enough for the ODH plugin.
+- [ ] Are the 5 MB storage and 10 MB cache quotas right?
+- [ ] Should secrets sync through iCloud Keychain or stay on this Mac? PopClip lets each secret choose; the proposal is local by default.
 
 ## Cross-platform plan
 
@@ -293,7 +365,8 @@ Share everything a plugin touches; write the host natively per OS. The shared pa
 | Page URL | `AXURL` on the web area | To be researched (UIA on the address bar) | To be researched |
 | Bar window | Non-activating `NSPanel` | Topmost window with `WS_EX_NOACTIVATE` | X11: override-redirect window. Wayland: absolute placement is not allowed |
 | Action engine | JavaScriptCore | QuickJS-NG | QuickJS-NG |
-| Views | `WKWebView` | WebView2 | WebKitGTK |
+| Native views (tier 2) | SwiftUI | WinUI | GTK |
+| Web views (tier 3) | `WKWebView` | WebView2 | WebKitGTK |
 | Sentence splitting | `NLTokenizer` | ICU (`icu.dll`, built into Windows 10 1903+) | ICU |
 
 **Rules that keep plugins portable**
@@ -371,6 +444,8 @@ The biggest risk is uneven Accessibility support across apps. Milestone 0 measur
 | macOS changes AX behaviour or permission prompts | Breakage after an OS update | Test on each macOS beta; keep the retriever swappable |
 | The plugin API is hard to change once published | Stuck with early mistakes | Small v1 surface, `apiVersion`, support N and N−1 |
 | JavaScriptCore and QuickJS-NG behave differently | A plugin works on macOS only | Every plugin's tests run on both engines in CI |
+| No Node APIs in plugins | Developers can't use some npm packages, the reason Raycast moved to Node | A documented web-platform subset; pure-JS npm packages bundle fine; revisit with real plugin requests |
+| React in every plugin context costs parse time and memory | Slow first view, larger helper | Load `@baron/ui` only when a plugin shows a native view; QuickJS bytecode precompile |
 
 **Open questions**
 

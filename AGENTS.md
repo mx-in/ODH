@@ -5,16 +5,16 @@
 **Task:** task-003-plugin-runtime: run TypeScript and JavaScript actions (gate: sample plugins pass on JavaScriptCore and QuickJS-NG)
 **Started:** 2026-10-10 · **Agent:** Claude (Claude Code)
 
-- [ ] **▶ IN PROGRESS** Research (user request 2026-10-10: runtime, storage, settings UI; look at Raycast and beyond)
-    - [ ] How Raycast runs extensions: runtime, process model, React-to-native UI, preferences, storage
-    - [ ] Other plugin systems: PopClip, VS Code, Obsidian, Figma, Zed, Alfred
-    - [ ] JS engines for plugins: JavaScriptCore, QuickJS-NG, Hermes, Node/Bun/Deno, WebAssembly
-    - [ ] Native UI from JS: React reconcilers rendering to SwiftUI/AppKit, declarative schemas, web views
-    - [ ] Storage and secrets: key-value, cache, Keychain
-    - [ ] Write the decision and update the design (Claude Docs and `docs/tec-design.md`)
+- [ ] Research (user request 2026-10-10: runtime, storage, settings UI; look at Raycast and beyond)
+    - [x] How Raycast runs extensions: runtime, process model, React-to-native UI, preferences, storage
+    - [x] Other plugin systems: PopClip, VS Code, Obsidian, Figma, Zed, Alfred
+    - [x] JS engines for plugins: JavaScriptCore, QuickJS-NG, Hermes, Node/Bun/Deno, WebAssembly
+    - [x] Native UI from JS: React reconcilers rendering to SwiftUI/AppKit, declarative schemas, web views
+    - [x] Storage and secrets: key-value, cache, Keychain
+    - [ ] **▶ IN PROGRESS** Write the decision and update the design (`docs/research/plugin-runtime.md` and `docs/tec-design.md` done; Claude Docs next)
     - [ ] Re-plan the rest of task-003 from the updated design
 
-**Notes for the next agent:** the implementation checklist for task-003 is written after the research, from the updated design.
+**Notes for the next agent:** no code for task-003 until the user has read the research and the updated Plugin system section (user request 2026-10-10). The implementation checklist is written after that, from the updated design.
 
 
 <!--

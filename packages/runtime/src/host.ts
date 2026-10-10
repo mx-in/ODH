@@ -54,20 +54,21 @@ export function createHost(channel: Channel, views: Views, state: HostState): Ho
             replace: async (text: string) => void (await call("selection", "replace", text)),
         }),
         storage: Object.freeze({
-            get: <T>(key: string) => call("storage", "get", key) as Promise<T | undefined>,
+            // Missing keys come back as null over JSON; the API promises undefined.
+            get: async <T>(key: string) => ((await call("storage", "get", key)) ?? undefined) as T | undefined,
             set: async (key: string, value: unknown) => void (await call("storage", "set", key, value)),
             remove: async (key: string) => void (await call("storage", "remove", key)),
             keys: () => call("storage", "keys") as Promise<string[]>,
             usage: () => call("storage", "usage") as Promise<number>,
         }),
         cache: Object.freeze({
-            get: (key: string) => call("cache", "get", key) as Promise<string | undefined>,
+            get: async (key: string) => ((await call("cache", "get", key)) ?? undefined) as string | undefined,
             set: async (key: string, value: string) => void (await call("cache", "set", key, value)),
             remove: async (key: string) => void (await call("cache", "remove", key)),
             clear: async () => void (await call("cache", "clear")),
         }),
         secrets: Object.freeze({
-            get: (key: string) => call("secrets", "get", key) as Promise<string | undefined>,
+            get: async (key: string) => ((await call("secrets", "get", key)) ?? undefined) as string | undefined,
             set: async (key: string, value: string) => void (await call("secrets", "set", key, value)),
             remove: async (key: string) => void (await call("secrets", "remove", key)),
         }),

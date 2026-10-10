@@ -40,6 +40,16 @@ describe("host object", () => {
         expect(await toast).toBeUndefined();
     });
 
+    test("missing keys read as undefined, not null", async () => {
+        const { host, answer } = setup();
+        const missing = host.storage.get("nothing");
+        answer(null);
+        expect(await missing).toBeUndefined();
+        const cached = host.cache.get("nothing");
+        answer(null);
+        expect(await cached).toBeUndefined();
+    });
+
     test("log lines are formatted text and need no answer", () => {
         const { host, sent, channel } = setup();
         host.log.warn("count", 3, { a: [1] });

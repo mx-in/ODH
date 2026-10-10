@@ -39,3 +39,31 @@ struct ManifestValidatorTests {
         #expect(issues(manifest) == ["/actions/0/needs/1"])
     }
 }
+
+struct ManifestValueCheckTests {
+    let validator = ManifestValidatorTests()
+    let action = #""actions": [{"id": "a", "title": "A"}]"#
+
+    func issues(_ rest: String) -> [String] {
+        validator.issues("{\(ManifestValidatorTests.head), \(rest)}")
+    }
+
+    @Test func minLengthIsAtMostMaxLength() {
+        #expect(issues(#""actions": [{"id": "a", "title": "A", "when": {"minLength": 10, "maxLength": 5}}]"#) == ["/actions/0/when/minLength"])
+        #expect(issues(#""actions": [{"id": "a", "title": "A", "when": {"minLength": 5, "maxLength": 5}}]"#) == [])
+    }
+
+    @Test func numberDefaultsStayInRange() {
+        #expect(issues(action + #", "preferences": [{"id": "n", "type": "number", "title": "N", "min": 1, "max": 5, "default": 9}]"#) == ["/preferences/0/default"])
+        #expect(issues(action + #", "preferences": [{"id": "n", "type": "number", "title": "N", "min": 1, "max": 5, "default": 0}]"#) == ["/preferences/0/default"])
+        #expect(issues(action + #", "preferences": [{"id": "n", "type": "number", "title": "N", "min": 6, "max": 5}]"#) == ["/preferences/0/min"])
+    }
+
+    @Test func choiceDefaultsAreOptions() {
+        let options = #""options": [{"value": "uk", "title": "UK"}]"#
+        #expect(issues(action + #", "preferences": [{"id": "d", "type": "dropdown", "title": "D", "#+options+#", "default": "us"}]"#) == ["/preferences/0/default"])
+        #expect(issues(action + #", "preferences": [{"id": "c", "type": "checklist", "title": "C", "#+options+#", "default": ["uk", "us"]}]"#) == ["/preferences/0/default/1"])
+        // Options loaded from the plugin aren't known yet, so any default is allowed.
+        #expect(issues(action + #", "preferences": [{"id": "d", "type": "dropdown", "title": "D", "optionsFrom": "decks", "default": "x"}]"#) == [])
+    }
+}

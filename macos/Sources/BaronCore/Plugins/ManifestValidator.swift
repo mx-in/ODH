@@ -46,6 +46,7 @@ public struct ManifestValidator: Sendable {
             return ManifestValidation(manifest: nil, issues: [ManifestIssue("", "manifest.json could not be read")])
         }
         let issues = ManifestReferenceChecks.check(manifest)
+            + ManifestValueChecks.check(manifest)
         return ManifestValidation(manifest: issues.isEmpty ? manifest : nil, issues: issues)
     }
 }

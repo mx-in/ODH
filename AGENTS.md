@@ -23,9 +23,10 @@
     - [x] Write the cases only the semantic checks reject, with their package files (7b3ddae)
     - [x] Run the corpus against the JSON Schema (90f2d2d)
 - [ ] **▶ IN PROGRESS** Swift manifest model (BaronCore)
-    - [ ] Check a manifest's structure as the schema does, reporting JSON Pointers
-    - [ ] Decode a valid manifest into Swift types
-    - [ ] Check unique IDs, `dependsOn` targets, and that `needs` are granted
+    - [x] Check a manifest's structure as the schema does, reporting JSON Pointers (63cdb3d)
+    - [x] Decode a valid manifest into Swift types (9516f33)
+    - [x] Check unique IDs, `dependsOn` targets, and that `needs` are granted (42c5e2e)
+    - [ ] Check ranges and defaults: minLength ≤ maxLength, a default within its options or range (found while writing the corpus)
     - [ ] Check that paths stay inside the package and referenced files exist
     - [ ] Compile each `regex` as JavaScript and as ICU
     - [ ] Check `apiVersion`, `minBaronVersion` and `platforms`

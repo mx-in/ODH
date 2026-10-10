@@ -349,12 +349,12 @@ Views appear in two places: the plugin's tab in Baron's Settings window (generat
 
 **Open questions for the plugin system**
 
-Proposed answers are in the platform design's [Decisions](design/plugin-platform/README.md#decisions) table. They become final when the user approves that design.
+Decided when the user approved the platform design on 2026-10-10; the reasons are in its [Decisions](design/plugin-platform/README.md#decisions) table.
 
-- [ ] Accept no Node built-ins (`fs`, `child_process`, `net`) in v1? This keeps the sandbox but rules out some npm packages. Proposed: no Node built-ins; Bun is the developer toolchain only.
-- [ ] Build native views (tier 2) inside task-003, or as their own task after it? Tiers 1 and 3 are enough for the ODH plugin. Proposed: their own task after ODH (task-013).
-- [ ] Are the 5 MB storage and 10 MB cache quotas right? Proposed: yes, with 1 MB and 2 MB per value.
-- [ ] Should secrets sync through iCloud Keychain or stay on this Mac? PopClip lets each secret choose; the proposal is local by default. Proposed: this Mac only in v1.
+- [x] Accept no Node built-ins (`fs`, `child_process`, `net`) in v1? This keeps the sandbox but rules out some npm packages. Decided: no Node built-ins; Bun is the developer toolchain only.
+- [x] Build native views (tier 2) inside task-003, or as their own task after it? Tiers 1 and 3 are enough for the ODH plugin. Decided: their own task after ODH (task-013).
+- [x] Are the 5 MB storage and 10 MB cache quotas right? Decided: yes, with 1 MB and 2 MB per value.
+- [x] Should secrets sync through iCloud Keychain or stay on this Mac? PopClip lets each secret choose; the proposal is local by default. Decided: this Mac only in v1.
 
 ## Cross-platform plan
 

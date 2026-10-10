@@ -34,6 +34,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             Task { await self.debugPanel.store.record(trigger: trigger, outcome: outcome, source: source) }
         }
         plugins.onCatalogChange = { [weak self] in self?.coordinator.pipeline.plugins = $0 }
+        coordinator.onPluginAction = { [weak self] entry, run in
+            guard let self else { return }
+            Task { _ = await self.plugins.run(entry, for: run) }
+        }
         Task { await plugins.reload() }
         coordinator.start()
         // `open build/Baron.app --args --debug-panel` starts with the panel showing.

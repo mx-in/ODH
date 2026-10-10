@@ -8,6 +8,8 @@ final class SelectionCoordinator {
     let pipeline: SelectionPipeline
     /// Called after every run, with the source it read from (used by the debug panel).
     var onRun: ((Trigger, PipelineOutcome, FocusedSelectionSource) -> Void)?
+    /// Runs a plugin's action for the selection; set by the app delegate.
+    var onPluginAction: ((PluginActionCatalog.Entry, SelectionRun) -> Void)?
     private let events = SelectionEventMonitor()
     private let hotkey = HotkeyMonitor()
     private let bar = ActionBarController()
@@ -54,7 +56,13 @@ final class SelectionCoordinator {
     }
 
     private func perform(_ item: BarItem) {
-        guard let run = current, let effect = pipeline.actions.effect(of: item.id, for: run.text) else { return }
+        guard let run = current else { return }
+        if let entry = pipeline.plugins.entry(forItemID: item.id) {
+            bar.hide()
+            onPluginAction?(entry, run)
+            return
+        }
+        guard let effect = pipeline.actions.effect(of: item.id, for: run.text) else { return }
         ActionEffectPerformer.perform(effect)
     }
 }

@@ -32,8 +32,28 @@ final class PluginController {
         onCatalogChange?(catalog)
     }
 
+    /// Runs the action for a selection with the plugin's preferences and the user's environment.
+    func run(_ entry: PluginActionCatalog.Entry, for selection: SelectionRun) async -> Result<JSONValue, HostError> {
+        guard let plugin = plugins[entry.pluginID] else { return .failure(.notFound("\(entry.pluginName) is no longer loaded")) }
+        let action = plugin.manifest.actions.first { $0.id == entry.actionID }
+        let appearance = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? "dark" : "light"
+        let payload = DispatchPayload(environment: PluginEnvironment(appearance: appearance),
+                                      preferences: PreferenceDefaults.values(for: plugin.manifest),
+                                      context: SelectionContextJSON.make(from: selection))
+        let result = await runtime.dispatch(plugin.id, .action, name: action?.handlerName ?? entry.actionID, payload: payload)
+        logger.info("\(plugin.id, privacy: .public) \(entry.actionID, privacy: .public): \(result.isSuccess ? "done" : "failed", privacy: .public)")
+        return result
+    }
+
     func openFolder() {
         _ = DevelopmentPlugins.scan()
         NSWorkspace.shared.open(DevelopmentPlugins.defaultFolder)
+    }
+}
+
+extension Result {
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
     }
 }

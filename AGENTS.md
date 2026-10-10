@@ -33,8 +33,8 @@
     - [x] Serve `http.fetch` with its time and size limits (permission checks come in task-006) (87ccbca)
 - [ ] Bar integration
     - [x] Load plugins from the development folder (installing comes in task-008) (739a2bc)
-    - [ ] **▶ IN PROGRESS** Show plugin actions whose `when` rules match, after the built-in ones
-    - [ ] Dispatch a click with `text`, `source`, `editable`, `app` and `platform`
+    - [x] Show plugin actions whose `when` rules match, after the built-in ones (cf5120b)
+    - [ ] **▶ IN PROGRESS** Dispatch a click with `text`, `source`, `editable`, `app` and `platform`
     - [ ] Carry out action results: copy, replace, toast, open URL
     - [ ] Show a plugin's error as a toast naming the plugin
 - [ ] Tooling

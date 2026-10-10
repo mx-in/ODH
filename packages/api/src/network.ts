@@ -4,8 +4,8 @@
  * subdomains only. Baron's own matcher (task-006) adds address resolution; this one serves tooling and tests.
  */
 export function networkPermissionCovers(permission: string, url: string): boolean {
-    const target = url.match(/^(https?):\/\/([^/:?#]+|\[[^\]]+\])(?::(\d+))?/i);
-    const pattern = permission.match(/^network:(?:(https?):\/\/)?(\*\.)?([^:]+|\[[^\]]+\])(?::(\d+))?$/);
+    const target = url.match(/^(https?):\/\/(\[[^\]]+\]|[^/:?#]+)(?::(\d+))?/i);
+    const pattern = permission.match(/^network:(?:(https?):\/\/)?(\*\.)?(\[[^\]]+\]|[^:]+)(?::(\d+))?$/);
     if (!target || !pattern) return false;
     const scheme = target[1]!.toLowerCase();
     const host = target[2]!.toLowerCase();
@@ -20,7 +20,7 @@ export function networkPermissionCovers(permission: string, url: string): boolea
 
 /** The `network:` permission that names exactly this URL's host, for prompts and `permissions.used`. */
 export function networkPermissionFor(url: string): string {
-    const target = url.match(/^(https?):\/\/([^/:?#]+|\[[^\]]+\])(?::(\d+))?/i);
+    const target = url.match(/^(https?):\/\/(\[[^\]]+\]|[^/:?#]+)(?::(\d+))?/i);
     if (!target) return "network:?";
     const scheme = target[1]!.toLowerCase();
     const host = target[2]!.toLowerCase();

@@ -19,3 +19,9 @@ test("names the permission for a URL", () => {
     expect(networkPermissionFor("http://example.com/")).toBe("network:http://example.com");
     expect(networkPermissionFor("http://127.0.0.1:8765/")).toBe("network:127.0.0.1:8765");
 });
+
+import corpus from "./network-corpus.json" with { type: "json" };
+
+test.each(corpus)("$permission vs $url: $note", ({ permission, url, covers: expected }) => {
+    expect(covers(permission, url)).toBe(expected);
+});

@@ -9,6 +9,9 @@ final class PluginInstance: @unchecked Sendable {
     private let lock = NSLock()
     private var nextDispatchID = 1
     private var waiting: [Int: CheckedContinuation<Result<JSONValue, HostError>, Never>] = [:]
+    /// Log lines are served one after another so they keep the order the plugin wrote them in;
+    /// other calls run concurrently.
+    private var lastLog: Task<Void, Never>?
 
     init(plugin: RuntimePlugin, handler: HostCallHandler) {
         self.plugin = plugin
@@ -34,9 +37,20 @@ final class PluginInstance: @unchecked Sendable {
     private func received(_ json: String) {
         switch OutboundEnvelope(json: json) {
         case .call(let call)?:
-            Task {
+            let serve: @Sendable () async -> Void = { [handler, plugin, engine] in
                 let result = await handler.handle(call, from: plugin)
                 engine.deliver(InboundEnvelope.result(id: call.id, result).json)
+            }
+            if call.namespace == "log" {
+                lock.withLock {
+                    let previous = lastLog
+                    lastLog = Task {
+                        await previous?.value
+                        await serve()
+                    }
+                }
+            } else {
+                Task { await serve() }
             }
         case .result(let id, let result)?:
             let continuation = lock.withLock { waiting.removeValue(forKey: id) }

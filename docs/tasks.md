@@ -13,10 +13,10 @@ To start a task, copy it into **Current task** in `AGENTS.md`, then tick items t
 | task-005-runtime | [02](design/plugin-platform/02-runtime.md) Runtime stage 1, [03](design/plugin-platform/03-host-api-and-ipc.md) core | A sample plugin runs from the bar; tests pass on both engines | Done ([archive](archive/task-005-runtime-archive.md)) |
 | task-006-host-services | [03](design/plugin-platform/03-host-api-and-ipc.md) Host API, [04](design/plugin-platform/04-permissions-and-security.md) Permissions | Every call is permission-checked; prompts are UI-tested | Done ([archive](archive/task-006-host-services-archive.md)) |
 | task-007-storage-and-settings | [05](design/plugin-platform/05-storage.md) Storage, [06](design/plugin-platform/06-settings.md) Settings | ODH-shaped settings fill from a mock AnkiConnect | Done ([archive](archive/task-007-storage-and-settings-archive.md)) |
-| task-008-install | [10](design/plugin-platform/10-install-and-lifecycle.md) Install and lifecycle, [09](design/plugin-platform/09-developer-tooling.md) CLI | Consent works; uninstall leaves nothing behind | Not started |
-| task-009-context-builder | [Context capture](tec-design.md#context-capture) | Context arrives only when needed and permitted | Not started |
-| task-010-web-views | [07](design/plugin-platform/07-web-views.md) Web views | Panel next to the selection; undeclared hosts blocked | Not started |
-| task-011-sandboxed-helper | [02](design/plugin-platform/02-runtime.md#stage-2-the-sandboxed-helper) Runtime stage 2 | The same tests pass; a helper crash recovers | Not started |
+| task-008-install | [10](design/plugin-platform/10-install-and-lifecycle.md) Install and lifecycle, [09](design/plugin-platform/09-developer-tooling.md) CLI | Consent works; uninstall leaves nothing behind | Built; waiting on one UI run (needs an unlocked screen) |
+| task-009-context-builder | [Context capture](tec-design.md#context-capture) | Context arrives only when needed and permitted | Built; waiting on one UI run (needs an unlocked screen) |
+| task-010-web-views | [07](design/plugin-platform/07-web-views.md) Web views | Panel next to the selection; undeclared hosts blocked | Built; waiting on one UI run (needs an unlocked screen) |
+| task-011-sandboxed-helper | [02](design/plugin-platform/02-runtime.md#stage-2-the-sandboxed-helper) Runtime stage 2 | The same tests pass; a helper crash recovers | Built; waiting on one UI run (needs an unlocked screen) |
 | task-012-odh-on-baron | [ODH on Baron](design/plugin-platform/odh-on-baron.md) | The parity checklist passes: the platform is done | Not started |
 | task-013-native-views | [08](design/plugin-platform/08-native-views.md) Native views | Form, List and Detail render; same trees on both engines | Not started |
 | task-014-release | v1 release | A signed, notarized download | Not started |

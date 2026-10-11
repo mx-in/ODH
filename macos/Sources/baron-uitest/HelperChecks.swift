@@ -4,7 +4,7 @@ import Foundation
 
 // `baron-uitest --helper` (scripts/uitest-helper.sh): installs a probe plugin whose onInstall waits three seconds,
 // checks its code runs in the sandboxed BaronPluginHost.xpc, stops the helper mid-hook (the error reaches the
-// user), and installs again (the helper starts again and the hook finishes). Needs no mouse or keyboard.
+// user), then runs the probe's action from the bar in Safari (a new helper starts and answers).
 
 @MainActor
 func runHelperChecks(probe: URL) async -> [PluginCheck] {
@@ -46,14 +46,30 @@ func runHelperChecks(probe: URL) async -> [PluginCheck] {
         SyntheticInput.pause(3.5)
     }
 
-    // 3. The next need starts the helper again and the hook finishes.
-    guard install() else {
-        record("the next action works", false, "no install sheet the second time")
+    // 3. The next action starts the helper again: run the probe's action from the bar.
+    let page = FileManager.default.temporaryDirectory.appendingPathComponent("baron-helper.html")
+    try? "<!doctype html><meta charset=\"utf-8\"><title>baron-helper</title><p style=\"margin:200px 80px;font:18px sans-serif\">A zebrafish swims.</p>"
+        .write(to: page, atomically: true, encoding: .utf8)
+    try? Shell.open(["-a", "Safari", page.path])
+    guard let safari = waitForApp("com.apple.Safari"),
+          let tab = FixtureWindows.waitForWindow(titled: "baron-helper", inApp: safari.processIdentifier, timeout: 20) else {
+        record("the next action works in a new helper", false, "Safari didn't open the page")
         return checks
     }
-    let toast = waitForToast(timeout: 8) ?? ""
-    record("the next action works in a new helper", toast == "helper probe: installed" && helperPID() != nil && helperPID() != pid,
-           "\(toast); helper pid \(helperPID().map(String.init) ?? "none")")
+    FixtureWindows.raise(tab)
+    safari.activate()
+    SyntheticInput.pause(1.2)
+    defer { closeTab(safari, titled: "baron-helper") }
+    guard let word = WordLocator.locate("zebrafish", inApp: safari.processIdentifier) else {
+        record("the next action works in a new helper", false, "\"zebrafish\" isn't in the Accessibility tree")
+        return checks
+    }
+    SyntheticInput.doubleClick(at: word.point)
+    let pressed = BaronBarDetector.waitForBar(timeout: 2.5) && BaronBarDetector.pressAction("plugin:org.baron.uitest.helper-probe/probe")
+    let toast = pressed ? waitForToast(timeout: 8) ?? "" : ""
+    let fresh = helperPID()
+    record("the next action works in a new helper", toast == "helper probe: ran" && fresh != nil && fresh != pid,
+           pressed ? "\(toast); helper pid \(fresh.map(String.init) ?? "none") (was \(pid.map(String.init) ?? "none"))" : "no bar or button")
     return checks
 }
 

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds Baron.app with BaronPluginHost.xpc and runs baron-uitest --helper: a probe plugin's onInstall runs in the
-# sandboxed helper, the helper is killed mid-hook, and a second install works in a new helper. Presses buttons
-# through Accessibility only, so it works with the display asleep. Removes the probe afterwards.
+# sandboxed helper, the helper is killed mid-hook, and the probe's action then works from the bar in a new helper.
+# Takes over the mouse and keyboard for the last step. Removes the probe afterwards.
 # Results: UITests/results/helper/helper.md
 set -eu
 cd "$(dirname "$0")/.."

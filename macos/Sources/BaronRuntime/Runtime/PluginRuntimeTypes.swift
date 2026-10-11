@@ -4,6 +4,9 @@ import Foundation
 /// The limits from the runtime design (02-runtime.md#limits-and-stuck-plugins); tests shorten them.
 public struct RuntimeLimits: Sendable {
     public var load: Duration = .seconds(2)
+    /// Starting the engine before the plugin's code loads: in the helper, waiting for launchd to start it, which
+    /// it holds back for up to 10 s after a helper that ran less than that (a crash, or a restart).
+    public var engineStart: Duration = .seconds(15)
     public var action: Duration = .seconds(10)
     public var options: Duration = .seconds(5)
     public var button: Duration = .seconds(10)

@@ -19,9 +19,13 @@ final class PluginInstance: @unchecked Sendable {
         self.engine = engine
     }
 
+    /// Makes the engine's context and installs `__baronNative` (in the helper, this starts it if needed).
+    func start() async throws {
+        try await engine.installNative(send: { [weak self] json in self?.received(json) })
+    }
+
     /// Evaluates the prelude and the plugin's bundle, and checks that the bundle defined actions.
     func load(bundle: String) async throws {
-        try await engine.installNative(send: { [weak self] json in self?.received(json) })
         try await engine.evaluate(Prelude.source, sourceURL: "baron-prelude.js")
         do {
             try await engine.evaluate(bundle, sourceURL: plugin.manifest.main)

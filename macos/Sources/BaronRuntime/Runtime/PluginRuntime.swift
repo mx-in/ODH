@@ -171,6 +171,15 @@ public actor PluginRuntime {
             guard let self, let instance else { return }
             Task { await self.engineLost(pluginID, instance) }
         }
+        // The engine starting late isn't the plugin's fault: the plugin stays unloaded, not broken.
+        do {
+            try await withLimit(limits.engineStart, "The plugin host didn't start within \(limits.engineStart)") {
+                try await instance.start()
+            }
+        } catch {
+            instance.engine.unload()
+            return .failure(.unavailable((error as? HostError)?.message ?? "The plugin host didn't start: \(error)"))
+        }
         do {
             let bundle = try plugin.bundleSource()
             try await withLimit(limits.load, "Its code took longer than \(limits.load) to load") {
